@@ -41,7 +41,7 @@ returns.
 **Full calendar access is requested behind a priming screen**, shown before the
 system prompt. iOS only asks once, so a cold denial is close to permanent.
 
-## 2026-09-01 — Planetary hours are not drawn on the arc
+## 2026-09-01 — Planetary hours have no surface
 
 The brief tints each planetary hour's stretch of the arc stroke with its ruling
 planet's colour, with no legend, on the grounds that "the line itself carries
@@ -49,16 +49,20 @@ the information". Dropped. The view is a three-hour window, so at most one or
 two planetary hours are ever visible and there is nothing to compare a tint
 against. The stroke stays a single weight in ink.
 
-The replacement is a tarot-style line-art card per planet, shown in the header
-and tappable to open an explanation of how to be in that hour. This also
-reverses the brief's "no astrology glyphs" rule, deliberately: the objection was
-to cryptic marks decorating the arc, and this is a deliberate object elsewhere
-on screen.
+The replacement was going to be a tarot-style line-art card per planet in the
+header. Three styles were drawn and the whole idea was then **removed**.
 
-Three styles were drawn and are **parked, undecided**:
-https://claude.ai/code/artifact/196ba544-caa6-4887-9ef0-b244d488cfa7
-Option A full miniature card, Option B illustration only, Option C framed with a
-reduced motif. Working files are outside the repo, in this session's scratchpad.
+So the planetary-hours system currently has nowhere to appear. `Planet` still
+holds the seven call-to-action lines and is still used by the natal chart types,
+but nothing renders an hour's ruling planet or its copy. That is a gap, not a
+finished decision.
+
+## 2026-09-01 — Dark mode
+
+Every colour is an asset-catalog pair rather than a single value, and the app no
+longer pins itself to light. The wheel's chrome was hardcoded greys; it now has
+its own named colours and becomes the black iPod in dark. The twilight wash
+carries a second palette, since pastels on a dark ground blow out.
 
 ## Still open
 
@@ -66,10 +70,11 @@ reduced motif. Working files are outside the repo, in this session's scratchpad.
   small modal opened from a navbar button. The navbar does not exist yet and has
   not been designed. The brief says "one screen, no navigation stack in v1",
   so this is a change to that too.
-- **Which tarot card style**, of the three above.
-- **Overlapping events** need a tiebreak for the header title. Proposal not yet
-  accepted: the shortest event wins, since a standup inside a focus block is
-  what you are actually doing.
+- **Overlapping events** need a tiebreak for the header title. Implemented as
+  shortest-wins, since a standup inside a focus block is what you are actually
+  doing, but never confirmed.
+- **Where the planetary hours live**, now that both the arc tinting and the
+  tarot cards are gone.
 
 ## Carried over from the brief, unchanged
 

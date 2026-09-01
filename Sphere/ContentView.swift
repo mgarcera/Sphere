@@ -32,7 +32,7 @@ struct ContentView: View {
         .sheet(item: $editorTarget) { target in
             EventEditorSheet(store: calendar.store, target: target) {
                 editorTarget = nil
-                reload()
+                Task { @MainActor in reload() }
             }
             .ignoresSafeArea()
         }
@@ -136,7 +136,7 @@ struct ContentView: View {
     /// starts a new one at the hour the wheel is on.
     private func openEditor() {
         if let active = model.activeEvent,
-           let event = calendar.event(withIdentifier: active.eventIdentifier) {
+           let event = calendar.occurrence(for: active.id) {
             editorTarget = .existing(event)
         } else {
             editorTarget = .new(model.focusDate)

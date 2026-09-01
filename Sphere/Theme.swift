@@ -12,6 +12,16 @@ enum Theme {
     static let hairlineSoft = Color("HairlineSoft")
     static let taskActive   = Color("TaskActive")
     static let taskInactive = Color("TaskInactive")
+
+    /// The wheel is chrome in light and the black iPod in dark.
+    enum Wheel {
+        static let faceTop      = Color("WheelFaceTop")
+        static let faceBottom   = Color("WheelFaceBottom")
+        static let buttonTop    = Color("WheelButtonTop")
+        static let buttonBottom = Color("WheelButtonBottom")
+        static let edge         = Color("WheelEdge")
+        static let label        = Color("WheelLabel")
+    }
 }
 
 extension Font {

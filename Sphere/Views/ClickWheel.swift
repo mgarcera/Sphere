@@ -33,24 +33,24 @@ struct ClickWheel: View {
     @State private var lastAngle: Double?
 
     private let face = LinearGradient(
-        colors: [Color(white: 0.99), Color(white: 0.93)],
+        colors: [Theme.Wheel.faceTop, Theme.Wheel.faceBottom],
         startPoint: .top,
         endPoint: .bottom
     )
     private let buttonFace = LinearGradient(
-        colors: [Color(white: 1.0), Color(white: 0.96)],
+        colors: [Theme.Wheel.buttonTop, Theme.Wheel.buttonBottom],
         startPoint: .top,
         endPoint: .bottom
     )
-    private let edge = Color(white: 0.86)
-    private let label = Color(white: 0.60)
+    private let edge = Theme.Wheel.edge
+    private let label = Theme.Wheel.label
 
     var body: some View {
         ZStack {
             Circle()
                 .fill(face)
                 .overlay(Circle().strokeBorder(edge, lineWidth: 1))
-                .shadow(color: .black.opacity(0.06), radius: 10, y: 3)
+                .shadow(color: .black.opacity(0.18), radius: 10, y: 3)
                 .contentShape(.circle)
                 .gesture(
                     DragGesture(minimumDistance: Self.scrubThreshold)

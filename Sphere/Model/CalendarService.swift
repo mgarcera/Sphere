@@ -27,6 +27,14 @@ final class CalendarService {
     private(set) var events: [CalendarEvent] = []
     private(set) var sources: [Source] = []
 
+    /// The real `EKEvent` behind each occurrence, kept from the fetch.
+    ///
+    /// This has to be the occurrence, not a lookup by identifier:
+    /// `event(withIdentifier:)` hands back the first occurrence of a recurring
+    /// series no matter which one you asked about, so editing or deleting from
+    /// it silently acts on the wrong day.
+    private var occurrences: [String: EKEvent] = [:]
+
     /// Which calendars the arc leaves out. Persisted, since a filter that
     /// resets every launch is no filter.
     private(set) var hiddenSourceIDs: Set<String>
@@ -84,20 +92,26 @@ final class CalendarService {
     func load(from start: Date, to end: Date, anchor: Date) {
         guard access == .granted else {
             events = []
+            occurrences = [:]
             return
         }
 
         if hiddenSourceIDs.isEmpty == false, visibleCalendars?.isEmpty == true {
             events = []
+            occurrences = [:]
             return
         }
 
         let predicate = store.predicateForEvents(withStart: start, end: end, calendars: visibleCalendars)
+        var found: [String: EKEvent] = [:]
+
         events = store.events(matching: predicate).map { event in
             let startHour = event.startDate.timeIntervalSince(anchor) / 3600
             let endHour = event.endDate.timeIntervalSince(anchor) / 3600
+            let id = "\(event.eventIdentifier ?? UUID().uuidString)@\(event.startDate.timeIntervalSince1970)"
+            found[id] = event
             return CalendarEvent(
-                id: "\(event.eventIdentifier ?? UUID().uuidString)@\(event.startDate.timeIntervalSince1970)",
+                id: id,
                 eventIdentifier: event.eventIdentifier ?? "",
                 title: event.title ?? "Untitled",
                 startHour: startHour,
@@ -107,11 +121,13 @@ final class CalendarService {
             )
         }
         .sorted { $0.startHour < $1.startHour }
+
+        occurrences = found
     }
 
-    func event(withIdentifier identifier: String) -> EKEvent? {
-        store.event(withIdentifier: identifier)
-    }
+    /// The exact occurrence the arc is showing, so an edit or a delete lands on
+    /// the day you are looking at.
+    func occurrence(for id: CalendarEvent.ID) -> EKEvent? { occurrences[id] }
 
     private static func color(for event: EKEvent) -> Color {
         guard let cgColor = event.calendar?.cgColor else { return Theme.taskActive }
