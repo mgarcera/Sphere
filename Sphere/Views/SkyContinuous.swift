@@ -90,13 +90,14 @@ struct SkyContinuous: View, Equatable {
 
         var id: Self { self }
 
-        /// How far this layer trails the arc while the wheel turns. Further
-        /// away means laggier, which is the whole of the parallax.
-        var lag: Double {
+        /// How fast this layer moves relative to the arc. The arc is the
+        /// reference at 1, so nothing on the line ever drifts and only the
+        /// upper sky recedes.
+        var parallax: CGFloat {
             switch self {
-            case .high: 0.62
-            case .mid: 0.38
-            case .low: 0.18
+            case .high: 0.85
+            case .mid: 0.93
+            case .low: 1.0
             }
         }
 

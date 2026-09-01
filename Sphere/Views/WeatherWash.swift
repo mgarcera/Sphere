@@ -14,8 +14,6 @@ struct WeatherWash: View {
     /// 0 to 1, interpolated, so a storm fades in rather than snapping on.
     let lightning: Double
 
-    @State private var flash = false
-
     private static let rainPeak: Double = 0.5
     private static let stormPeak: Double = 0.72
 
@@ -30,33 +28,9 @@ struct WeatherWash: View {
             gradient(stormColors)
                 .opacity(min(lightning, 1) * Self.stormPeak)
 
-            gradient(flashColors)
-                .opacity(flash ? 0.42 * min(lightning, 1) : 0)
         }
         .ignoresSafeArea()
         .allowsHitTesting(false)
-        // The strike is a discrete flip, so body runs twice per flash and Core
-        // Animation tweens the opacity. Driving it from a continuous value
-        // would re-evaluate every frame for a wash that is only ever two
-        // states.
-        .task(id: lightning > 0.05) {
-            guard lightning > 0.05 else { return }
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(.random(in: 2.4...7.5)))
-                await strike(rise: 0.05, hold: 70, fall: 0.34)
-                // Real lightning often doubles, and the second is quicker.
-                if Bool.random() {
-                    try? await Task.sleep(for: .milliseconds(.random(in: 90...220)))
-                    await strike(rise: 0.04, hold: 45, fall: 0.26)
-                }
-            }
-        }
-    }
-
-    private func strike(rise: Double, hold: Int, fall: Double) async {
-        withAnimation(.easeOut(duration: rise)) { flash = true }
-        try? await Task.sleep(for: .milliseconds(hold))
-        withAnimation(.easeIn(duration: fall)) { flash = false }
     }
 
     private func gradient(_ colors: [Color]) -> some View {
@@ -72,18 +46,6 @@ struct WeatherWash: View {
             : [Color(red: 0.44, green: 0.51, blue: 0.59),
                Color(red: 0.66, green: 0.71, blue: 0.76),
                Theme.background]
-    }
-
-    /// The flash itself: brightest at the cloud base, falling away above and
-    /// below, since the light comes from inside the storm.
-    private var flashColors: [Color] {
-        colorScheme == .dark
-            ? [Color(red: 0.30, green: 0.30, blue: 0.36),
-               Color(red: 0.86, green: 0.82, blue: 0.62),
-               Color(red: 0.30, green: 0.28, blue: 0.24)]
-            : [Color(red: 0.88, green: 0.90, blue: 0.95),
-               Color(red: 1.0, green: 0.98, blue: 0.86),
-               Color(red: 0.96, green: 0.94, blue: 0.88)]
     }
 
     /// Dark blue-grey overhead with the flash low, where the cloud base is.

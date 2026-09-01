@@ -142,17 +142,25 @@ anvil, which read as a diagram inside a drawing; and a single big radial blob,
 which scalloped all the way round and floated with a lumpy underside instead of
 sitting on a base like every other cloud.
 
-**The three decks pan at three rates.** Each is its own cached layer with its
-own trailing spring, so a further deck lags the arc while the wheel turns and
-catches up when it stops. That gives depth during motion without ever leaving a
-cloud permanently off its hour, which a fixed positional parallax would. The sky
-had to move out of the cached arc layer for this; ArcContent now owns only the
-curve, the baseline and the ticks.
+**The three decks move at three rates, by position.** High at 0.85, mid at
+0.93, low at 1.0, with the arc as the reference so nothing on the line ever
+drifts. No spring: the layers are locked to the wheel, since a trailing spring
+read as lag rather than as depth.
 
-**Lightning actually flashes.** An irregular strike every two to eight seconds,
-sometimes doubling, driven by a discrete flip so Core Animation tweens the
-opacity rather than the view re-evaluating every frame for something that is
-only ever two states.
+Each deck is scaled horizontally about the time dot, not merely offset more
+slowly, and that is the whole trick. A plain slower offset drifts without bound
+-- the error grows with distance from the layer's origin and reaches around
+700pt for the high deck part-way through a day, so the upper sky would show the
+wrong hour's weather entirely. Scaled about the dot, the error is
+(1 - factor) x distance from the dot: zero under the dot, at most about 29pt at
+the screen edge, on any hour, with no jump at day boundaries. The 15% horizontal
+squash on the high deck comes free and reads as distance.
+
+The sky had to move out of the cached arc layer for any of this; ArcContent now
+owns only the curve, the baseline and the ticks.
+
+**Lightning does not flash yet.** A flicker was built and removed, to come back
+to later. The storm's static wash stays.
 
 **Rain and storms wash the ground, as dawn and dusk do.** Rain darkens it to
 slate, a storm darkens it further with the flash low down where the cloud base

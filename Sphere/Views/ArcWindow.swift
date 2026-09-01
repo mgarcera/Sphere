@@ -49,8 +49,18 @@ struct ArcWindow: View {
                         }
                     }
                     .frame(width: dayWidth * 3, alignment: .topLeading)
-                    .offset(x: pan)
-                    .animation(.interactiveSpring(response: deck.lag, dampingFraction: 1), value: pan)
+                    // Scaling horizontally about the dot is what makes this
+                    // work. A plain slower offset drifts without bound: the
+                    // error grows with distance from the layer's origin and
+                    // runs to hundreds of points across a day. Scaled, the
+                    // error is (1 - factor) x distance from the dot, so it is
+                    // zero under the dot and at most about 29pt at the screen
+                    // edge, whatever hour you are on.
+                    //
+                    // The 15% horizontal squash on the high deck comes free
+                    // with it, and reads as distance rather than as a defect.
+                    .scaleEffect(x: deck.parallax, y: 1, anchor: .leading)
+                    .offset(x: pan * deck.parallax + centreX * (1 - deck.parallax))
                 }
 
                 EventLayer(
