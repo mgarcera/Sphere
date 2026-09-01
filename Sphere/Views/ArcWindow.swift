@@ -5,7 +5,10 @@ import SwiftUI
 /// crossing midnight needs no separate control and no seam.
 struct ArcWindow: View {
     let model: DayModel
-    var suppressedEventID: CalendarEvent.ID?
+    /// Every capsule is held back while a jump is in flight, not just the
+    /// destination: the others sweep across the screen too, and that is most
+    /// of what a long jump looks like.
+    var eventsHidden = false
     var arcHeight: CGFloat = 190
 
     var body: some View {
@@ -71,10 +74,10 @@ struct ArcWindow: View {
                     width: dayWidth * 3,
                     height: arcHeight,
                     activeID: model.activeEvent?.id,
-                    suppressedID: suppressedEventID,
                     elevation: { model.normalizedElevation(atAbsoluteHour: $0) }
                 )
                 .offset(x: pan)
+                .opacity(eventsHidden ? 0 : 1)
 
                 Rectangle()
                     .fill(Theme.hairlineSoft)

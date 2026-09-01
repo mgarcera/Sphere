@@ -14,7 +14,7 @@ struct ContentView: View {
     @State private var captionScale: CGFloat = 1
     @State private var captionFade: Double = 1
     @AppStorage("appearance") private var appearance: Appearance = .system
-    @State private var suppressedEventID: CalendarEvent.ID?
+    @State private var eventsHidden = false
 
     var body: some View {
         ZStack {
@@ -98,7 +98,7 @@ struct ContentView: View {
         VStack(spacing: 0) {
             header
 
-            ArcWindow(model: model, suppressedEventID: suppressedEventID)
+            ArcWindow(model: model, eventsHidden: eventsHidden)
                 .padding(.top, 8)
 
             Spacer(minLength: 16)
@@ -281,12 +281,12 @@ struct ContentView: View {
     private func jump(to event: CalendarEvent?) {
         guard let event else { return }
 
-        // The destination is held back through the flight so it arrives rather
-        // than sweeping in with everything else. A jump pans every layer at
-        // once, and the gap sets the distance, so a long one moves the whole
-        // arc several screen widths; the capsule crossing that was what read as
-        // it being dragged along.
-        suppressedEventID = event.id
+        // EVERY capsule is held back through the flight, not just the
+        // destination. A jump pans the whole arc, so all of them cross the
+        // screen, and suppressing only the one being jumped to left the rest
+        // sweeping past — which is most of what a long jump actually looks
+        // like.
+        eventsHidden = true
 
         // Critically damped, both here and on the reveal: a jump should land,
         // not settle.
@@ -299,7 +299,7 @@ struct ContentView: View {
         withAnimation(.spring(response: 0.5, dampingFraction: 1), completionCriteria: .removed) {
             model.focusHour = event.startHour
         } completion: {
-            withAnimation(.easeOut(duration: 0.22)) { suppressedEventID = nil }
+            withAnimation(.easeOut(duration: 0.22)) { eventsHidden = false }
         }
     }
 
