@@ -17,9 +17,13 @@ enum SkyMarks {
 
     /// Distance out along the arc's normal for each cloud deck. Altitude reads
     /// as height, which is why coverage is split by layer at all.
-    static let lowOffset: CGFloat = 28
-    static let midOffset: CGFloat = 50
-    static let highOffset: CGFloat = 70
+    /// Absolute distance from the curve. These used to have a further 34pt
+    /// added silently by the sky's placement helper, a leftover from when the
+    /// band was per-hour icons at a fixed standoff, so every deck sat 34pt
+    /// higher than its constant claimed and the clearance sums were all wrong.
+    static let lowOffset: CGFloat = 62
+    static let midOffset: CGFloat = 84
+    static let highOffset: CGFloat = 104
 
     /// Deterministic 0..1 from two integers.
     static func jitter(_ seed: Int, _ salt: Int) -> Double {

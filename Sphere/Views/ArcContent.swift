@@ -8,13 +8,6 @@ struct ArcContent: View, Equatable {
     let day: SolarDay
     let width: CGFloat
     let height: CGFloat
-    /// One entry per hour we have weather for. Hours outside the forecast are
-    /// simply absent, so an empty sky always means "not known" rather than
-    /// "clear".
-    var skyHours: [SkyHour] = []
-    /// Seeds the deterministic wobble, so a shape is stable across redraws but
-    /// different from its neighbour.
-    var daySeed: Int = 0
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -46,39 +39,12 @@ struct ArcContent: View, Equatable {
                     .position(x: x, y: ArcGeometry.baseline(height) + 20)
             }
 
-            // The sky band. Everything in it is placed along the curve's
-            // normal and turned with its tangent, so the band runs parallel to
-            // the arc rather than sitting in a flat row above it.
-            SkyContinuous(hours: skyHours, daySeed: daySeed, placement: skyPlacement(atHour:))
-                .frame(width: width, height: ArcGeometry.totalHeight(height), alignment: .topLeading)
-
             DayArcShape(day: day, arcHeight: height)
                 .stroke(Theme.ink, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
                 .frame(width: width, height: ArcGeometry.totalHeight(height))
 
         }
         .frame(width: width, height: ArcGeometry.totalHeight(height), alignment: .topLeading)
-    }
-
-    /// How far out along the curve's normal the sky band sits.
-    private static let skyOffset: CGFloat = 34
-
-    private func skyPlacement(atHour hour: Double) -> (point: CGPoint, angle: Double) {
-        let delta = 0.35
-        func x(_ h: Double) -> CGFloat { width * (h / 24) }
-        func y(_ h: Double) -> CGFloat {
-            ArcGeometry.y(normalized: day.normalizedElevation(atHour: h), height: height)
-        }
-
-        let angle = atan2(y(hour + delta) - y(hour - delta), x(hour + delta) - x(hour - delta))
-        // (sin, -cos) is the normal pointing away from the ground.
-        return (
-            CGPoint(
-                x: x(hour) + sin(angle) * Self.skyOffset,
-                y: y(hour) - cos(angle) * Self.skyOffset
-            ),
-            angle
-        )
     }
 
     /// "6 AM", "12 PM" — hour 24 reads as midnight again.

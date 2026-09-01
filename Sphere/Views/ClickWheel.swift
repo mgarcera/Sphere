@@ -44,7 +44,7 @@ struct ClickWheel: View {
         endPoint: .bottom
     )
     private let edge = Theme.Wheel.edge
-    private var label: Color { style == .chrome ? Theme.Wheel.label : Theme.muted }
+    private var label: Color { style == .chrome ? Theme.Wheel.label : Theme.ink }
 
     var body: some View {
         ZStack {
@@ -57,9 +57,7 @@ struct ClickWheel: View {
                 } else {
                     // Same weight as the arc, so the control is drawn in the
                     // same hand as everything else on the screen.
-                    Circle()
-                        .strokeBorder(Theme.ink, lineWidth: 1.5)
-                        .background(Circle().fill(Theme.background))
+                    Circle().strokeBorder(Theme.ink, lineWidth: 1.5)
                 }
             }
                 .contentShape(.circle)
@@ -97,9 +95,7 @@ struct ClickWheel: View {
                             .overlay(Circle().strokeBorder(edge, lineWidth: 1))
                             .shadow(color: .black.opacity(0.05), radius: 4, y: 1)
                     } else {
-                        Circle()
-                            .strokeBorder(Theme.ink, lineWidth: 1.5)
-                            .background(Circle().fill(Theme.background))
+                        Circle().strokeBorder(Theme.ink, lineWidth: 1.5)
                     }
                 }
                 .frame(width: Self.buttonDiameter, height: Self.buttonDiameter)

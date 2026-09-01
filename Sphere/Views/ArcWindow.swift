@@ -23,18 +23,35 @@ struct ArcWindow: View {
                 // re-samples a path.
                 HStack(alignment: .top, spacing: 0) {
                     ForEach(firstDay...(firstDay + 2), id: \.self) { index in
-                        ArcContent(
-                            day: model.solarDay(index),
-                            width: dayWidth,
-                            height: arcHeight,
-                            skyHours: model.sky(forDayIndex: index),
-                            daySeed: index
-                        )
-                        .equatable()
+                        ArcContent(day: model.solarDay(index), width: dayWidth, height: arcHeight)
+                            .equatable()
                     }
                 }
                 .frame(width: dayWidth * 3, alignment: .topLeading)
                 .offset(x: pan)
+
+                // Each deck is its own layer so it can trail the arc by its own
+                // amount. Further decks lag more, which is the parallax; they
+                // catch up the moment the wheel stops, so a cloud is never
+                // permanently off its hour.
+                ForEach(SkyContinuous.Deck.allCases) { deck in
+                    HStack(alignment: .top, spacing: 0) {
+                        ForEach(firstDay...(firstDay + 2), id: \.self) { index in
+                            SkyContinuous(
+                                day: model.solarDay(index),
+                                width: dayWidth,
+                                height: arcHeight,
+                                hours: model.sky(forDayIndex: index),
+                                daySeed: index,
+                                deck: deck
+                            )
+                            .equatable()
+                        }
+                    }
+                    .frame(width: dayWidth * 3, alignment: .topLeading)
+                    .offset(x: pan)
+                    .animation(.interactiveSpring(response: deck.lag, dampingFraction: 1), value: pan)
+                }
 
                 EventLayer(
                     events: model.timedEvents,

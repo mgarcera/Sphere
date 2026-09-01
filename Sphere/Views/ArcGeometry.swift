@@ -13,7 +13,7 @@ enum ArcGeometry {
     /// Room ABOVE the box's ceiling. Without it the tallest clouds are cut off
     /// at the drawing layer's own top edge, which no amount of padding in the
     /// parent can reach: the clip is the canvas frame, not the window.
-    static let skyGutter: CGFloat = 66
+    static let skyGutter: CGFloat = 100
 
     /// Room below the baseline for the hour ticks and their labels.
     static let labelGutter: CGFloat = 32

@@ -142,6 +142,18 @@ anvil, which read as a diagram inside a drawing; and a single big radial blob,
 which scalloped all the way round and floated with a lumpy underside instead of
 sitting on a base like every other cloud.
 
+**The three decks pan at three rates.** Each is its own cached layer with its
+own trailing spring, so a further deck lags the arc while the wheel turns and
+catches up when it stops. That gives depth during motion without ever leaving a
+cloud permanently off its hour, which a fixed positional parallax would. The sky
+had to move out of the cached arc layer for this; ArcContent now owns only the
+curve, the baseline and the ticks.
+
+**Lightning actually flashes.** An irregular strike every two to eight seconds,
+sometimes doubling, driven by a discrete flip so Core Animation tweens the
+opacity rather than the view re-evaluating every frame for something that is
+only ever two states.
+
 **Rain and storms wash the ground, as dawn and dusk do.** Rain darkens it to
 slate, a storm darkens it further with the flash low down where the cloud base
 is. Both follow the FOCUS hour, so they agree with the dot and with the twilight

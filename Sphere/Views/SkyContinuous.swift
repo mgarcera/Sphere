@@ -10,10 +10,14 @@ import SwiftUI
 /// filled with the background before it is stroked, so a nearer deck cuts a
 /// hole in the one behind it: line art can still occlude, which is what gives
 /// the band depth instead of leaving three parallel streaks.
-struct SkyContinuous: View {
+struct SkyContinuous: View, Equatable {
+    let day: SolarDay
+    let width: CGFloat
+    let height: CGFloat
     let hours: [SkyHour]
     let daySeed: Int
-    let placement: (Double) -> (point: CGPoint, angle: Double)
+    /// One deck per view, so the three can be panned at three rates.
+    let deck: Deck
 
     /// Roughly a third of an hour per lobe, which is a cloud-sized bump at the
     /// three-hour zoom.
@@ -27,54 +31,74 @@ struct SkyContinuous: View {
             let byHour = Dictionary(uniqueKeysWithValues: hours.map { ($0.hour, $0) })
             let stormHours = Set(hours.filter(\.isConvective).map(\.hour))
 
-            // Rain first: it hangs between the cloud base and the arc, so the
-            // decks are drawn over its top edge.
-            for run in runs(byHour, where: { $0.condition.isWet }) {
-                let fall = curtain(run, byHour: byHour)
-                // Two passes at different weights so the curtain has depth
-                // rather than reading as one ruled row of ticks.
-                context.stroke(fall.far, with: faint,
-                               style: StrokeStyle(lineWidth: 0.9, lineCap: .round))
-                context.stroke(fall.near, with: ink, style: SkyMarks.stroke)
-            }
-
-            // Far decks first so the near ones can occlude them. A storm is
-            // the same three layers at the same three heights with much bigger
-            // lobes, drawn in the same pass so it stacks and cuts identically.
-            let stormRuns = runs(byHour, where: { $0.isConvective })
-
-            for deck in [Deck.high, .mid, .low] {
-                for run in runs(byHour, where: { deck.coverage($0) >= SkyHour.layerThreshold
-                                                 && !stormHours.contains($0.hour) }) {
-                    let path = lobedSilhouette(run, deck: deck, byHour: byHour)
-                    context.fill(path, with: ground)
-                    context.stroke(path, with: ink, style: SkyMarks.stroke)
-                }
-
-                // All three always, whatever the coverage says, so a storm is
-                // never mistakable for an ordinary overcast hour.
-                for run in stormRuns {
-                    let path = stormLayer(run, deck: deck)
-                    context.fill(path, with: ground)
-                    context.stroke(path, with: ink, style: SkyMarks.stroke)
+            // Rain hangs below every deck, so it belongs with the nearest one.
+            if deck == .low {
+                for run in runs(byHour, where: { $0.condition.isWet }) {
+                    let fall = curtain(run, byHour: byHour)
+                    context.stroke(fall.far, with: faint,
+                                   style: StrokeStyle(lineWidth: 0.9, lineCap: .round))
+                    context.stroke(fall.near, with: ink, style: SkyMarks.stroke)
                 }
             }
 
-            for entry in hours where entry.hasLightning {
-                context.stroke(strike(at: entry), with: ink, style: SkyMarks.stroke)
+            for run in runs(byHour, where: { deck.coverage($0) >= SkyHour.layerThreshold
+                                             && !stormHours.contains($0.hour) }) {
+                let path = lobedSilhouette(run, deck: deck, byHour: byHour)
+                context.fill(path, with: ground)
+                context.stroke(path, with: ink, style: SkyMarks.stroke)
             }
 
-            for run in runs(byHour, where: { $0.condition == .fog }) {
-                context.stroke(fog(run), with: ink, style: SkyMarks.stroke)
+            // A storm is this same deck with much bigger lobes and coverage
+            // forced full, so all three always draw.
+            for run in runs(byHour, where: { $0.isConvective }) {
+                let path = stormLayer(run, deck: deck)
+                context.fill(path, with: ground)
+                context.stroke(path, with: ink, style: SkyMarks.stroke)
             }
 
+            if deck == .low {
+                for entry in hours where entry.hasLightning {
+                    context.stroke(strike(at: entry), with: ink, style: SkyMarks.stroke)
+                }
+                for run in runs(byHour, where: { $0.condition == .fog }) {
+                    context.stroke(fog(run), with: ink, style: SkyMarks.stroke)
+                }
+            }
         }
+        .frame(width: width, height: ArcGeometry.totalHeight(height), alignment: .topLeading)
+    }
+
+    /// Where the band sits and which way it leans, from the curve this layer
+    /// belongs to. It used to live in ArcContent; it moved here so this view
+    /// owns everything it needs and can be compared for equality.
+    private func placement(_ hour: Double) -> (point: CGPoint, angle: Double) {
+        let delta = 0.35
+        func x(_ h: Double) -> CGFloat { width * (h / 24) }
+        func y(_ h: Double) -> CGFloat {
+            ArcGeometry.y(normalized: day.normalizedElevation(atHour: h), height: height)
+        }
+        let angle = atan2(y(hour + delta) - y(hour - delta), x(hour + delta) - x(hour - delta))
+        return (CGPoint(x: x(hour), y: y(hour)), angle)
     }
 
     // MARK: - Decks
 
-    private enum Deck {
+    enum Deck: CaseIterable, Identifiable {
+        /// Declaration order is draw order: furthest first, so the nearer
+        /// layers cut into them.
         case high, mid, low
+
+        var id: Self { self }
+
+        /// How far this layer trails the arc while the wheel turns. Further
+        /// away means laggier, which is the whole of the parallax.
+        var lag: Double {
+            switch self {
+            case .high: 0.62
+            case .mid: 0.38
+            case .low: 0.18
+            }
+        }
 
         var offset: CGFloat {
             switch self {
