@@ -2,8 +2,10 @@ import CoreLocation
 import Observation
 
 /// The arc is the sun's elevation curve for a place, so the app needs real
-/// coordinates whether or not weather is switched on. Chicago stands in until
-/// a fix arrives, and permanently if permission is refused.
+/// coordinates whether or not weather is switched on.
+///
+/// Three sources, in order: a place the user typed, a Core Location fix, then
+/// Chicago as the last resort.
 @Observable
 final class LocationService: NSObject, CLLocationManagerDelegate {
     enum Access: Equatable {
@@ -14,21 +16,38 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
 
     private let manager = CLLocationManager()
     private(set) var access: Access = .undetermined
-    private(set) var coordinate: Coordinate = .chicago
-    private(set) var placeName: String?
-    private(set) var hasFix = false
+
+    private(set) var fix: Coordinate?
+    private(set) var fixName: String?
+    private(set) var manual: Coordinate?
+    private(set) var manualName: String?
+    private(set) var isSearching = false
+
+    private static let manualKey = "manualLocation"
+
+    var coordinate: Coordinate { manual ?? fix ?? .chicago }
+
+    var placeName: String {
+        manualName ?? fixName ?? "Chicago"
+    }
+
+    var isUsingFallback: Bool { manual == nil && fix == nil }
 
     override init() {
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyKilometer
         access = Self.access(for: manager.authorizationStatus)
+        restoreManual()
     }
+
+    // MARK: - Core Location
 
     func request() {
         switch manager.authorizationStatus {
         case .notDetermined: manager.requestWhenInUseAuthorization()
-        default: manager.requestLocation()
+        case .authorizedWhenInUse, .authorizedAlways: manager.requestLocation()
+        default: break
         }
     }
 
@@ -47,14 +66,58 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let last = locations.last else { return }
-        coordinate = Coordinate(latitude: last.coordinate.latitude, longitude: last.coordinate.longitude)
-        hasFix = true
+        fix = Coordinate(latitude: last.coordinate.latitude, longitude: last.coordinate.longitude)
         CLGeocoder().reverseGeocodeLocation(last) { [weak self] marks, _ in
-            self?.placeName = marks?.first?.locality
+            self?.fixName = marks?.first?.locality
         }
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         // Chicago keeps standing in; a failed fix is not a refusal.
+    }
+
+    // MARK: - Typed place
+
+    /// A typed place wins over the device fix, so this also covers a refusal
+    /// and covers checking another city's day.
+    @discardableResult
+    func search(_ query: String) async -> Bool {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+
+        isSearching = true
+        defer { isSearching = false }
+
+        guard let mark = try? await CLGeocoder().geocodeAddressString(trimmed).first,
+              let where_ = mark.location else { return false }
+
+        manual = Coordinate(latitude: where_.coordinate.latitude, longitude: where_.coordinate.longitude)
+        manualName = mark.locality ?? mark.name ?? trimmed
+        persistManual()
+        return true
+    }
+
+    func clearManual() {
+        manual = nil
+        manualName = nil
+        UserDefaults.standard.removeObject(forKey: Self.manualKey)
+        request()
+    }
+
+    private func persistManual() {
+        guard let manual, let manualName else { return }
+        UserDefaults.standard.set(
+            ["lat": manual.latitude, "lon": manual.longitude, "name": manualName],
+            forKey: Self.manualKey
+        )
+    }
+
+    private func restoreManual() {
+        guard let stored = UserDefaults.standard.dictionary(forKey: Self.manualKey),
+              let lat = stored["lat"] as? Double,
+              let lon = stored["lon"] as? Double,
+              let name = stored["name"] as? String else { return }
+        manual = Coordinate(latitude: lat, longitude: lon)
+        manualName = name
     }
 }

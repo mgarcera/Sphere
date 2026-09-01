@@ -7,9 +7,12 @@ import SwiftUI
 struct DayMenu: View {
     let model: DayModel
     let calendar: CalendarService
+    let location: LocationService
     let onDismiss: () -> Void
 
     @State private var pickedDate: Date = .now
+    @State private var placeQuery = ""
+    @FocusState private var placeFocused: Bool
 
     var body: some View {
         ScrollView {
@@ -41,6 +44,44 @@ struct DayMenu: View {
                             .padding(.vertical, 7)
                         }
                     }
+                }
+
+                divider
+                section("Place") {
+                    HStack {
+                        Text(location.placeName)
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.ink)
+                        if location.isUsingFallback {
+                            Text("default")
+                                .font(.caption2)
+                                .foregroundStyle(Theme.mutedLight)
+                        }
+                        Spacer()
+                        if location.manual != nil {
+                            Button("Use my location") { location.clearManual() }
+                                .font(.footnote)
+                                .foregroundStyle(Theme.taskActive)
+                        } else if location.access != .granted {
+                            Button("Allow") { location.request() }
+                                .font(.footnote)
+                                .foregroundStyle(Theme.taskActive)
+                        }
+                    }
+                    .padding(.vertical, 6)
+
+                    HStack(spacing: 8) {
+                        TextField("Search a city", text: $placeQuery)
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.ink)
+                            .focused($placeFocused)
+                            .submitLabel(.search)
+                            .onSubmit { submitPlace() }
+                        if location.isSearching {
+                            ProgressView().controlSize(.small)
+                        }
+                    }
+                    .padding(.vertical, 6)
                 }
 
                 divider
@@ -93,6 +134,16 @@ struct DayMenu: View {
         .onAppear { pickedDate = model.focusDate }
         .onChange(of: pickedDate) { _, newValue in
             model.focus(onDayOf: newValue)
+        }
+    }
+
+    private func submitPlace() {
+        let query = placeQuery
+        Task {
+            if await location.search(query) {
+                placeQuery = ""
+                placeFocused = false
+            }
         }
     }
 

@@ -40,11 +40,15 @@ struct ContentView: View {
             .ignoresSafeArea()
         }
         .sheet(isPresented: $isMenuOpen) {
-            DayMenu(model: model, calendar: calendar) { isMenuOpen = false }
+            DayMenu(model: model, calendar: calendar, location: location) { isMenuOpen = false }
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
         .task {
+            // Ask independently of priming. Anyone who granted calendar before
+            // location existed never sees that screen again, and was silently
+            // getting Chicago's sky.
+            if location.access == .undetermined { location.request() }
             await weather.load(coordinate: location.coordinate)
             model.applySky(from: weather)
             reload()
