@@ -18,9 +18,9 @@ enum SkyMarks {
 
     /// Distance out along the arc's normal for each cloud deck. Altitude reads
     /// as height, which is why coverage is split by layer at all.
-    static let lowOffset: CGFloat = 30
-    static let midOffset: CGFloat = 44
-    static let highOffset: CGFloat = 57
+    static let lowOffset: CGFloat = 28
+    static let midOffset: CGFloat = 50
+    static let highOffset: CGFloat = 70
 
     /// Deterministic 0..1 from two integers.
     static func jitter(_ seed: Int, _ salt: Int) -> Double {

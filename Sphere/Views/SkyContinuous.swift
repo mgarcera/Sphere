@@ -17,7 +17,7 @@ struct SkyContinuous: View {
 
     /// Roughly a third of an hour per lobe, which is a cloud-sized bump at the
     /// three-hour zoom.
-    private static let lobeHours = 0.34
+    private static let lobeHours = 0.40
 
     var body: some View {
         Canvas { context, _ in
@@ -84,12 +84,14 @@ struct SkyContinuous: View {
             }
         }
 
-        /// How tall the lobes get at full coverage.
+        /// How tall the lobes get at full coverage. Bulkier than the deck
+        /// spacing in places, deliberately: a low cloud passing in front of a
+        /// mid one is what the background fill is there to handle.
         var amplitude: CGFloat {
             switch self {
-            case .high: 4
-            case .mid: 7
-            case .low: 11
+            case .high: 7
+            case .mid: 10
+            case .low: 14
             }
         }
 
@@ -169,7 +171,7 @@ struct SkyContinuous: View {
 
             let span = min(Self.lobeHours * (0.55 + 1.0 * widthRoll), to - hour)
             let coverage = reading(byHour, at: hour + span / 2).map { deck.coverage($0) } ?? 0
-            let peak = deck.amplitude * CGFloat(0.3 + coverage * 0.75) * CGFloat(0.75 + heightRoll * 0.55)
+            let peak = deck.amplitude * CGFloat(0.45 + coverage * 0.7) * CGFloat(0.8 + heightRoll * 0.5)
             // Barely off centre. Any more and the lobe becomes a slope.
             let skew = 0.42 + 0.16 * skewRoll
             let microAmp = peak * 0.09

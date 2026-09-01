@@ -84,7 +84,7 @@ struct ContentView: View {
             header
 
             ArcWindow(model: model)
-                .padding(.top, 40)
+                .padding(.top, 8)
 
             Spacer(minLength: 16)
 

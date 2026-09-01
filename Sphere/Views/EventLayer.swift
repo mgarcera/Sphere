@@ -26,7 +26,7 @@ struct EventLayer: View {
                     )
             }
         }
-        .frame(width: width, height: height + ArcContent.labelGutter, alignment: .topLeading)
+        .frame(width: width, height: ArcGeometry.totalHeight(height), alignment: .topLeading)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: activeID)
     }
 

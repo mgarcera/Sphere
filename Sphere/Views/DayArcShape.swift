@@ -7,6 +7,9 @@ import SwiftUI
 /// normalized elevation of 0 to the bottom edge and 1 to the top.
 struct DayArcShape: Shape {
     let day: SolarDay
+    /// The arc box, not the frame. The frame carries a sky gutter above and a
+    /// label gutter below, so `rect.height` is not the curve's range.
+    let arcHeight: CGFloat
     var samplesPerHour: Int = 12
 
     func path(in rect: CGRect) -> Path {
@@ -17,7 +20,7 @@ struct DayArcShape: Shape {
             let hour = Double(step) / Double(samplesPerHour)
             let point = CGPoint(
                 x: rect.minX + rect.width * (hour / 24),
-                y: rect.minY + ArcGeometry.y(normalized: day.normalizedElevation(atHour: hour), height: rect.height)
+                y: rect.minY + ArcGeometry.y(normalized: day.normalizedElevation(atHour: hour), height: arcHeight)
             )
             if step == 0 {
                 path.move(to: point)
@@ -26,16 +29,5 @@ struct DayArcShape: Shape {
             }
         }
         return path
-    }
-}
-
-extension DayArcShape {
-    /// Where a given hour lands inside the same rect the shape was drawn in,
-    /// so markers and dots sit exactly on the line.
-    static func point(forHour hour: Double, day: SolarDay, in rect: CGRect) -> CGPoint {
-        CGPoint(
-            x: rect.minX + rect.width * (hour / 24),
-            y: rect.minY + ArcGeometry.y(normalized: day.normalizedElevation(atHour: hour), height: rect.height)
-        )
     }
 }

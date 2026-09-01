@@ -6,10 +6,6 @@ import SwiftUI
 struct ArcWindow: View {
     let model: DayModel
     var arcHeight: CGFloat = 190
-    /// Headroom above the curve's peak. The dot is 42pt across at full ray
-    /// length, and at midsummer noon it sits on y = 0, so without this the rays
-    /// are clipped exactly when they are longest.
-    var topInset: CGFloat = 24
 
     var body: some View {
         GeometryReader { proxy in
@@ -19,7 +15,7 @@ struct ArcWindow: View {
             let originHour = Double(firstDay) * 24
             let centreX = proxy.size.width / 2
             let pan = centreX - (model.focusHour - originHour) * pointsPerHour
-            let dotY = topInset + ArcGeometry.y(normalized: model.normalizedElevation(atAbsoluteHour: model.focusHour), height: arcHeight)
+            let dotY = ArcGeometry.y(normalized: model.normalizedElevation(atAbsoluteHour: model.focusHour), height: arcHeight)
 
             ZStack(alignment: .topLeading) {
                 // Each day is its own cached layer, so only the set of three
@@ -38,7 +34,7 @@ struct ArcWindow: View {
                     }
                 }
                 .frame(width: dayWidth * 3, alignment: .topLeading)
-                .offset(x: pan, y: topInset)
+                .offset(x: pan)
 
                 EventLayer(
                     events: model.timedEvents,
@@ -49,12 +45,12 @@ struct ArcWindow: View {
                     activeID: model.activeEvent?.id,
                     elevation: { model.normalizedElevation(atAbsoluteHour: $0) }
                 )
-                .offset(x: pan, y: topInset)
+                .offset(x: pan)
 
                 Rectangle()
                     .fill(Theme.hairlineSoft)
-                    .frame(width: 1, height: max(0, topInset + arcHeight - dotY))
-                    .position(x: centreX, y: (topInset + arcHeight + dotY) / 2)
+                    .frame(width: 1, height: max(0, ArcGeometry.baseline(arcHeight) - dotY))
+                    .position(x: centreX, y: (ArcGeometry.baseline(arcHeight) + dotY) / 2)
 
                 TimeDot(
                     elevationDegrees: model.elevationDegrees(atAbsoluteHour: model.focusHour),
@@ -63,9 +59,9 @@ struct ArcWindow: View {
                 )
                 .position(x: centreX, y: dotY)
             }
-            .frame(width: proxy.size.width, height: topInset + arcHeight + ArcContent.labelGutter, alignment: .topLeading)
+            .frame(width: proxy.size.width, height: ArcGeometry.totalHeight(arcHeight), alignment: .topLeading)
             .clipped()
         }
-        .frame(height: topInset + arcHeight + ArcContent.labelGutter)
+        .frame(height: ArcGeometry.totalHeight(arcHeight))
     }
 }
