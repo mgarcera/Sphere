@@ -14,10 +14,7 @@ struct ContentView: View {
     @State private var captionScale: CGFloat = 1
     @State private var captionFade: Double = 1
     @AppStorage("appearance") private var appearance: Appearance = .system
-    /// Temporary: three jump treatments under comparison.
-    @AppStorage("jumpStyle") private var jumpStyle: JumpStyle = .speedLimited
     @State private var suppressedEventID: CalendarEvent.ID?
-    @State private var arcFade: Double = 1
 
     var body: some View {
         ZStack {
@@ -57,7 +54,7 @@ struct ContentView: View {
             .ignoresSafeArea()
         }
         .sheet(isPresented: $isMenuOpen) {
-            DayMenu(model: model, calendar: calendar, location: location, appearance: $appearance, jumpStyle: $jumpStyle) { isMenuOpen = false }
+            DayMenu(model: model, calendar: calendar, location: location, appearance: $appearance) { isMenuOpen = false }
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
@@ -102,7 +99,6 @@ struct ContentView: View {
             header
 
             ArcWindow(model: model, suppressedEventID: suppressedEventID)
-                .opacity(arcFade)
                 .padding(.top, 8)
 
             Spacer(minLength: 16)
@@ -284,43 +280,23 @@ struct ContentView: View {
     /// is what read as it being dragged along.
     private func jump(to event: CalendarEvent?) {
         guard let event else { return }
-        let distance = abs(event.startHour - model.focusHour) * (UIScreen.main.bounds.width / DayModel.windowHours)
 
-        switch jumpStyle {
-        case .capsuleLast:
-            // Hold the destination back so it appears rather than sweeps.
-            suppressedEventID = event.id
-            springTo { model.focusHour = event.startHour }
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(430))
-                withAnimation(.spring(response: 0.26, dampingFraction: 0.62)) {
-                    suppressedEventID = nil
-                }
-            }
+        // The destination is held back through the flight so it arrives rather
+        // than sweeping in with everything else. A jump pans every layer at
+        // once, and the gap sets the distance, so a long one moves the whole
+        // arc several screen widths; the capsule crossing that was what read as
+        // it being dragged along.
+        suppressedEventID = event.id
 
-        case .speedLimited:
-            // Hold a constant readable speed, and simply cut when the gap is
-            // too far to cross legibly at all.
-            let readableSpeed: Double = 1_000
-            let duration = distance / readableSpeed
-            if duration > 0.95 {
-                model.focusHour = event.startHour
-            } else {
-                withAnimation(.spring(response: max(0.26, min(duration, 0.9)), dampingFraction: 0.9)) {
-                    model.focusHour = event.startHour
-                }
-            }
+        // Critically damped, both here and on the reveal: a jump should land,
+        // not settle.
+        withAnimation(.spring(response: 0.5, dampingFraction: 1)) {
+            model.focusHour = event.startHour
+        }
 
-        case .dissolve:
-            // Keep the direction, lose the middle of the journey.
-            withAnimation(.easeIn(duration: 0.10)) { arcFade = 0.12 }
-            withAnimation(.spring(response: 0.34, dampingFraction: 0.9)) {
-                model.focusHour = event.startHour
-            }
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(180))
-                withAnimation(.easeOut(duration: 0.22)) { arcFade = 1 }
-            }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(440))
+            withAnimation(.easeOut(duration: 0.22)) { suppressedEventID = nil }
         }
     }
 
