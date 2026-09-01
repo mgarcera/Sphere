@@ -10,9 +10,7 @@ struct ContentView: View {
     @Environment(\.colorScheme) private var systemScheme
     @State private var isMenuOpen = false
     @State private var titleScale: CGFloat = 1
-    @State private var titleFade: Double = 1
     @State private var captionScale: CGFloat = 1
-    @State private var captionFade: Double = 1
     @AppStorage("appearance") private var appearance: Appearance = .system
     @State private var eventsHidden = false
 
@@ -134,7 +132,6 @@ struct ContentView: View {
                     // Anchored left, not centre: the pair share a left edge and
                     // scaling about the middle would slide them off it.
                     .scaleEffect(titleScale, anchor: .leading)
-                    .opacity(titleFade)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.plain)
@@ -145,7 +142,6 @@ struct ContentView: View {
                 .foregroundStyle(captionColor)
                 .monospacedDigit()
                 .scaleEffect(captionScale, anchor: .leading)
-                .opacity(captionFade)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)
@@ -168,26 +164,22 @@ struct ContentView: View {
         "\(titleKey)|\(Self.dayLine(model.focusDate))"
     }
 
-    /// Drop to 94% and fade out, then spring back. Scale and opacity are leaf
-    /// modifiers driven from a discrete change, so the body runs once per pop
-    /// and Core Animation does the rest.
+    /// Drop to 94% and spring back. No fade: the text cuts to its new value
+    /// and the bounce carries the change on its own. Scale is a leaf modifier
+    /// driven from a discrete change, so the body runs once per pop and Core
+    /// Animation does the rest.
     private static let popSpring = Animation.spring(response: 0.26, dampingFraction: 0.62)
-    private static let popFade = Animation.easeOut(duration: 0.20)
 
     private func popTitle() {
         titleScale = 0.94
-        titleFade = 0
         withAnimation(Self.popSpring) { titleScale = 1 }
-        withAnimation(Self.popFade) { titleFade = 1 }
     }
 
     /// The 40ms delay is what makes the pair read as one system with the title
     /// leading. It stays when the caption pops alone, where it is invisible.
     private func popCaption() {
         captionScale = 0.94
-        captionFade = 0
         withAnimation(Self.popSpring.delay(0.04)) { captionScale = 1 }
-        withAnimation(Self.popFade.delay(0.04)) { captionFade = 1 }
     }
 
     /// How much wash is present, for twilight to yield to.
