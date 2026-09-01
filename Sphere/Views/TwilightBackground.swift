@@ -14,6 +14,8 @@ struct TwilightBackground: View {
     /// True on the rising half of the day, which is what separates dawn's
     /// palette from dusk's.
     let isMorning: Bool
+    /// 0 to 1. Weather takes precedence, so dusk does not tint a storm.
+    var suppressedBy: Double = 0
 
     /// How far either side of the horizon the wash reaches.
     private static let spanDegrees: Double = 8
@@ -57,7 +59,7 @@ struct TwilightBackground: View {
 
     var body: some View {
         LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom)
-            .opacity(strength * Self.peakOpacity)
+            .opacity(strength * Self.peakOpacity * (1 - min(suppressedBy, 1)))
             .ignoresSafeArea()
             .allowsHitTesting(false)
     }

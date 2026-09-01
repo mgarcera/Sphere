@@ -7,6 +7,7 @@ struct ContentView: View {
     @State private var location = LocationService()
     @State private var weather = WeatherService()
     @State private var editorTarget: EventTarget?
+    @Environment(\.colorScheme) private var systemScheme
     @State private var isMenuOpen = false
     @AppStorage("appearance") private var appearance: Appearance = .system
     /// Temporary design test, not a permanent setting.
@@ -16,16 +17,16 @@ struct ContentView: View {
         ZStack {
             Theme.background.ignoresSafeArea()
 
+            let sky = model.weather(atAbsoluteHour: model.focusHour)
+
             TwilightBackground(
                 elevationDegrees: model.elevationDegrees(atAbsoluteHour: model.focusHour),
-                isMorning: model.focusHour - Double(model.dayIndex) * 24 < model.focusSolarDay.solarNoon
+                isMorning: model.focusHour - Double(model.dayIndex) * 24 < model.focusSolarDay.solarNoon,
+                suppressedBy: washDarkness / WeatherWash.stormPeak
             )
 
             // Weather sits over the time of day, being nearer.
-            WeatherWash(
-                precipitation: model.weather(atAbsoluteHour: model.focusHour).precipitation,
-                lightning: model.weather(atAbsoluteHour: model.focusHour).lightning
-            )
+            WeatherWash(precipitation: sky.precipitation, lightning: sky.lightning)
 
             if calendar.access == .undetermined {
                 CalendarPriming {
@@ -124,7 +125,8 @@ struct ContentView: View {
                 // the planet cards, so the clock stands in until then.
                 Text(model.activeEvent?.title ?? ArcContent.clock(hourOfDay))
                     .font(.display())
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(onWash(Theme.ink))
+                    .shadow(color: washHalo.opacity(washDarkness > 0.04 ? 0.95 : 0), radius: 5)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -136,11 +138,55 @@ struct ContentView: View {
 
             Text(subtitle)
                 .font(.footnote)
-                .foregroundStyle(Theme.muted)
+                .foregroundStyle(onWash(Theme.muted))
+                .shadow(color: washHalo.opacity(washDarkness > 0.04 ? 0.95 : 0), radius: 4)
                 .monospacedDigit()
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 24)
+    }
+
+    /// How dark the top of the screen has been made by weather.
+    private var washDarkness: Double {
+        let sky = model.weather(atAbsoluteHour: model.focusHour)
+        return WeatherWash.darkness(precipitation: sky.precipitation, lightning: sky.lightning)
+    }
+
+    private var effectiveScheme: ColorScheme {
+        appearance.colorScheme ?? systemScheme
+    }
+
+    /// The header sits in the darkest part of the weather wash, so its ink
+    /// flips to the background colour once the sky closes in. In dark mode the
+    /// ink is already light and the ground only gets darker, so it stays.
+    ///
+    /// This is a SWITCH with a short crossfade, not a blend. Interpolating
+    /// linearly parks the text mid-grey exactly where the background is also
+    /// mid-grey: measured against the rain wash it took contrast from 8:1 down
+    /// to 2:1, worse than doing nothing. Rain is light enough for dark ink and
+    /// a storm is dark enough for light ink; the ramp only has to get between
+    /// the two quickly.
+    private func onWash(_ base: Color) -> Color {
+        guard effectiveScheme == .light else { return base }
+        return base.mix(with: Theme.background, by: washSwitch)
+    }
+
+    /// 0 keeps the ink dark, 1 takes it to the background colour.
+    private var washSwitch: Double {
+        Self.smoothstep(0.44, 0.54, washDarkness)
+    }
+
+    /// A halo in whichever colour the text is NOT. Even with a narrow switch
+    /// there is a band where the background and the text are both mid-grey and
+    /// contrast measures near 1:1; a soft glow behind the glyphs covers it at
+    /// any luminance, which no choice of text colour can.
+    private var washHalo: Color {
+        Theme.background.mix(with: Theme.ink, by: washSwitch)
+    }
+
+    private static func smoothstep(_ edge0: Double, _ edge1: Double, _ x: Double) -> Double {
+        let t = min(max((x - edge0) / (edge1 - edge0), 0), 1)
+        return t * t * (3 - 2 * t)
     }
 
     private var hourOfDay: Double {

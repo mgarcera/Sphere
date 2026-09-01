@@ -162,6 +162,21 @@ owns only the curve, the baseline and the ticks.
 **Lightning does not flash yet.** A flicker was built and removed, to come back
 to later. The storm's static wash stays.
 
+**Weather overrides the time of day.** A storm sky is not also a sunset sky, so
+the twilight wash fades out in proportion to how much weather is present.
+
+**The weather wash is weighted to the top of the screen** and clears before the
+arc block begins. Darkening the band would cost the arc and the clouds their
+contrast, and they cannot be recoloured per frame without giving up the cached
+layers. Overhead is where weather belongs anyway.
+
+**Header ink switches rather than blends.** Interpolating it linearly parks the
+text mid-grey exactly where the background is also mid-grey: measured against
+the rain wash it took contrast from 8:1 to 2:1, worse than doing nothing. It is
+now a narrow switch, plus a halo in whichever colour the text is not, because
+even a narrow switch has a band where nothing legible exists and a soft glow
+covers it at any luminance.
+
 **Rain and storms wash the ground, as dawn and dusk do.** Rain darkens it to
 slate, a storm darkens it further with the flash low down where the cloud base
 is. Both follow the FOCUS hour, so they agree with the dot and with the twilight
