@@ -129,36 +129,18 @@ separates convective from stratiform cleanly. A cumulonimbus draws at CAPE
 hours ran a median of 2090. That takes the same year from 8 storm hours to 28,
 and 5 storm days to 13, with no frontal-rain hour wrongly promoted.
 
-**A storm draws one big puffy cloud per convective hour**, spanning all three
-decks and much bigger than anything else in the band. It is the same flat-bottomed
-scalloped mass as a deck, just far bigger: one shared construction draws both,
-so they cannot drift apart. It sits on a base like everything else and does its
-growing upward. A radial version that scalloped all the way round was tried and
-left the cloud floating with a lumpy underside, out of step with the rest of the
-band. It deliberately does not model a real cumulonimbus; the anvil version did,
-and read as a diagram inside a drawing. CAPE only scales it.
+**A storm is the same three layers as ordinary cloud, exaggerated.** Same three
+heights, lobes roughly doubled (28 / 20 / 14 against 14 / 10 / 7), coverage
+forced to full so all three always draw and a storm can never be mistaken for
+an overcast hour. Drawn in the same pass as the ordinary decks, so it occludes
+in the same order: the low layer reaches 78, above both the mid base at 50 and
+the high base at 70, and cuts into them.
 
-An overlapping-circles construction, where each puff keeps its own stroked
-outline and is occluded by the puffs in front, was built for both the decks and
-the storms and compared on device against this and against a silhouette with
-interior arcs. The plain scallop won and the other two were removed.
-
-**Clear skies draw nothing.** The band is simply empty. This gives up telling
-"clear" apart from "outside the forecast window", which was the reason a thin
-wisp was drawn there; the wisp was worse.
-
-**Appearance is light, dark, or auto**, chosen in the menu. Every colour is
-already an asset-catalog pair, so the setting only has to override the scheme.
-
-Everything in the band is drawn at one stroke weight. The storm cloud and its
-bolt carried a heavier line and it separated them from the drawing.
-
-**Clouds do not end on a vertical edge.** Both ends of a deck round from the
-base up to the lobe line over a short shoulder, since a straight drop reads as
-cut off rather than as a cloud edge.
-
-**Overlapping events: the shortest one names the title.** A standup sitting
-inside a focus block is what you are actually doing. Tested and confirmed.
+It is drawn per RUN, like the decks, not per hour, so a long storm is one
+continuous three-layer mass. Two earlier attempts were rejected on device: an
+anvil, which read as a diagram inside a drawing; and a single big radial blob,
+which scalloped all the way round and floated with a lumpy underside instead of
+sitting on a base like every other cloud.
 
 **Rain is a curtain, not ticks.** Hatching hangs between the cloud base and the
 arc, leaned by wind, with density and length from millimetres.

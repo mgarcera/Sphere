@@ -38,7 +38,11 @@ struct SkyContinuous: View {
                 context.stroke(fall.near, with: ink, style: SkyMarks.stroke)
             }
 
-            // Far decks first so the near ones can occlude them.
+            // Far decks first so the near ones can occlude them. A storm is
+            // the same three layers at the same three heights with much bigger
+            // lobes, drawn in the same pass so it stacks and cuts identically.
+            let stormRuns = runs(byHour, where: { $0.isConvective })
+
             for deck in [Deck.high, .mid, .low] {
                 for run in runs(byHour, where: { deck.coverage($0) >= SkyHour.layerThreshold
                                                  && !stormHours.contains($0.hour) }) {
@@ -46,18 +50,14 @@ struct SkyContinuous: View {
                     context.fill(path, with: ground)
                     context.stroke(path, with: ink, style: SkyMarks.stroke)
                 }
-            }
 
-            // A cumulonimbus is not a low cloud, it is a tower that starts low
-            // and spreads an anvil at cirrus height, so a storm merges the
-            // three decks into one form instead of stacking them.
-            // One cell per convective hour rather than one blob per run, so a
-            // long storm reads as a line of cells. Each is filled before it is
-            // stroked, so neighbours cut into each other and cluster.
-            for entry in hours where entry.isConvective {
-                let cell = cumulonimbus(at: entry)
-                context.fill(cell, with: ground)
-                context.stroke(cell, with: ink, style: SkyMarks.stroke)
+                // All three always, whatever the coverage says, so a storm is
+                // never mistakable for an ordinary overcast hour.
+                for run in stormRuns {
+                    let path = stormLayer(run, deck: deck)
+                    context.fill(path, with: ground)
+                    context.stroke(path, with: ink, style: SkyMarks.stroke)
+                }
             }
 
             for entry in hours where entry.hasLightning {
@@ -92,6 +92,16 @@ struct SkyContinuous: View {
             case .high: 7
             case .mid: 10
             case .low: 14
+            }
+        }
+
+        /// Lobe size for a storm: the same three positions, roughly doubled,
+        /// which is what makes a storm read as heavy rather than as tall.
+        var stormAmplitude: CGFloat {
+            switch self {
+            case .high: 14
+            case .mid: 20
+            case .low: 28
             }
         }
 
@@ -262,19 +272,17 @@ struct SkyContinuous: View {
         path.addQuadCurve(to: points[points.count - 1], control: points[points.count - 2])
     }
 
-    /// A storm cloud is the same flat-bottomed scalloped mass as a deck, just
-    /// far bigger: it sits on a base like everything else and does its growing
-    /// upward. The radial version scalloped all the way round, which left it
-    /// floating with a lumpy underside and out of step with the rest.
-    private func cumulonimbus(at entry: SkyHour) -> Path {
-        let scale = CGFloat(0.9 + 0.24 * min(entry.cape / 4_000, 1))
-        return scallopedMass(
-            from: Double(entry.hour) + 0.02, to: Double(entry.hour) + 0.98,
-            baseOut: SkyMarks.lowOffset - 12,
-            plinth: 46 * scale,
-            peakAmplitude: 28 * scale,
-            lobeHours: 0.17,
-            salt: entry.hour &* 613,
+    /// One layer of a storm: the same construction as an ordinary deck, at the
+    /// same height, with lobes about twice the size and coverage forced to
+    /// full. Three of these stacked and cutting into each other is the storm.
+    private func stormLayer(_ run: ClosedRange<Int>, deck: Deck) -> Path {
+        scallopedMass(
+            from: Double(run.lowerBound), to: Double(run.upperBound) + 1,
+            baseOut: deck.offset,
+            plinth: deck.stormAmplitude * 0.78,
+            peakAmplitude: deck.stormAmplitude,
+            lobeHours: Self.lobeHours,
+            salt: deck.saltBase &+ run.lowerBound &* 31 &+ 4_099,
             coverage: { _ in 1 }
         )
     }
