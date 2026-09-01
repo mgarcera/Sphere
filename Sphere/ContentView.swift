@@ -148,37 +148,45 @@ struct ContentView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)
-        .onChange(of: headerKey) { _, _ in pop() }
+        .onChange(of: titleKey) { _, _ in popTitle() }
+        .onChange(of: captionKey) { _, _ in popCaption() }
     }
 
-    /// What counts as the header CHANGING.
+    /// What counts as each line CHANGING.
     ///
-    /// Not the rendered strings: when no event is under the dot the title is a
-    /// live clock, so keying off its text would fire the pop every second and
-    /// on every frame of a scrub. This is the identity of what is being shown,
-    /// which moves when you enter or leave an event, cross to another one, or
-    /// cross a day boundary.
-    private var headerKey: String {
-        "\(model.activeEvent?.id ?? "-")|\(Self.dayLine(model.focusDate))"
+    /// Neither is the rendered string. With no event under the dot the title is
+    /// a live clock, so keying off its text would fire the pop every second and
+    /// on every frame of a scrub.
+    ///
+    /// The title moves only when the EVENT identity does. The caption also
+    /// moves on the date, so crossing midnight pops the caption alone and the
+    /// clock above it carries straight through.
+    private var titleKey: String { model.activeEvent?.id ?? "-" }
+
+    private var captionKey: String {
+        "\(titleKey)|\(Self.dayLine(model.focusDate))"
     }
 
-    /// Both lines drop to 94% and fade out, then spring back, the caption 40ms
-    /// behind the title. Scale and opacity are leaf modifiers driven from a
-    /// discrete change, so the body runs once per pop and Core Animation does
-    /// the rest.
-    private func pop() {
-        let spring = Animation.spring(response: 0.26, dampingFraction: 0.62)
-        let fade = Animation.easeOut(duration: 0.20)
+    /// Drop to 94% and fade out, then spring back. Scale and opacity are leaf
+    /// modifiers driven from a discrete change, so the body runs once per pop
+    /// and Core Animation does the rest.
+    private static let popSpring = Animation.spring(response: 0.26, dampingFraction: 0.62)
+    private static let popFade = Animation.easeOut(duration: 0.20)
 
+    private func popTitle() {
         titleScale = 0.94
         titleFade = 0
+        withAnimation(Self.popSpring) { titleScale = 1 }
+        withAnimation(Self.popFade) { titleFade = 1 }
+    }
+
+    /// The 40ms delay is what makes the pair read as one system with the title
+    /// leading. It stays when the caption pops alone, where it is invisible.
+    private func popCaption() {
         captionScale = 0.94
         captionFade = 0
-
-        withAnimation(spring) { titleScale = 1 }
-        withAnimation(fade) { titleFade = 1 }
-        withAnimation(spring.delay(0.04)) { captionScale = 1 }
-        withAnimation(fade.delay(0.04)) { captionFade = 1 }
+        withAnimation(Self.popSpring.delay(0.04)) { captionScale = 1 }
+        withAnimation(Self.popFade.delay(0.04)) { captionFade = 1 }
     }
 
     /// How much wash is present, for twilight to yield to.
