@@ -182,7 +182,8 @@ final class DayModel {
                     cloudMid: reading.cloudMid,
                     cloudHigh: reading.cloudHigh,
                     precipitation: reading.precipitation,
-                    wind: reading.wind
+                    wind: reading.wind,
+                    cape: reading.cape
                 )
             }
         }

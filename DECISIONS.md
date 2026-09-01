@@ -116,9 +116,21 @@ lobes meeting at cusps rather than sine waves, and each deck is filled with the
 background before stroking so a nearer deck cuts a hole in the one behind it.
 Line art can occlude, and that is what gives the band depth.
 
+**Storms are detected from CAPE, not from the weather code.** Open-Meteo's
+thunderstorm code is conservative: in a year of Chicago data it flagged 8 hours
+on 5 days, while showers coded 80 to 82 carried a median CAPE of 1260 and are
+physically the same cumulonimbus. Frontal rain sits near 30, so instability
+separates convective from stratiform cleanly. A cumulonimbus draws at CAPE
+>= 1000 with precipitation, lightning at >= 2000, since coded thunderstorm
+hours ran a median of 2090. That takes the same year from 8 storm hours to 28,
+and 5 storm days to 13, with no frontal-rain hour wrongly promoted.
+
 **A thunderstorm merges the decks.** A cumulonimbus is not a low cloud, it is a
 tower starting low and spreading an anvil at cirrus height, so storm hours draw
 one tall form instead of three stacked ones, at heavier stroke weight.
+
+**Overlapping events: the shortest one names the title.** A standup sitting
+inside a focus block is what you are actually doing. Tested and confirmed.
 
 **Rain is a curtain, not ticks.** Hatching hangs between the cloud base and the
 arc, leaned by wind, with density and length from millimetres.
@@ -147,8 +159,6 @@ until a fix arrives and permanently if permission is refused.
   small modal opened from a navbar button. The navbar does not exist yet and has
   not been designed. The brief says "one screen, no navigation stack in v1",
   so this is a change to that too.
-- **Overlapping events** need a tiebreak for the header title. Shortest-wins is
-  live and Mason is testing it before confirming.
 - **Monetization**, which decides whether Open-Meteo's non-commercial free tier
   is enough or WeatherKit is needed. Deferred to a 6pm block, 2026-09-01.
 - **The tilt of the sky band is gentle**, about 8° at most, because a day is

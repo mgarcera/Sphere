@@ -37,6 +37,9 @@ struct WeatherHour: Equatable {
     let precipitation: Double
     /// km/h at 10m.
     let wind: Double
+    /// Convective available potential energy, J/kg. The actual measure of how
+    /// unstable the air is, and a far better storm signal than the code.
+    let cape: Double
 }
 
 /// One hour of sky, ready to draw.
@@ -49,8 +52,28 @@ struct SkyHour: Identifiable, Equatable {
     let cloudHigh: Double
     let precipitation: Double
     let wind: Double
+    let cape: Double
 
     var id: Int { hour }
+
+    /// Enough instability to build a cumulonimbus. Open-Meteo's thunderstorm
+    /// code is conservative: in a year of Chicago data it flagged 8 hours,
+    /// while showers coded 80 to 82 carried a median CAPE of 1260 and are
+    /// physically the same cloud. Frontal rain sits near 30, so this separates
+    /// convective from stratiform cleanly.
+    static let convectiveCAPE: Double = 1_000
+
+    /// A higher bar for drawing lightning than for drawing the cloud. Coded
+    /// thunderstorm hours ran a median of 2090.
+    static let electricCAPE: Double = 2_000
+
+    var isConvective: Bool {
+        condition == .thunderstorm || (cape >= Self.convectiveCAPE && precipitation > 0)
+    }
+
+    var hasLightning: Bool {
+        condition == .thunderstorm || (cape >= Self.electricCAPE && precipitation > 0)
+    }
 
     /// Below this a layer is not worth drawing.
     static let layerThreshold: Double = 0.12

@@ -25,7 +25,7 @@ struct SkyContinuous: View {
             let ground = GraphicsContext.Shading.color(Theme.background)
             let faint = GraphicsContext.Shading.color(Theme.ink.opacity(SkyMarks.inkOpacity * 0.5))
             let byHour = Dictionary(uniqueKeysWithValues: hours.map { ($0.hour, $0) })
-            let stormHours = Set(hours.filter { $0.condition == .thunderstorm }.map(\.hour))
+            let stormHours = Set(hours.filter(\.isConvective).map(\.hour))
 
             // Rain first: it hangs between the cloud base and the arc, so the
             // decks are drawn over its top edge.
@@ -51,13 +51,13 @@ struct SkyContinuous: View {
             // A cumulonimbus is not a low cloud, it is a tower that starts low
             // and spreads an anvil at cirrus height, so a storm merges the
             // three decks into one form instead of stacking them.
-            for run in runs(byHour, where: { $0.condition == .thunderstorm }) {
+            for run in runs(byHour, where: { $0.isConvective }) {
                 let tower = cumulonimbus(run, byHour: byHour)
                 context.fill(tower, with: ground)
                 context.stroke(tower, with: ink, style: SkyMarks.heavyStroke)
             }
 
-            for entry in hours where entry.condition == .thunderstorm {
+            for entry in hours where entry.hasLightning {
                 context.stroke(strike(at: entry), with: ink, style: SkyMarks.heavyStroke)
             }
 
