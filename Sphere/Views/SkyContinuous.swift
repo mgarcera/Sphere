@@ -204,16 +204,25 @@ struct SkyContinuous: View {
                          out: baseOut + plinth * CGFloat(sin(.pi / 2 * t)))
         }, to: &path)
 
+        // The spans are worked out up front and normalised to fill the width
+        // exactly. Advancing lobe by lobe and clamping the last one to whatever
+        // was left over let it end up almost zero wide while still rising to
+        // full height, which drew a needle sticking out of the cloud.
+        let available = (to - shoulder) - (from + shoulder)
+        guard available > 0 else { return path }
+        let lobeCount = max(1, Int((available / lobeHours).rounded()))
+        let widthRolls = (0..<lobeCount).map { SkyMarks.jitter(daySeed, saltBase &+ $0) }
+        let widthTotal = widthRolls.reduce(0) { $0 + 0.55 + $1 }
+        let spans = widthRolls.map { available * (0.55 + $0) / widthTotal }
+
         var hour = from + shoulder
-        var index = 0
-        while hour < to - shoulder - 1e-6 {
+        for index in 0..<lobeCount {
             let salt = saltBase &+ index
-            let widthRoll = SkyMarks.jitter(daySeed, salt)
             let heightRoll = SkyMarks.jitter(daySeed, salt &+ 911)
             let skewRoll = SkyMarks.jitter(daySeed, salt &+ 1_733)
             let microRoll = SkyMarks.jitter(daySeed, salt &+ 2_591)
 
-            let span = min(lobeHours * (0.55 + 1.0 * widthRoll), to - shoulder - hour)
+            let span = spans[index]
             let cover = coverage(hour + span / 2)
             let peak = peakAmplitude * CGFloat(0.28 + cover * 0.42) * CGFloat(0.8 + heightRoll * 0.5)
             // Barely off centre. Any more and the lobe becomes a slope.
@@ -236,7 +245,6 @@ struct SkyContinuous: View {
             appendSmooth(crest, to: &path)
 
             hour += span
-            index += 1
         }
 
         appendSmooth((1...4).map { step in

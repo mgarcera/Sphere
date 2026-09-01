@@ -54,6 +54,7 @@ struct ContentView: View {
             await weather.load(coordinate: location.coordinate)
             model.applySky(from: weather)
             reload()
+            model.tick()
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(30))
                 model.tick()
@@ -142,8 +143,7 @@ struct ContentView: View {
         if let active = model.activeEvent {
             return "\(ArcContent.clock(active.startHour - Double(model.dayIndex) * 24)) · \(Self.dayLine(model.focusDate))"
         }
-        return model.isFocusedOnToday ? Self.dayLine(model.focusDate)
-                                      : "\(Self.dayLine(model.focusDate)) · \(ArcContent.clock(hourOfDay))"
+        return Self.dayLine(model.focusDate)
     }
 
     // MARK: - Actions
