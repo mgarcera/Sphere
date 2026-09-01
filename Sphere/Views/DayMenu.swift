@@ -9,6 +9,7 @@ struct DayMenu: View {
     let calendar: CalendarService
     let location: LocationService
     @Binding var appearance: Appearance
+    @Binding var layout: MenuLayout
     let onDismiss: () -> Void
 
     @State private var pickedDate: Date = .now
@@ -29,79 +30,22 @@ struct DayMenu: View {
                 }
                 .padding(.vertical, 13)
 
-                if !model.allDayEvents.isEmpty {
-                    divider
-                    section("All day") {
-                        ForEach(model.allDayEvents) { event in
-                            HStack(spacing: 10) {
-                                Circle()
-                                    .fill(event.color)
-                                    .frame(width: 8, height: 8)
-                                Text(event.title)
-                                    .font(.subheadline)
-                                    .foregroundStyle(Theme.ink)
-                                Spacer()
-                            }
-                            .padding(.vertical, 7)
-                        }
-                    }
+                divider
+                switch layout {
+                case .grid: gridLayout
+                case .block: blockLayout
+                case .list: listLayout
                 }
 
                 divider
-                section("Place") {
-                    HStack {
-                        Text(location.placeName)
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.ink)
-                        if location.isUsingFallback {
-                            Text("default")
-                                .font(.caption2)
-                                .foregroundStyle(Theme.mutedLight)
-                        }
-                        Spacer()
-                        if location.manual != nil {
-                            Button("Use my location") { location.clearManual() }
-                                .font(.footnote)
-                                .foregroundStyle(Theme.taskActive)
-                        } else if location.access != .granted {
-                            Button("Allow") { location.request() }
-                                .font(.footnote)
-                                .foregroundStyle(Theme.taskActive)
+                section("Layout") {
+                    Picker("Layout", selection: $layout) {
+                        ForEach(MenuLayout.allCases) { option in
+                            Text(option.title).tag(option)
                         }
                     }
-                    .padding(.vertical, 6)
-
-                    HStack(spacing: 8) {
-                        TextField("Search a city", text: $placeQuery)
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.ink)
-                            .focused($placeFocused)
-                            .submitLabel(.search)
-                            .onSubmit { submitPlace() }
-                        if location.isSearching {
-                            ProgressView().controlSize(.small)
-                        }
-                    }
-                    .padding(.vertical, 6)
-                }
-
-                divider
-                section("Sun") {
-                    let day = model.focusSolarDay
-                    reading("Sunrise", day.sunrise)
-                    reading("Midday", day.solarNoon)
-                    reading("Sunset", day.sunset)
-                    HStack {
-                        Text(model.focusMoonPhase.name)
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.ink)
-                        Spacer()
-                        Text("\(Int((model.focusMoonPhase.illuminated * 100).rounded()))% lit")
-                            .font(.footnote)
-                            .foregroundStyle(Theme.muted)
-                            .monospacedDigit()
-                    }
-                    .padding(.vertical, 6)
+                    .pickerStyle(.segmented)
+                    .padding(.vertical, 4)
                 }
 
                 divider
@@ -146,6 +90,182 @@ struct DayMenu: View {
         .onAppear { pickedDate = model.focusDate }
         .onChange(of: pickedDate) { _, newValue in
             model.focus(onDayOf: newValue)
+        }
+    }
+
+    // MARK: - Layouts
+
+    /// Place and date share a row as two cards, and the sun's three times sit
+    /// three-up. Uses the width the linear version was leaving empty.
+    private var gridLayout: some View {
+        VStack(spacing: 14) {
+            HStack(alignment: .top, spacing: 12) {
+                card("Place") {
+                    placeName
+                    placeSearch
+                }
+                card("Date") {
+                    DatePicker("", selection: $pickedDate, displayedComponents: .date)
+                        .labelsHidden()
+                        .tint(Theme.ink)
+                        .padding(.top, 2)
+                }
+            }
+            sunRow
+            moonRow
+        }
+        .padding(.vertical, 12)
+    }
+
+    /// The day itself as one block, with the sun as a strip under it.
+    private var blockLayout: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(location.placeName)
+                    .font(.display(24))
+                    .foregroundStyle(Theme.ink)
+                if location.isUsingFallback {
+                    Text("default")
+                        .font(.caption2)
+                        .foregroundStyle(Theme.mutedLight)
+                }
+                Spacer()
+                placeAction
+            }
+
+            HStack {
+                DatePicker("", selection: $pickedDate, displayedComponents: .date)
+                    .labelsHidden()
+                    .tint(Theme.ink)
+                Spacer()
+            }
+
+            placeSearch
+
+            Rectangle().fill(Theme.hairline).frame(height: 1).padding(.top, 4)
+            sunRow
+            moonRow
+        }
+        .padding(.vertical, 12)
+    }
+
+    /// The vertical list, kept, with the three sun readings collapsed onto one
+    /// row instead of three.
+    private var listLayout: some View {
+        VStack(spacing: 0) {
+            section("Place") {
+                placeName
+                placeSearch
+            }
+            divider
+            HStack {
+                Text("Date").font(.subheadline).foregroundStyle(Theme.ink)
+                Spacer()
+                DatePicker("", selection: $pickedDate, displayedComponents: .date)
+                    .labelsHidden()
+                    .tint(Theme.ink)
+            }
+            .padding(.vertical, 13)
+            divider
+            section("Sun") {
+                sunRow
+                moonRow
+            }
+        }
+    }
+
+    // MARK: - Shared pieces
+
+    private func card<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(size: 11, weight: .medium))
+                .tracking(1.1)
+                .textCase(.uppercase)
+                .foregroundStyle(Theme.mutedLight)
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.hairline, lineWidth: 1))
+    }
+
+    private var placeName: some View {
+        HStack {
+            Text(location.placeName)
+                .font(.subheadline)
+                .foregroundStyle(Theme.ink)
+                .lineLimit(1)
+            if location.isUsingFallback {
+                Text("default")
+                    .font(.caption2)
+                    .foregroundStyle(Theme.mutedLight)
+            }
+            Spacer()
+            placeAction
+        }
+    }
+
+    @ViewBuilder
+    private var placeAction: some View {
+        if location.manual != nil {
+            Button("Use mine") { location.clearManual() }
+                .font(.footnote)
+                .foregroundStyle(Theme.taskActive)
+        } else if location.access != .granted {
+            Button("Allow") { location.request() }
+                .font(.footnote)
+                .foregroundStyle(Theme.taskActive)
+        }
+    }
+
+    private var placeSearch: some View {
+        HStack(spacing: 8) {
+            TextField("Search a city", text: $placeQuery)
+                .font(.subheadline)
+                .foregroundStyle(Theme.ink)
+                .focused($placeFocused)
+                .submitLabel(.search)
+                .onSubmit { submitPlace() }
+            if location.isSearching {
+                ProgressView().controlSize(.small)
+            }
+        }
+    }
+
+    /// Three times across the width rather than three stacked rows.
+    private var sunRow: some View {
+        let day = model.focusSolarDay
+        return HStack(spacing: 0) {
+            sunCell("Sunrise", day.sunrise)
+            sunCell("Midday", day.solarNoon)
+            sunCell("Sunset", day.sunset)
+        }
+    }
+
+    private func sunCell(_ title: String, _ hour: Double?) -> some View {
+        VStack(spacing: 3) {
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(Theme.mutedLight)
+            Text(hour.map(ArcContent.clock) ?? "—")
+                .font(.subheadline)
+                .foregroundStyle(Theme.ink)
+                .monospacedDigit()
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var moonRow: some View {
+        HStack {
+            Text(model.focusMoonPhase.name)
+                .font(.footnote)
+                .foregroundStyle(Theme.muted)
+            Spacer()
+            Text("\(Int((model.focusMoonPhase.illuminated * 100).rounded()))% lit")
+                .font(.footnote)
+                .foregroundStyle(Theme.muted)
+                .monospacedDigit()
         }
     }
 

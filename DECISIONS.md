@@ -223,10 +223,14 @@ until a fix arrives and permanently if permission is refused.
 
 ## Still open
 
-- **All-day events.** They have no hour and cannot sit on the arc. Going in a
-  small modal opened from a navbar button. The navbar does not exist yet and has
-  not been designed. The brief says "one screen, no navigation stack in v1",
-  so this is a change to that too.
+**All-day events live under the header, not in the menu.** They have no hour and
+cannot sit on the arc, so they get their own button below the date caption,
+showing the single title when there is one and a count when there are more. It
+opens a sheet with ONE detent, so it cannot be dragged open: it is a glance, not
+a list view. Each row opens the same Apple editor a timed event uses.
+
+The menu's date, place and sun material no longer runs as a linear list. Three
+arrangements are under comparison behind a switch: grid, block and list.
 - **Monetization**, which decides whether Open-Meteo's non-commercial free tier
   is enough or WeatherKit is needed. Deferred to a 6pm block, 2026-09-01.
 - **The tilt of the sky band is gentle**, about 8° at most, because a day is

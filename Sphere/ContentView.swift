@@ -12,7 +12,10 @@ struct ContentView: View {
     @State private var titleScale: CGFloat = 1
     @State private var captionScale: CGFloat = 1
     @AppStorage("appearance") private var appearance: Appearance = .system
+    /// Temporary: three menu arrangements under comparison.
+    @AppStorage("menuLayout") private var menuLayout: MenuLayout = .grid
     @State private var eventsHidden = false
+    @State private var isAllDayOpen = false
 
     var body: some View {
         ZStack {
@@ -51,8 +54,20 @@ struct ContentView: View {
             }
             .ignoresSafeArea()
         }
+        .sheet(isPresented: $isAllDayOpen) {
+            AllDaySheet(events: model.allDayEvents) { entry in
+                isAllDayOpen = false
+                if let event = calendar.occurrence(for: entry.id) {
+                    editorTarget = .existing(event)
+                }
+            }
+            // One detent, so it cannot be dragged open. It is a glance, not a
+            // list view.
+            .presentationDetents([.height(AllDaySheet.height(for: model.allDayEvents.count))])
+            .presentationDragIndicator(.hidden)
+        }
         .sheet(isPresented: $isMenuOpen) {
-            DayMenu(model: model, calendar: calendar, location: location, appearance: $appearance) { isMenuOpen = false }
+            DayMenu(model: model, calendar: calendar, location: location, appearance: $appearance, layout: $menuLayout) { isMenuOpen = false }
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
@@ -149,6 +164,25 @@ struct ContentView: View {
                 .foregroundStyle(captionColor)
                 .monospacedDigit()
                 .scaleEffect(captionScale, anchor: .leading)
+
+            if !model.allDayEvents.isEmpty {
+                Button { isAllDayOpen = true } label: {
+                    HStack(spacing: 7) {
+                        Circle()
+                            .fill(model.allDayEvents[0].color)
+                            .frame(width: 7, height: 7)
+                        Text(allDayLabel)
+                            .font(.footnote)
+                            .foregroundStyle(captionColor)
+                    }
+                    .padding(.vertical, 5)
+                    .padding(.horizontal, 10)
+                    .overlay(Capsule().stroke(Theme.hairlineSoft, lineWidth: 1))
+                    .contentShape(.capsule)
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 8)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)
@@ -237,6 +271,11 @@ struct ContentView: View {
     /// while the caption is pinned is what let them meet at dusk.
     private static let titleContrast: Double = 9.0
     private static let captionContrast: Double = 3.5
+
+    private var allDayLabel: String {
+        let events = model.allDayEvents
+        return events.count == 1 ? events[0].title : "\(events.count) all day"
+    }
 
     private var hourOfDay: Double {
         model.focusHour - Double(model.dayIndex) * 24
