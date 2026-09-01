@@ -31,12 +31,35 @@ enum SkyMarks {
         return Double(x % 1_000) / 1_000
     }
 
-    static func bolt(height: CGFloat) -> Path {
+    /// A bolt with its zigs generated rather than fixed, so two strikes are
+    /// never the same drawing. Roughly a third of them fork.
+    static func bolt(height: CGFloat, seed: Int, salt: Int) -> Path {
+        let zigs = 2 + Int((jitter(seed, salt) * 2).rounded())
+        let step = height / CGFloat(zigs)
         var path = Path()
-        path.move(to: CGPoint(x: 2, y: 0))
-        path.addLine(to: CGPoint(x: -5, y: height * 0.5))
-        path.addLine(to: CGPoint(x: 0.5, y: height * 0.5))
-        path.addLine(to: CGPoint(x: -6, y: height))
+
+        var position = CGPoint(x: CGFloat(jitter(seed, salt &+ 11) - 0.5) * 3, y: 0)
+        path.move(to: position)
+
+        var side: CGFloat = jitter(seed, salt &+ 23) < 0.5 ? -1 : 1
+        var forkFrom: CGPoint?
+
+        for index in 0..<zigs {
+            let spread = CGFloat(2.5 + jitter(seed, salt &+ index &* 31) * 4.5)
+            // Each zig steps down and across, then cuts back, which is what
+            // gives a bolt its kinked profile.
+            let corner = CGPoint(x: position.x + side * spread, y: position.y + step * 0.55)
+            path.addLine(to: corner)
+            position = CGPoint(x: position.x + side * spread * 0.25, y: position.y + step)
+            path.addLine(to: position)
+            if index == zigs - 2 { forkFrom = position }
+            side *= -1
+        }
+
+        if let forkFrom, jitter(seed, salt &+ 97) > 0.65 {
+            path.move(to: forkFrom)
+            path.addLine(to: CGPoint(x: forkFrom.x + side * 5, y: forkFrom.y + step * 0.7))
+        }
         return path
     }
 

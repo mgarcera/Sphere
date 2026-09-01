@@ -30,7 +30,12 @@ struct SkyContinuous: View {
             // Rain first: it hangs between the cloud base and the arc, so the
             // decks are drawn over its top edge.
             for run in runs(byHour, where: { $0.condition.isWet }) {
-                context.stroke(curtain(run, byHour: byHour), with: ink, style: SkyMarks.stroke)
+                let fall = curtain(run, byHour: byHour)
+                // Two passes at different weights so the curtain has depth
+                // rather than reading as one ruled row of ticks.
+                context.stroke(fall.far, with: faint,
+                               style: StrokeStyle(lineWidth: 0.9, lineCap: .round))
+                context.stroke(fall.near, with: ink, style: SkyMarks.stroke)
             }
 
             // Far decks first so the near ones can occlude them.
@@ -251,47 +256,87 @@ struct SkyContinuous: View {
         return path
     }
 
-    /// Rain as a hatched curtain between the cloud base and the arc, leaned by
-    /// the wind, with density and length from millimetres rather than from
-    /// which side of a category boundary the hour landed on.
-    private func curtain(_ run: ClosedRange<Int>, byHour: [Int: SkyHour]) -> Path {
-        var path = Path()
-        let top = SkyMarks.lowOffset - 4
+    /// Rain as a curtain between the cloud base and the arc.
+    ///
+    /// Everything about a single stroke varies: where it starts along the
+    /// hour, how far up under the cloud it begins, how long it is, and how far
+    /// the wind lays it over. The first version fixed all four, which put every
+    /// streak on a ruled line at the same length, and that is what read as
+    /// uniform. Open-Meteo also quantises precipitation coarsely, so hour after
+    /// hour reports the same 0.4mm and intensity alone varies almost nothing.
+    ///
+    /// Drizzle and rain differ in kind rather than degree: drizzle is dense,
+    /// short and nearly upright, rain is sparser, longer and leaning.
+    private func curtain(_ run: ClosedRange<Int>, byHour: [Int: SkyHour]) -> (near: Path, far: Path) {
+        var near = Path()
+        var far = Path()
+        let base = SkyMarks.lowOffset - 4
 
         for hour in run {
             guard let entry = byHour[hour] else { continue }
             let intensity = min(entry.precipitation / 3, 1)
-            let strokes = max(2, Int((3 + intensity * 5).rounded()))
-            let drop = CGFloat(6 + intensity * 13)
-            let lean = CGFloat(min(entry.wind / 45, 1)) * 0.16
+            let fine = entry.condition == .drizzle
+            let count = max(3, Int(((fine ? 6 : 3) + intensity * (fine ? 5 : 6)).rounded()))
+            let reach = CGFloat((fine ? 4 : 7) + intensity * (fine ? 6 : 15))
+            let windLean = CGFloat(min(entry.wind / 45, 1)) * (fine ? 0.07 : 0.20)
 
-            for index in 0..<strokes {
-                let j = SkyMarks.jitter(daySeed, hour &* 101 &+ index)
-                let at = Double(hour) + (Double(index) + 0.5) / Double(strokes) + (j - 0.5) * 0.06
+            for index in 0..<count {
+                let salt = hour &* 101 &+ index
+                let jx = SkyMarks.jitter(daySeed, salt)
+                let jy = SkyMarks.jitter(daySeed, salt &+ 7_717)
+                let jl = SkyMarks.jitter(daySeed, salt &+ 3_301)
+                let jlean = SkyMarks.jitter(daySeed, salt &+ 5_501)
+
+                let at = Double(hour) + (Double(index) + 0.1 + 0.8 * jx) / Double(count)
 
                 if entry.condition.isFrozen {
-                    let c = point(hour: at, out: top - drop * 0.5)
-                    let s: CGFloat = 2.2
+                    let size = CGFloat(1.4 + jl * 2.2)
+                    let centre = point(hour: at, out: base - CGFloat(jy) * reach)
                     for k in 0..<3 {
                         let angle = Double(k) * .pi / 3
-                        path.move(to: CGPoint(x: c.x - s * cos(angle), y: c.y - s * sin(angle)))
-                        path.addLine(to: CGPoint(x: c.x + s * cos(angle), y: c.y + s * sin(angle)))
+                        far.move(to: CGPoint(x: centre.x - size * cos(angle), y: centre.y - size * sin(angle)))
+                        far.addLine(to: CGPoint(x: centre.x + size * cos(angle), y: centre.y + size * sin(angle)))
                     }
+                    continue
+                }
+
+                // Stagger the start so the top edge is not a rule.
+                let start = base - CGFloat(jy) * 8
+                let length = reach * CGFloat(0.5 + jl * 1.0)
+                let lean = windLean * (0.55 + jlean * 0.9)
+
+                // Half the streaks fall to the lighter pass, which reads as
+                // distance.
+                let isNear = jx + jl > 1.0
+                if isNear {
+                    near.move(to: point(hour: at, out: start))
+                    near.addLine(to: point(hour: at + lean, out: start - length))
                 } else {
-                    path.move(to: point(hour: at, out: top))
-                    path.addLine(to: point(hour: at + lean, out: top - drop))
+                    far.move(to: point(hour: at, out: start))
+                    far.addLine(to: point(hour: at + lean * 0.8, out: start - length * 0.7))
                 }
             }
         }
-        return path
+        return (near, far)
     }
 
+    /// One or two strikes per storm hour, placed and shaped from the hour's
+    /// own seed so no two are the same bolt in the same spot.
     private func strike(at entry: SkyHour) -> Path {
-        let anchor = point(hour: Double(entry.hour) + 0.5, out: SkyMarks.lowOffset - 6)
-        let base = placement(Double(entry.hour) + 0.5)
-        var transform = CGAffineTransform(translationX: anchor.x, y: anchor.y)
-        transform = transform.rotated(by: base.angle)
-        return SkyMarks.bolt(height: 17).applying(transform)
+        var path = Path()
+        let count = SkyMarks.jitter(daySeed, entry.hour &* 137) > 0.55 ? 2 : 1
+
+        for index in 0..<count {
+            let salt = entry.hour &* 211 &+ index
+            let at = Double(entry.hour) + 0.25 + 0.5 * SkyMarks.jitter(daySeed, salt)
+            let height = CGFloat(13 + SkyMarks.jitter(daySeed, salt &+ 41) * 10)
+            let anchor = point(hour: at, out: SkyMarks.lowOffset - 6)
+            let base = placement(at)
+            var transform = CGAffineTransform(translationX: anchor.x, y: anchor.y)
+            transform = transform.rotated(by: base.angle)
+            path.addPath(SkyMarks.bolt(height: height, seed: daySeed, salt: salt).applying(transform))
+        }
+        return path
     }
 
     private func fog(_ run: ClosedRange<Int>) -> Path {
