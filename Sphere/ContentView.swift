@@ -6,6 +6,7 @@ struct ContentView: View {
     @State private var calendar = CalendarService()
     @State private var editorStart: Date?
     @State private var detailEvent: EKEvent?
+    @State private var isMenuOpen = false
 
     var body: some View {
         ZStack {
@@ -31,6 +32,11 @@ struct ContentView: View {
             }
             .ignoresSafeArea()
         }
+        .sheet(isPresented: $isMenuOpen) {
+            DayMenu(model: model, calendar: calendar) { isMenuOpen = false }
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
         .sheet(item: $detailEvent) { event in
             EventDetailSheet(event: event) {
                 detailEvent = nil
@@ -52,6 +58,7 @@ struct ContentView: View {
             }
         }
         .onChange(of: model.dayIndex) { _, _ in reload() }
+        .onChange(of: calendar.hiddenSourceIDs) { _, _ in reload() }
     }
 
     private var day: some View {
@@ -65,7 +72,7 @@ struct ContentView: View {
 
             ClickWheel(
                 onRotate: { model.scrub(byRotations: $0) },
-                onMenu: { springTo { model.returnToNow() } },
+                onMenu: { isMenuOpen = true },
                 onCentre: { editorStart = model.focusDate },
                 onPrevious: { springTo { model.jumpToPreviousEvent() } },
                 onNext: { springTo { model.jumpToNextEvent() } }
@@ -122,6 +129,7 @@ struct ContentView: View {
 
     private func reload() {
         let range = model.loadedRange
+        calendar.refreshSources()
         calendar.load(from: range.start, to: range.end, anchor: model.anchor)
         model.events = calendar.events
     }

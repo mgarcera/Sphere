@@ -46,9 +46,16 @@ struct ArcWindow: View {
                     .frame(width: 1, height: max(0, arcHeight - dotY))
                     .position(x: centreX, y: (arcHeight + dotY) / 2)
 
+                // A ring of background sits under the dot so it stays legible
+                // wherever a capsule runs beneath it.
+                Circle()
+                    .fill(Theme.background)
+                    .frame(width: 20, height: 20)
+                    .position(x: centreX, y: dotY)
+
                 Circle()
                     .fill(Theme.ink)
-                    .frame(width: 9, height: 9)
+                    .frame(width: 13, height: 13)
                     .position(x: centreX, y: dotY)
             }
             .frame(width: proxy.size.width, height: arcHeight + ArcContent.labelGutter, alignment: .topLeading)

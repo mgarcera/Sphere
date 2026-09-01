@@ -82,6 +82,13 @@ final class DayModel {
         focusHour = nowHour
     }
 
+    /// Jump to another date, keeping the clock time you were already on.
+    func focus(onDayOf date: Date) {
+        let target = calendar.startOfDay(for: date)
+        let days = calendar.dateComponents([.day], from: anchor, to: target).day ?? 0
+        focusHour = Double(days) * 24 + (focusHour - Double(dayIndex) * 24)
+    }
+
     func tick(_ date: Date = .now) {
         let wasOnNow = isFocusedOnNow
         realNow = date

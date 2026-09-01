@@ -1,9 +1,9 @@
 import SwiftUI
 
 /// Events as capsules riding the curve from start to end, so visual extent is
-/// time extent and nothing can misrepresent when something happens. A short
-/// event collapses to its start dot, which is where the sphere comes from —
-/// one shape, not two kinds of mark.
+/// time extent and nothing can misrepresent when something happens. The stroke
+/// has round caps, so a very short event still renders as a sphere — that is
+/// where the sphere comes from now, rather than a separate dot.
 struct EventLayer: View {
     let events: [CalendarEvent]
     /// Absolute hour sitting at this layer's x origin.
@@ -22,13 +22,8 @@ struct EventLayer: View {
                 capsulePath(for: event)
                     .stroke(
                         event.color.opacity(isActive ? 1 : 0.5),
-                        style: StrokeStyle(lineWidth: isActive ? 9 : 7, lineCap: .round, lineJoin: .round)
+                        style: StrokeStyle(lineWidth: isActive ? 5 : 4, lineCap: .round, lineJoin: .round)
                     )
-
-                Circle()
-                    .fill(event.color)
-                    .frame(width: isActive ? 11 : 8, height: isActive ? 11 : 8)
-                    .position(point(at: event.startHour))
             }
         }
         .frame(width: width, height: height + ArcContent.labelGutter, alignment: .topLeading)

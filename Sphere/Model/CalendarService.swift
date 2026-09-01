@@ -15,12 +15,48 @@ final class CalendarService {
         case granted
     }
 
+    /// One of the user's calendars, reduced to what the picker needs.
+    struct Source: Identifiable, Equatable {
+        let id: String
+        let title: String
+        let color: Color
+    }
+
     let store = EKEventStore()
     private(set) var access: Access
     private(set) var events: [CalendarEvent] = []
+    private(set) var sources: [Source] = []
+
+    /// Which calendars the arc leaves out. Persisted, since a filter that
+    /// resets every launch is no filter.
+    private(set) var hiddenSourceIDs: Set<String>
+
+    private static let hiddenKey = "hiddenCalendarIdentifiers"
 
     init() {
         access = Self.currentAccess()
+        hiddenSourceIDs = Set(UserDefaults.standard.stringArray(forKey: Self.hiddenKey) ?? [])
+    }
+
+    func isVisible(_ source: Source) -> Bool { !hiddenSourceIDs.contains(source.id) }
+
+    func setVisible(_ visible: Bool, for source: Source) {
+        if visible { hiddenSourceIDs.remove(source.id) } else { hiddenSourceIDs.insert(source.id) }
+        UserDefaults.standard.set(Array(hiddenSourceIDs), forKey: Self.hiddenKey)
+    }
+
+    func refreshSources() {
+        guard access == .granted else { sources = []; return }
+        sources = store.calendars(for: .event)
+            .map { Source(id: $0.calendarIdentifier, title: $0.title, color: Color(cgColor: $0.cgColor)) }
+            .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+    }
+
+    private var visibleCalendars: [EKCalendar]? {
+        let calendars = store.calendars(for: .event).filter { !hiddenSourceIDs.contains($0.calendarIdentifier) }
+        // nil means every calendar; an empty array would mean every calendar
+        // too, which is the opposite of what hiding them all should do.
+        return hiddenSourceIDs.isEmpty ? nil : calendars
     }
 
     static func currentAccess() -> Access {
@@ -51,7 +87,12 @@ final class CalendarService {
             return
         }
 
-        let predicate = store.predicateForEvents(withStart: start, end: end, calendars: nil)
+        if hiddenSourceIDs.isEmpty == false, visibleCalendars?.isEmpty == true {
+            events = []
+            return
+        }
+
+        let predicate = store.predicateForEvents(withStart: start, end: end, calendars: visibleCalendars)
         events = store.events(matching: predicate).map { event in
             let startHour = event.startDate.timeIntervalSince(anchor) / 3600
             let endHour = event.endDate.timeIntervalSince(anchor) / 3600
