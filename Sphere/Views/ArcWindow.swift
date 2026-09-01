@@ -5,6 +5,7 @@ import SwiftUI
 /// crossing midnight needs no separate control and no seam.
 struct ArcWindow: View {
     let model: DayModel
+    var suppressedEventID: CalendarEvent.ID?
     var arcHeight: CGFloat = 190
 
     var body: some View {
@@ -70,6 +71,7 @@ struct ArcWindow: View {
                     width: dayWidth * 3,
                     height: arcHeight,
                     activeID: model.activeEvent?.id,
+                    suppressedID: suppressedEventID,
                     elevation: { model.normalizedElevation(atAbsoluteHour: $0) }
                 )
                 .offset(x: pan)

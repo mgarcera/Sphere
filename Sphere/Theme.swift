@@ -108,3 +108,27 @@ enum ContrastHold {
         return Color(red: result.r, green: result.g, blue: result.b)
     }
 }
+
+/// Temporary. Three ways of handling a jump between events, switchable from the
+/// menu. The losers and this enum come out together.
+enum JumpStyle: String, CaseIterable, Identifiable {
+    /// The destination capsule is held back during the flight and appears on
+    /// arrival. Everything else still travels.
+    case capsuleLast
+    /// The duration scales with distance so the pan holds a readable speed, and
+    /// a gap too large to travel legibly cuts instead.
+    case speedLimited
+    /// A short flight with the arc faded down through the middle of it, so the
+    /// direction survives without the smear.
+    case dissolve
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .capsuleLast: "Arrive"
+        case .speedLimited: "Paced"
+        case .dissolve: "Dissolve"
+        }
+    }
+}

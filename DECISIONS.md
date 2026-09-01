@@ -159,8 +159,8 @@ squash on the high deck comes free and reads as distance.
 The sky had to move out of the cached arc layer for any of this; ArcContent now
 owns only the curve, the baseline and the ticks.
 
-**Lightning does not flash yet.** A flicker was built and removed, to come back
-to later. The storm's static wash stays.
+**Lightning does not flash.** A flicker was built, tried and rejected. The
+storm's static wash stays.
 
 **Weather overrides the time of day.** A storm sky is not also a sunset sky, so
 the twilight wash fades out in proportion to how much weather is present.

@@ -14,6 +14,10 @@ struct ContentView: View {
     @State private var captionScale: CGFloat = 1
     @State private var captionFade: Double = 1
     @AppStorage("appearance") private var appearance: Appearance = .system
+    /// Temporary: three jump treatments under comparison.
+    @AppStorage("jumpStyle") private var jumpStyle: JumpStyle = .speedLimited
+    @State private var suppressedEventID: CalendarEvent.ID?
+    @State private var arcFade: Double = 1
 
     var body: some View {
         ZStack {
@@ -53,7 +57,7 @@ struct ContentView: View {
             .ignoresSafeArea()
         }
         .sheet(isPresented: $isMenuOpen) {
-            DayMenu(model: model, calendar: calendar, location: location, appearance: $appearance) { isMenuOpen = false }
+            DayMenu(model: model, calendar: calendar, location: location, appearance: $appearance, jumpStyle: $jumpStyle) { isMenuOpen = false }
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
@@ -97,7 +101,8 @@ struct ContentView: View {
         VStack(spacing: 0) {
             header
 
-            ArcWindow(model: model)
+            ArcWindow(model: model, suppressedEventID: suppressedEventID)
+                .opacity(arcFade)
                 .padding(.top, 8)
 
             Spacer(minLength: 16)
@@ -107,8 +112,8 @@ struct ContentView: View {
                 onMenu: { isMenuOpen = true },
                 onNow: { springTo { model.returnToNow() } },
                 onCentre: openEditor,
-                onPrevious: { springTo { model.jumpToPreviousEvent() } },
-                onNext: { springTo { model.jumpToNextEvent() } }
+                onPrevious: { jump(to: model.previousEvent) },
+                onNext: { jump(to: model.nextEvent) }
             )
             .padding(.top, 16)
             .padding(.bottom, 24)
@@ -269,6 +274,53 @@ struct ContentView: View {
             editorTarget = .existing(event)
         } else {
             editorTarget = .new(model.focusDate)
+        }
+    }
+
+    /// A jump pans EVERY layer, and the distance is set by the gap between
+    /// events while the duration was fixed. A one-hour hop travelled 130pt and
+    /// an eight-hour one 1040pt, both in 0.55s, so the far end smeared at about
+    /// 3000 pt/s against a readable 800 to 1200. The capsule arriving mid-smear
+    /// is what read as it being dragged along.
+    private func jump(to event: CalendarEvent?) {
+        guard let event else { return }
+        let distance = abs(event.startHour - model.focusHour) * (UIScreen.main.bounds.width / DayModel.windowHours)
+
+        switch jumpStyle {
+        case .capsuleLast:
+            // Hold the destination back so it appears rather than sweeps.
+            suppressedEventID = event.id
+            springTo { model.focusHour = event.startHour }
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(430))
+                withAnimation(.spring(response: 0.26, dampingFraction: 0.62)) {
+                    suppressedEventID = nil
+                }
+            }
+
+        case .speedLimited:
+            // Hold a constant readable speed, and simply cut when the gap is
+            // too far to cross legibly at all.
+            let readableSpeed: Double = 1_000
+            let duration = distance / readableSpeed
+            if duration > 0.95 {
+                model.focusHour = event.startHour
+            } else {
+                withAnimation(.spring(response: max(0.26, min(duration, 0.9)), dampingFraction: 0.9)) {
+                    model.focusHour = event.startHour
+                }
+            }
+
+        case .dissolve:
+            // Keep the direction, lose the middle of the journey.
+            withAnimation(.easeIn(duration: 0.10)) { arcFade = 0.12 }
+            withAnimation(.spring(response: 0.34, dampingFraction: 0.9)) {
+                model.focusHour = event.startHour
+            }
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(180))
+                withAnimation(.easeOut(duration: 0.22)) { arcFade = 1 }
+            }
         }
     }
 

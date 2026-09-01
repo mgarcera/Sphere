@@ -12,16 +12,19 @@ struct EventLayer: View {
     let width: CGFloat
     let height: CGFloat
     let activeID: CalendarEvent.ID?
+    /// Held back while a jump is in flight, so it arrives rather than sweeps.
+    var suppressedID: CalendarEvent.ID?
     let elevation: (Double) -> Double
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             ForEach(events) { event in
                 let isActive = event.id == activeID
+                let hidden = event.id == suppressedID
 
                 capsulePath(for: event)
                     .stroke(
-                        event.color.opacity(isActive ? 1 : 0.72),
+                        event.color.opacity(hidden ? 0 : (isActive ? 1 : 0.72)),
                         style: StrokeStyle(lineWidth: isActive ? 5 : 4, lineCap: .round, lineJoin: .round)
                     )
             }
