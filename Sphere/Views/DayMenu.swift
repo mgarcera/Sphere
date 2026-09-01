@@ -7,7 +7,6 @@ import SwiftUI
 struct DayMenu: View {
     let model: DayModel
     let calendar: CalendarService
-    @Binding var skyStyle: SkyStyle
     let onDismiss: () -> Void
 
     @State private var pickedDate: Date = .now
@@ -61,17 +60,6 @@ struct DayMenu: View {
                             .monospacedDigit()
                     }
                     .padding(.vertical, 6)
-                }
-
-                divider
-                section("Sky style") {
-                    Picker("Sky style", selection: $skyStyle) {
-                        ForEach(SkyStyle.allCases) { style in
-                            Text(style.title).tag(style)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.vertical, 4)
                 }
 
                 if !calendar.sources.isEmpty {

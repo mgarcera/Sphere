@@ -12,7 +12,6 @@ struct ArcContent: View, Equatable {
     /// simply absent, so an empty sky always means "not known" rather than
     /// "clear".
     var skyHours: [SkyHour] = []
-    var skyStyle: SkyStyle = .layered
     /// Seeds the deterministic wobble, so a shape is stable across redraws but
     /// different from its neighbour.
     var daySeed: Int = 0
@@ -50,15 +49,8 @@ struct ArcContent: View, Equatable {
             // The sky band. Everything in it is placed along the curve's
             // normal and turned with its tangent, so the band runs parallel to
             // the arc rather than sitting in a flat row above it.
-            Group {
-                switch skyStyle {
-                case .layered:
-                    SkyLayered(hours: skyHours, daySeed: daySeed, placement: skyPlacement(atHour:))
-                case .continuous:
-                    SkyContinuous(hours: skyHours, daySeed: daySeed, placement: skyPlacement(atHour:))
-                }
-            }
-            .frame(width: width, height: height + Self.labelGutter, alignment: .topLeading)
+            SkyContinuous(hours: skyHours, daySeed: daySeed, placement: skyPlacement(atHour:))
+                .frame(width: width, height: height + Self.labelGutter, alignment: .topLeading)
 
             DayArcShape(day: day)
                 .stroke(Theme.ink, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))

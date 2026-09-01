@@ -5,7 +5,6 @@ import SwiftUI
 /// crossing midnight needs no separate control and no seam.
 struct ArcWindow: View {
     let model: DayModel
-    var skyStyle: SkyStyle = .layered
     var arcHeight: CGFloat = 190
     /// Headroom above the curve's peak. The dot is 42pt across at full ray
     /// length, and at midsummer noon it sits on y = 0, so without this the rays
@@ -33,7 +32,6 @@ struct ArcWindow: View {
                             width: dayWidth,
                             height: arcHeight,
                             skyHours: model.sky(forDayIndex: index),
-                            skyStyle: skyStyle,
                             daySeed: index
                         )
                         .equatable()

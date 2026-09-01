@@ -93,10 +93,11 @@ real Chicago forecast produce eleven distinct profiles. Where a shape still
 needs to look placed rather than stamped it is perturbed by a hash of the day
 and hour, never by `random`, so nothing shimmers while the wheel turns.
 
-**Two band styles are under comparison**, switchable from the menu: `layered`
-draws each hour's decks separately, `continuous` draws one silhouette per deck
-across the whole day. The loser, the switch, and `SkyStyle` all come out
-together once a verdict lands.
+**The band is one continuous silhouette per deck**, not a mark per hour.
+Coverage drives how far the outline bulges and where it breaks, so a clearing
+reads as a gap in a drawn sky rather than an absent glyph. The per-hour
+`layered` alternative was built, compared on device, and removed along with its
+switch.
 
 **Outside the forecast window the band shows nothing.** An empty sky always
 means "not known", never "clear". A failed fetch reads the same way.

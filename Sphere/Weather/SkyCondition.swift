@@ -62,19 +62,3 @@ struct SkyHour: Identifiable, Equatable {
     /// Whether the sun or moon can be seen through what is above it.
     var bodyVisible: Bool { cloudLow < 0.75 }
 }
-
-/// Temporary. Two ways of drawing the same data, switchable from the menu so
-/// they can be compared on device. The loser and this enum both come out.
-enum SkyStyle: String, CaseIterable, Identifiable {
-    case layered
-    case continuous
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .layered: "Layered"
-        case .continuous: "Continuous"
-        }
-    }
-}
