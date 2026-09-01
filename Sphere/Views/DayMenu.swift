@@ -9,7 +9,6 @@ struct DayMenu: View {
     let calendar: CalendarService
     let location: LocationService
     @Binding var appearance: Appearance
-    @Binding var wheelStyle: WheelStyle
     let onDismiss: () -> Void
 
     @State private var pickedDate: Date = .now
@@ -109,17 +108,6 @@ struct DayMenu: View {
                 section("Appearance") {
                     Picker("Appearance", selection: $appearance) {
                         ForEach(Appearance.allCases) { option in
-                            Text(option.title).tag(option)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.vertical, 4)
-                }
-
-                divider
-                section("Wheel") {
-                    Picker("Wheel", selection: $wheelStyle) {
-                        ForEach(WheelStyle.allCases) { option in
                             Text(option.title).tag(option)
                         }
                     }

@@ -12,16 +12,6 @@ enum Theme {
     static let hairlineSoft = Color("HairlineSoft")
     static let taskActive   = Color("TaskActive")
     static let taskInactive = Color("TaskInactive")
-
-    /// The wheel is chrome in light and the black iPod in dark.
-    enum Wheel {
-        static let faceTop      = Color("WheelFaceTop")
-        static let faceBottom   = Color("WheelFaceBottom")
-        static let buttonTop    = Color("WheelButtonTop")
-        static let buttonBottom = Color("WheelButtonBottom")
-        static let edge         = Color("WheelEdge")
-        static let label        = Color("WheelLabel")
-    }
 }
 
 extension Font {
@@ -51,21 +41,6 @@ enum Appearance: String, CaseIterable, Identifiable {
         case .system: nil
         case .light: .light
         case .dark: .dark
-        }
-    }
-}
-
-/// Temporary design test: the wheel as chrome, or flattened to the same line
-/// art as the arc. Not a permanent setting.
-enum WheelStyle: String, CaseIterable, Identifiable {
-    case chrome, line
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .chrome: "Chrome"
-        case .line: "Line"
         }
     }
 }

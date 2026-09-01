@@ -10,8 +10,6 @@ struct ContentView: View {
     @Environment(\.colorScheme) private var systemScheme
     @State private var isMenuOpen = false
     @AppStorage("appearance") private var appearance: Appearance = .system
-    /// Temporary design test, not a permanent setting.
-    @AppStorage("wheelStyle") private var wheelStyle: WheelStyle = .chrome
 
     var body: some View {
         ZStack {
@@ -51,7 +49,7 @@ struct ContentView: View {
             .ignoresSafeArea()
         }
         .sheet(isPresented: $isMenuOpen) {
-            DayMenu(model: model, calendar: calendar, location: location, appearance: $appearance, wheelStyle: $wheelStyle) { isMenuOpen = false }
+            DayMenu(model: model, calendar: calendar, location: location, appearance: $appearance) { isMenuOpen = false }
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
@@ -106,10 +104,7 @@ struct ContentView: View {
                 onNow: { springTo { model.returnToNow() } },
                 onCentre: openEditor,
                 onPrevious: { springTo { model.jumpToPreviousEvent() } },
-                onNext: { springTo { model.jumpToNextEvent() } },
-                style: wheelStyle,
-                lineColor: wheelLine,
-                labelColor: wheelLabel
+                onNext: { springTo { model.jumpToNextEvent() } }
             )
             .padding(.top, 16)
             .padding(.bottom, 24)
@@ -166,19 +161,6 @@ struct ContentView: View {
         return ContrastHold.color(ContrastHold.muted, target: Self.captionContrast, on: headerLuminance)
     }
 
-    /// The wheel gets the same treatment as the header, but measured against
-    /// its OWN ground. The wash clears well above it, so the wheel always sits
-    /// on plain background; handing it the header's colours directly would turn
-    /// it white on white the moment a storm flipped the title.
-    private var wheelLine: Color {
-        guard effectiveScheme == .light else { return Theme.ink }
-        return ContrastHold.color(ContrastHold.ink, target: Self.titleContrast, on: 1)
-    }
-
-    private var wheelLabel: Color {
-        guard effectiveScheme == .light else { return Theme.muted }
-        return ContrastHold.color(ContrastHold.muted, target: Self.captionContrast, on: 1)
-    }
 
     private var isMorning: Bool {
         model.focusHour - Double(model.dayIndex) * 24 < model.focusSolarDay.solarNoon

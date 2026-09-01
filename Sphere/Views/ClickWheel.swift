@@ -1,7 +1,9 @@
 import SwiftUI
 
-/// The iPod click wheel, in chrome and white. Colour is deliberately absent —
-/// everything coloured on this screen belongs to the day, not to the control.
+/// The click wheel, drawn in the same line as the arc and in the same grey as
+/// the timeline's hour labels. It is a control, not an object: the chrome
+/// version was tried against this and removed, and the light grey keeps the
+/// wheel from pulling weight away from the day above it.
 ///
 /// Turning it is a rotation, not a swipe: the drag's angle around the centre is
 /// what moves time, so a circling thumb keeps scrubbing indefinitely.
@@ -13,11 +15,6 @@ struct ClickWheel: View {
     let onCentre: () -> Void
     let onPrevious: () -> Void
     let onNext: () -> Void
-    var style: WheelStyle = .chrome
-    /// The header's own colours, so the control is drawn in the same ink as
-    /// the type above it.
-    var lineColor: Color = Theme.ink
-    var labelColor: Color = Theme.muted
 
     static let diameter: CGFloat = 240
     private static let buttonDiameter: CGFloat = 92
@@ -37,33 +34,12 @@ struct ClickWheel: View {
     /// Angle of the previous drag sample, in radians. Nil between drags.
     @State private var lastAngle: Double?
 
-    private let face = LinearGradient(
-        colors: [Theme.Wheel.faceTop, Theme.Wheel.faceBottom],
-        startPoint: .top,
-        endPoint: .bottom
-    )
-    private let buttonFace = LinearGradient(
-        colors: [Theme.Wheel.buttonTop, Theme.Wheel.buttonBottom],
-        startPoint: .top,
-        endPoint: .bottom
-    )
-    private let edge = Theme.Wheel.edge
-    private var label: Color { labelColor }
+    private var line: Color { Theme.mutedLighter }
 
     var body: some View {
         ZStack {
-            Group {
-                if style == .chrome {
-                    Circle()
-                        .fill(face)
-                        .overlay(Circle().strokeBorder(edge, lineWidth: 1))
-                        .shadow(color: .black.opacity(0.18), radius: 10, y: 3)
-                } else {
-                    // Same weight as the arc, so the control is drawn in the
-                    // same hand as everything else on the screen.
-                    Circle().strokeBorder(lineColor, lineWidth: 1.5)
-                }
-            }
+            Circle()
+                .strokeBorder(line, lineWidth: 1.5)
                 .contentShape(.circle)
                 .gesture(
                     DragGesture(minimumDistance: Self.scrubThreshold)
@@ -92,17 +68,10 @@ struct ClickWheel: View {
                 )
 
             Button(action: onCentre) {
-                Group {
-                    if style == .chrome {
-                        Circle()
-                            .fill(buttonFace)
-                            .overlay(Circle().strokeBorder(edge, lineWidth: 1))
-                            .shadow(color: .black.opacity(0.05), radius: 4, y: 1)
-                    } else {
-                        Circle().strokeBorder(lineColor, lineWidth: 1.5)
-                    }
-                }
-                .frame(width: Self.buttonDiameter, height: Self.buttonDiameter)
+                Circle()
+                    .strokeBorder(line, lineWidth: 1.5)
+                    .frame(width: Self.buttonDiameter, height: Self.buttonDiameter)
+                    .contentShape(.circle)
             }
             .buttonStyle(WheelButtonStyle())
 
@@ -128,7 +97,7 @@ struct ClickWheel: View {
             Text(text)
                 .font(.system(size: size, weight: size > 14 ? .medium : .semibold))
                 .tracking(size > 14 ? 0 : 1.2)
-                .foregroundStyle(label)
+                .foregroundStyle(line)
                 .frame(width: Self.hitTarget, height: Self.hitTarget)
                 .contentShape(.rect)
         }
@@ -136,12 +105,12 @@ struct ClickWheel: View {
     }
 }
 
-/// Presses dim rather than scale — the wheel is meant to read as a solid
+/// Presses dim rather than scale — the wheel is meant to read as one drawn
 /// object, and a growing button would break that.
 private struct WheelButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .opacity(configuration.isPressed ? 0.55 : 1)
+            .opacity(configuration.isPressed ? 0.45 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }
