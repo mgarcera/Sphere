@@ -93,6 +93,30 @@ real Chicago forecast produce eleven distinct profiles. Where a shape still
 needs to look placed rather than stamped it is perturbed by a hash of the day
 and hour, never by `random`, so nothing shimmers while the wheel turns.
 
+**The sky is a co-equal element, not a backdrop.** The name is the
+architecture: the atmo*sphere* above the line and the work and social *spheres*
+on it, sharing one arc. They stay apart by register, ink above versus calendar
+colour on the line, rather than by one of them being quiet. Band ink went to
+0.8 and inactive capsules to 0.72 to meet it.
+
+**Clouds are closed bodies, not curves.** The first draft read as wind because
+each deck was a stroked open polyline with sine bulges. Three fixes: every deck
+is a closed shape with a base and a scalloped top, the scallops are convex
+lobes meeting at cusps rather than sine waves, and each deck is filled with the
+background before stroking so a nearer deck cuts a hole in the one behind it.
+Line art can occlude, and that is what gives the band depth.
+
+**A thunderstorm merges the decks.** A cumulonimbus is not a low cloud, it is a
+tower starting low and spreading an anvil at cirrus height, so storm hours draw
+one tall form instead of three stacked ones, at heavier stroke weight.
+
+**Rain is a curtain, not ticks.** Hatching hangs between the cloud base and the
+arc, leaned by wind, with density and length from millimetres.
+
+**A clear hour still draws a wisp**, so an empty band always means "no data" and
+never "nothing in the sky". Sun and moon marks are gone from the band; the time
+dot is the only celestial body.
+
 **The band is one continuous silhouette per deck**, not a mark per hour.
 Coverage drives how far the outline bulges and where it breaks, so a clearing
 reads as a gap in a drawn sky rather than an absent glyph. The per-hour

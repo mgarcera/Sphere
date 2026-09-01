@@ -21,7 +21,7 @@ struct EventLayer: View {
 
                 capsulePath(for: event)
                     .stroke(
-                        event.color.opacity(isActive ? 1 : 0.5),
+                        event.color.opacity(isActive ? 1 : 0.72),
                         style: StrokeStyle(lineWidth: isActive ? 5 : 4, lineCap: .round, lineJoin: .round)
                     )
             }
