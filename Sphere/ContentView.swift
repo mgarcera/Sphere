@@ -113,7 +113,7 @@ struct ContentView: View {
     }
 
     private var header: some View {
-        VStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: 6) {
             Button {
                 openEditor()
             } label: {
@@ -127,6 +127,10 @@ struct ContentView: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                     .contentTransition(.opacity)
+                    // The button's label would centre inside the row without
+                    // this, so a short title would not sit on the same left
+                    // edge as the caption under it.
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.plain)
             .disabled(model.activeEvent == nil)
@@ -137,7 +141,7 @@ struct ContentView: View {
                 .foregroundStyle(captionColor)
                 .monospacedDigit()
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)
     }
 
