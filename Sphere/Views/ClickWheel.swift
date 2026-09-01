@@ -16,17 +16,24 @@ struct ClickWheel: View {
     let onPrevious: () -> Void
     let onNext: () -> Void
 
-    static let diameter: CGFloat = 240
-    private static let buttonDiameter: CGFloat = 92
+    static let diameter: CGFloat = 280
+
+    // Everything inside the wheel is a fraction of its diameter, so resizing it
+    // is one number and the design holds its proportions.
+    private static let buttonRatio: CGFloat = 0.383
+    private static let labelInsetRatio: CGFloat = 0.108
+    private static let hitTargetRatio: CGFloat = 0.192
+
+    private static var buttonDiameter: CGFloat { diameter * buttonRatio }
+    private static var labelInset: CGFloat { diameter * labelInsetRatio }
+    /// Never below the 44pt floor, whatever the ratio works out to.
+    private static var hitTarget: CGFloat { max(44, diameter * hitTargetRatio) }
 
     /// A real tap drifts a few points under the thumb. Anything under about ten
     /// was being read as the start of a turn, which is why the printed buttons
-    /// took several attempts. A rotation travels far, so it loses nothing.
+    /// took several attempts. Absolute, not scaled: it is about the thumb, not
+    /// about the wheel.
     private static let scrubThreshold: CGFloat = 10
-
-    /// Below the 44pt floor a target is missed as often as it is hit, and every
-    /// label here was smaller than that.
-    private static let hitTarget: CGFloat = 46
 
     private var outerRadius: CGFloat { Self.diameter / 2 }
     private var innerRadius: CGFloat { Self.buttonDiameter / 2 }
@@ -76,18 +83,18 @@ struct ClickWheel: View {
             .buttonStyle(WheelButtonStyle())
 
             printedButton("NOW", action: onNow)
-                .position(x: outerRadius, y: 26)
+                .position(x: outerRadius, y: Self.labelInset)
 
             printedButton("MENU", action: onMenu)
-                .position(x: outerRadius, y: Self.diameter - 26)
+                .position(x: outerRadius, y: Self.diameter - Self.labelInset)
 
             // These jump straight to the previous and next event's start. They
             // are not a generic time nudge — the wheel already does that.
             printedButton("‹", size: 20, action: onPrevious)
-                .position(x: 26, y: outerRadius)
+                .position(x: Self.labelInset, y: outerRadius)
 
             printedButton("›", size: 20, action: onNext)
-                .position(x: Self.diameter - 26, y: outerRadius)
+                .position(x: Self.diameter - Self.labelInset, y: outerRadius)
         }
         .frame(width: Self.diameter, height: Self.diameter)
     }
