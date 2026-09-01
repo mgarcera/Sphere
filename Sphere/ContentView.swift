@@ -125,7 +125,7 @@ struct ContentView: View {
                 // the planet cards, so the clock stands in until then.
                 Text(model.activeEvent?.title ?? ArcContent.clock(hourOfDay))
                     .font(.display())
-                    .foregroundStyle(onWash(Theme.ink))
+                    .foregroundStyle(titleColor)
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -154,34 +154,14 @@ struct ContentView: View {
         appearance.colorScheme ?? systemScheme
     }
 
-    /// The header sits in the darkest part of the wash, so its ink flips to
-    /// the background colour once the sky is genuinely dark. In dark mode the
-    /// ink is already light and the ground only gets darker, so it stays.
-    ///
-    /// This switches on the MEASURED luminance under the header, not on how
-    /// much wash there is. Those are different: heavy rain scores 0.5 on amount
-    /// yet composites to a light grey that dark ink reads on at 8:1, while a
-    /// storm scores 0.78 and composites to near-black.
-    private func onWash(_ base: Color) -> Color {
-        guard effectiveScheme == .light else { return base }
-        return base.mix(with: Theme.background, by: washSwitch)
+    private var titleColor: Color {
+        guard effectiveScheme == .light else { return Theme.ink }
+        return ContrastHold.color(ContrastHold.ink, target: Self.titleContrast, on: headerLuminance)
     }
 
-    /// The caption is the one that vanishes, because #8A8A8A is a light grey
-    /// whose luminance passes straight THROUGH the wash's: measured against
-    /// medium rain it fell to 1.8:1 and at the crossing point it is literally
-    /// 1:1. Flipping earlier alone does not fix that, since both sides of the
-    /// flip are weak there. So it darkens toward the ink as the ground darkens,
-    /// moving away from the background rather than into it, and only flips once
-    /// the ground is dark enough for light text to win outright.
     private var captionColor: Color {
         guard effectiveScheme == .light else { return Theme.muted }
-        if headerLuminance < Self.flipLuminance {
-            // Not pure white: it stays subordinate to the title.
-            return Theme.background.mix(with: Theme.ink, by: 0.12)
-        }
-        let darkening = min(max((1 - headerLuminance) / 0.6, 0), 1)
-        return Theme.muted.mix(with: Theme.ink, by: darkening)
+        return ContrastHold.color(ContrastHold.muted, target: Self.captionContrast, on: headerLuminance)
     }
 
     private var isMorning: Bool {
@@ -205,13 +185,12 @@ struct ContentView: View {
         )
     }
 
-    /// Biased earlier than the measured optimum of 0.20, deliberately: the
-    /// caption is the one that disappears first and it should be white by then.
-    private static let flipLuminance: Double = 0.26
-
-    private var washSwitch: Double {
-        headerLuminance < Self.flipLuminance ? 1 : 0
-    }
+    /// Both roles hold a fixed contrast against the measured ground, so the
+    /// gap between them is the same in every condition. Capping the title as
+    /// well as raising it is the point: letting it run to 15:1 on a clear day
+    /// while the caption is pinned is what let them meet at dusk.
+    private static let titleContrast: Double = 9.0
+    private static let captionContrast: Double = 3.5
 
     private var hourOfDay: Double {
         model.focusHour - Double(model.dayIndex) * 24

@@ -170,25 +170,23 @@ arc block begins. Darkening the band would cost the arc and the clouds their
 contrast, and they cannot be recoloured per frame without giving up the cached
 layers. Overhead is where weather belongs anyway.
 
-**Header ink flips outright, on measured luminance.** Two things had to be got
-right. It keys on the composited luminance under the header, not on how much
-wash is present: those diverge badly, since heavy rain scores 0.5 on amount yet
-composites to a light grey that dark ink reads on at 8:1, while a storm scores
-0.78 and composites to near-black. And the flip is hard, with no crossfade at
-all, because any blend puts the glyphs mid-grey on a mid-grey ground; measured,
-a crossfade bottoms out at 1.00:1 while a storm rolls in. The threshold sits
-where dark and light ink measure equal, 3.79:1 each, so neither side of the flip
-is the weak one. The flip is biased slightly earlier than the measured optimum, to 0.26, because
-the caption is what disappears first and should be light by the time it does.
+**The title and the caption each hold a fixed contrast against the measured
+ground.** Title 9:1, caption 3.5:1, derived by mixing the designed colour rather
+than picking a neutral grey, so the ink keeps its warmth. This CAPS as well as
+raises: on a clear day the ink measures 15:1 and is deliberately brought down to
+9:1. That is the price of uniformity and it lands on the most-seen screen of
+all; the alternative, letting the title run free while the caption was pinned,
+is what let the two meet at dusk and read as one weight.
 
-**The caption darkens before it flips.** `#8A8A8A` is a light grey whose
-luminance passes straight THROUGH the wash's, so it fell to 1.8:1 in medium rain
-and to literally 1:1 where the two crossed. Flipping earlier alone does not fix
-that, since both sides of the flip are weak there. It now darkens toward the ink
-as the ground darkens, moving away from the background rather than into it, and
-flips only once light text wins outright. Settled states: title 15:1 clear,
-8.0:1 heavy rain, 5.6:1 storm; caption 3.5:1, 6.2:1, 4.5:1, worst 2.7:1 exactly
-at the flip against 1.0:1 before.
+The measured ground is everything painted over the background at the top of the
+screen, in draw order: twilight, then rain, then storm. Leaving twilight out of
+it was a real bug -- at full dusk the ground is 0.386 while the code reported
+1.000, so the caption sat at plain grey and measured 1.4:1, while heavy rain at
+the same real luminance got 6.2:1 because rain was the only thing counted.
+
+Gap spread is now 1.60x to 2.57x, against 1.00x to 4.29x before. The one
+remaining variance is the storm, where the ground physically cannot support 9:1
+in any direction and the title takes the best available, 5.6:1.
 
 **All the washes share one set of stops**, weighted to the top of the screen and
 gone before the arc block, so twilight reads as sky in the same way weather
