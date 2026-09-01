@@ -14,7 +14,7 @@ struct TimeDot: View {
     /// at this latitude.
     let ceilingDegrees: Double
 
-    private static let discDiameter: CGFloat = 13
+    private static let discDiameter: CGFloat = 15
     private static let rayCount = 8
     private static let rayInner: CGFloat = 9
     private static let rayOuter: CGFloat = 21
@@ -25,26 +25,33 @@ struct TimeDot: View {
             // runs beneath it.
             Circle()
                 .fill(Theme.background)
-                .frame(width: 20, height: 20)
+                .frame(width: 22, height: 22)
 
-            if elevationDegrees >= 0 {
-                SunRays(reach: rayReach)
-                    .stroke(Theme.ink, style: StrokeStyle(lineWidth: 1.6, lineCap: .round))
-                    .frame(width: Self.rayOuter * 2, height: Self.rayOuter * 2)
+            SunRays(reach: rayReach)
+                .stroke(Theme.ink, style: StrokeStyle(lineWidth: 1.6, lineCap: .round))
+                .frame(width: Self.rayOuter * 2, height: Self.rayOuter * 2)
 
-                Circle()
-                    .fill(Theme.ink)
-                    .frame(width: Self.discDiameter, height: Self.discDiameter)
-            } else {
-                MoonShape(illuminated: moon.illuminated, isWaxing: moon.isWaxing)
-                    .fill(Theme.ink)
-                    .overlay(
-                        Circle().strokeBorder(Theme.ink.opacity(0.35), lineWidth: 1)
-                    )
-                    .frame(width: Self.discDiameter + 3, height: Self.discDiameter + 3)
-            }
+            // One shape for both, always present. There used to be an
+            // if/else here between a sun and a moon, and inside a withAnimation
+            // transaction SwiftUI gives a branch change its default OPACITY
+            // transition — so crossing the horizon during a jump faded the dot
+            // out and back rather than letting it travel.
+            //
+            // A full moon is a disc, so the sun is simply this shape fully lit.
+            MoonShape(illuminated: litFraction, isWaxing: moon.isWaxing)
+                .fill(Theme.ink)
+                .overlay(Circle().strokeBorder(Theme.ink.opacity(0.32), lineWidth: 1))
+                .frame(width: Self.discDiameter, height: Self.discDiameter)
         }
         .frame(width: Self.rayOuter * 2, height: Self.rayOuter * 2)
+    }
+
+    /// How far into daylight, over the first few degrees above the horizon.
+    /// The disc fills to a solid sun across this, while the rays grow from
+    /// nothing, so sunrise is a morph rather than a swap.
+    private var litFraction: Double {
+        let dayness = min(max(elevationDegrees / 6, 0), 1)
+        return moon.illuminated + (1 - moon.illuminated) * dayness
     }
 
     /// 0 at the horizon, 1 at the seasonal ceiling.
@@ -91,6 +98,13 @@ struct TimeDot: View {
 struct MoonShape: Shape {
     var illuminated: Double
     var isWaxing: Bool
+
+    /// Without this the terminator jumps between values instead of sweeping,
+    /// which is what turns sunrise into a morph.
+    var animatableData: Double {
+        get { illuminated }
+        set { illuminated = newValue }
+    }
 
     func path(in rect: CGRect) -> Path {
         var path = Path()
