@@ -13,6 +13,7 @@ struct ClickWheel: View {
     let onCentre: () -> Void
     let onPrevious: () -> Void
     let onNext: () -> Void
+    var style: WheelStyle = .chrome
 
     static let diameter: CGFloat = 240
     private static let buttonDiameter: CGFloat = 92
@@ -43,14 +44,24 @@ struct ClickWheel: View {
         endPoint: .bottom
     )
     private let edge = Theme.Wheel.edge
-    private let label = Theme.Wheel.label
+    private var label: Color { style == .chrome ? Theme.Wheel.label : Theme.muted }
 
     var body: some View {
         ZStack {
-            Circle()
-                .fill(face)
-                .overlay(Circle().strokeBorder(edge, lineWidth: 1))
-                .shadow(color: .black.opacity(0.18), radius: 10, y: 3)
+            Group {
+                if style == .chrome {
+                    Circle()
+                        .fill(face)
+                        .overlay(Circle().strokeBorder(edge, lineWidth: 1))
+                        .shadow(color: .black.opacity(0.18), radius: 10, y: 3)
+                } else {
+                    // Same weight as the arc, so the control is drawn in the
+                    // same hand as everything else on the screen.
+                    Circle()
+                        .strokeBorder(Theme.ink, lineWidth: 1.5)
+                        .background(Circle().fill(Theme.background))
+                }
+            }
                 .contentShape(.circle)
                 .gesture(
                     DragGesture(minimumDistance: Self.scrubThreshold)
@@ -79,11 +90,19 @@ struct ClickWheel: View {
                 )
 
             Button(action: onCentre) {
-                Circle()
-                    .fill(buttonFace)
-                    .overlay(Circle().strokeBorder(edge, lineWidth: 1))
-                    .frame(width: Self.buttonDiameter, height: Self.buttonDiameter)
-                    .shadow(color: .black.opacity(0.05), radius: 4, y: 1)
+                Group {
+                    if style == .chrome {
+                        Circle()
+                            .fill(buttonFace)
+                            .overlay(Circle().strokeBorder(edge, lineWidth: 1))
+                            .shadow(color: .black.opacity(0.05), radius: 4, y: 1)
+                    } else {
+                        Circle()
+                            .strokeBorder(Theme.ink, lineWidth: 1.5)
+                            .background(Circle().fill(Theme.background))
+                    }
+                }
+                .frame(width: Self.buttonDiameter, height: Self.buttonDiameter)
             }
             .buttonStyle(WheelButtonStyle())
 

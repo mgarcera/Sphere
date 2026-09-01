@@ -9,6 +9,8 @@ struct ContentView: View {
     @State private var editorTarget: EventTarget?
     @State private var isMenuOpen = false
     @AppStorage("appearance") private var appearance: Appearance = .system
+    /// Temporary design test, not a permanent setting.
+    @AppStorage("wheelStyle") private var wheelStyle: WheelStyle = .chrome
 
     var body: some View {
         ZStack {
@@ -17,6 +19,12 @@ struct ContentView: View {
             TwilightBackground(
                 elevationDegrees: model.elevationDegrees(atAbsoluteHour: model.focusHour),
                 isMorning: model.focusHour - Double(model.dayIndex) * 24 < model.focusSolarDay.solarNoon
+            )
+
+            // Weather sits over the time of day, being nearer.
+            WeatherWash(
+                precipitation: model.weather(atAbsoluteHour: model.focusHour).precipitation,
+                lightning: model.weather(atAbsoluteHour: model.focusHour).lightning
             )
 
             if calendar.access == .undetermined {
@@ -42,7 +50,7 @@ struct ContentView: View {
             .ignoresSafeArea()
         }
         .sheet(isPresented: $isMenuOpen) {
-            DayMenu(model: model, calendar: calendar, location: location, appearance: $appearance) { isMenuOpen = false }
+            DayMenu(model: model, calendar: calendar, location: location, appearance: $appearance, wheelStyle: $wheelStyle) { isMenuOpen = false }
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
@@ -97,7 +105,8 @@ struct ContentView: View {
                 onNow: { springTo { model.returnToNow() } },
                 onCentre: openEditor,
                 onPrevious: { springTo { model.jumpToPreviousEvent() } },
-                onNext: { springTo { model.jumpToNextEvent() } }
+                onNext: { springTo { model.jumpToNextEvent() } },
+                style: wheelStyle
             )
             .padding(.top, 16)
             .padding(.bottom, 24)

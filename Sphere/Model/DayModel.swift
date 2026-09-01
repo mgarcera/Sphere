@@ -190,6 +190,27 @@ final class DayModel {
         skyByDay = result
     }
 
+    private func skyHour(atAbsoluteHour hour: Double) -> SkyHour? {
+        let index = Int(floor(hour / 24))
+        let inDay = Int(floor(hour - Double(index) * 24))
+        return skyByDay[index]?.first { $0.hour == inDay }
+    }
+
+    /// Weather at any fractional hour, interpolated between the two readings
+    /// either side. The readings are hourly, so without this a wash would snap
+    /// on and off at hour boundaries while the wheel turns.
+    func weather(atAbsoluteHour hour: Double) -> (precipitation: Double, lightning: Double) {
+        let lower = floor(hour)
+        let t = hour - lower
+        let a = skyHour(atAbsoluteHour: lower)
+        let b = skyHour(atAbsoluteHour: lower + 1)
+        func blend(_ x: Double, _ y: Double) -> Double { x + (y - x) * t }
+        return (
+            blend(a?.precipitation ?? 0, b?.precipitation ?? 0),
+            blend(a.map { $0.hasLightning ? 1 : 0 } ?? 0, b.map { $0.hasLightning ? 1 : 0 } ?? 0)
+        )
+    }
+
     /// The span the arc can currently show, a day either side of the focus so
     /// the window is never short of curve or events.
     var loadedRange: (start: Date, end: Date) {

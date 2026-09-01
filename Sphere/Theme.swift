@@ -54,3 +54,18 @@ enum Appearance: String, CaseIterable, Identifiable {
         }
     }
 }
+
+/// Temporary design test: the wheel as chrome, or flattened to the same line
+/// art as the arc. Not a permanent setting.
+enum WheelStyle: String, CaseIterable, Identifiable {
+    case chrome, line
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .chrome: "Chrome"
+        case .line: "Line"
+        }
+    }
+}

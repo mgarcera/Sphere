@@ -142,6 +142,14 @@ anvil, which read as a diagram inside a drawing; and a single big radial blob,
 which scalloped all the way round and floated with a lumpy underside instead of
 sitting on a base like every other cloud.
 
+**Rain and storms wash the ground, as dawn and dusk do.** Rain darkens it to
+slate, a storm darkens it further with the flash low down where the cloud base
+is. Both follow the FOCUS hour, so they agree with the dot and with the twilight
+wash, and both sit over twilight since weather is nearer than the time of day.
+Readings are hourly, so the strengths are interpolated between the two hours
+either side; without that a wash snaps on and off at hour boundaries while the
+wheel turns.
+
 **Rain is a curtain, not ticks.** Hatching hangs between the cloud base and the
 arc, leaned by wind, with density and length from millimetres.
 
