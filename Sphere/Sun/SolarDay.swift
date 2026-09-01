@@ -1,6 +1,6 @@
 import Foundation
 
-struct Coordinate {
+struct Coordinate: Equatable {
     var latitude: Double
     var longitude: Double
 
@@ -15,7 +15,7 @@ struct Coordinate {
 /// low-precision approach the React prototype used, ported directly. Declination
 /// and the equation of time are evaluated once for the day; both drift by far
 /// less than the arc can render over 24 hours.
-struct SolarDay {
+struct SolarDay: Equatable {
     let coordinate: Coordinate
     /// Offset from UTC in hours, for the day being drawn.
     let utcOffsetHours: Double
