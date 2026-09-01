@@ -1,4 +1,4 @@
-import SwiftUI
+import Foundation
 
 /// The seven classical planets, in Chaldean order (slowest to fastest).
 /// Uranus, Neptune and Pluto are excluded by design, not by omission.
@@ -9,10 +9,6 @@ enum Planet: String, CaseIterable, Identifiable {
 
     var displayName: String {
         rawValue.prefix(1).uppercased() + rawValue.dropFirst()
-    }
-
-    var color: Color {
-        Color(displayName)
     }
 
     /// Title text shown for the whole of this planet's hour — the screen's

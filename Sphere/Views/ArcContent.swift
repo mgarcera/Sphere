@@ -24,7 +24,15 @@ struct ArcContent: View, Equatable {
                 .frame(width: width, height: 1)
                 .position(x: width / 2, y: height)
 
-            ForEach(0..<25) { hour in
+            // Midnight. Days are drawn edge to edge, so this is the seam — the
+            // curve itself runs straight through it, since the sun's elevation
+            // really is continuous here.
+            Rectangle()
+                .fill(Theme.hairlineSoft)
+                .frame(width: 1, height: height + 8)
+                .position(x: 0, y: (height + 8) / 2)
+
+            ForEach(0..<24) { hour in
                 let x = width * (Double(hour) / 24)
 
                 Rectangle()

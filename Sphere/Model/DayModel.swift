@@ -1,95 +1,85 @@
 import Foundation
 import Observation
 
-/// The single screen's state. `focusHour` is what the wheel moves; `realNow`
-/// is what MENU returns to.
+/// The screen's state.
+///
+/// Time is one unbounded axis, not a day: `focusHour` counts hours from
+/// `anchor` (local midnight at launch), so turning the wheel past midnight
+/// carries into the next or previous day with no clamp and no second control.
+///
+/// Note the grid is a flat 24 hours per day. On the two DST days a year the
+/// arc will sit an hour off; the sun geometry itself stays correct because
+/// each day's `SolarDay` is built from a real `Date`.
 @Observable
 final class DayModel {
-    private(set) var day: SolarDay
+    let anchor: Date
+    let coordinate: Coordinate
+    let timeZone: TimeZone
+
+    /// Hours from `anchor`, unbounded in both directions.
+    var focusHour: Double
     private(set) var realNow: Date
 
-    /// Local decimal hour under the time dot, 0..24. The dot is pinned to the
-    /// centre of the screen, so this is also what the arc pans to.
-    var focusHour: Double
+    private var calendar: Calendar
+    private var solarDays: [Int: SolarDay] = [:]
 
-    var tasks: [DayTask] = []
-
-    /// One full rotation of the wheel covers four hours. Crossing a whole day
-    /// takes six turns, which is the intended pace.
+    /// One full rotation of the wheel covers four hours.
     static let hoursPerRotation: Double = 4
 
-    /// Width of the visible slice of the day.
+    /// Width of the visible slice.
     static let windowHours: Double = 3
 
-    /// A task names the title only while the dot is this close to it. There is
-    /// deliberately no "next upcoming task" fallback — the title is driven by
-    /// proximity, not by the schedule.
-    static let proximityWindowHours: Double = 15.0 / 60
-
-    init(date: Date = .now, coordinate: Coordinate = .chicago, timeZone: TimeZone = .autoupdatingCurrent) {
-        self.day = SolarDay(date: date, coordinate: coordinate, timeZone: timeZone)
-        self.realNow = date
-        self.focusHour = Self.decimalHour(of: date, in: timeZone)
+    init(now: Date = .now, coordinate: Coordinate = .chicago, timeZone: TimeZone = .autoupdatingCurrent) {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        self.calendar = calendar
+        self.coordinate = coordinate
+        self.timeZone = timeZone
+        self.anchor = calendar.startOfDay(for: now)
+        self.realNow = now
+        self.focusHour = now.timeIntervalSince(calendar.startOfDay(for: now)) / 3600
     }
 
-    var nowHour: Double {
-        Self.decimalHour(of: realNow, in: .autoupdatingCurrent)
+    // MARK: - Time
+
+    /// Which day the dot is on, counting from the anchor. Negative is the past.
+    var dayIndex: Int { Int(floor(focusHour / 24)) }
+
+    var focusDate: Date { anchor.addingTimeInterval(focusHour * 3600) }
+
+    var nowHour: Double { realNow.timeIntervalSince(anchor) / 3600 }
+
+    var isFocusedOnNow: Bool { abs(focusHour - nowHour) < 1.0 / 60 }
+
+    var isFocusedOnToday: Bool { dayIndex == Int(floor(nowHour / 24)) }
+
+    func date(forDayIndex index: Int) -> Date {
+        calendar.date(byAdding: .day, value: index, to: anchor) ?? anchor
     }
 
-    /// True when the dot is sitting on the real current time, within a minute.
-    var isFocusedOnNow: Bool {
-        abs(focusHour - nowHour) < 1.0 / 60
+    /// Cached per day, since the wheel crosses a boundary far less often than
+    /// it moves.
+    func solarDay(_ index: Int) -> SolarDay {
+        if let cached = solarDays[index] { return cached }
+        let day = SolarDay(date: date(forDayIndex: index), coordinate: coordinate, timeZone: timeZone)
+        solarDays[index] = day
+        return day
     }
 
-    /// Turn the wheel. `rotations` is signed: positive is clockwise, later.
+    /// Height of the curve at any absolute hour, picking the right day. This is
+    /// what makes the arc read as one continuous curve across midnight — the
+    /// sun's elevation genuinely is continuous there, so nothing needs a seam.
+    func normalizedElevation(atAbsoluteHour hour: Double) -> Double {
+        let index = Int(floor(hour / 24))
+        return solarDay(index).normalizedElevation(atHour: hour - Double(index) * 24)
+    }
+
     func scrub(byRotations rotations: Double) {
-        focusHour = (focusHour + rotations * Self.hoursPerRotation).clamped(to: 0...24)
+        focusHour += rotations * Self.hoursPerRotation
     }
 
     func returnToNow() {
         focusHour = nowHour
-    }
-
-    // MARK: - Tasks
-
-    /// The task under the dot, if the dot is within fifteen minutes of one.
-    /// Nearest wins when two are in range.
-    var activeTask: DayTask? {
-        tasks
-            .filter { abs($0.hour - focusHour) <= Self.proximityWindowHours }
-            .min { abs($0.hour - focusHour) < abs($1.hour - focusHour) }
-    }
-
-    @discardableResult
-    func addTask(label: String) -> DayTask? {
-        let trimmed = label.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-        let task = DayTask(hour: focusHour, label: trimmed)
-        tasks.append(task)
-        tasks.sort { $0.hour < $1.hour }
-        return task
-    }
-
-    /// A few seconds of slack, so tapping next while parked on a task moves to
-    /// the one after it rather than re-selecting where you already are.
-    private static let jumpEpsilon: Double = 1.0 / 600
-
-    var nextTask: DayTask? {
-        tasks.first { $0.hour > focusHour + Self.jumpEpsilon }
-    }
-
-    var previousTask: DayTask? {
-        tasks.last { $0.hour < focusHour - Self.jumpEpsilon }
-    }
-
-    /// Both jumps land on the task's hour exactly. They do nothing at the ends
-    /// of the list rather than wrapping around.
-    func jumpToNextTask() {
-        if let next = nextTask { focusHour = next.hour }
-    }
-
-    func jumpToPreviousTask() {
-        if let previous = previousTask { focusHour = previous.hour }
     }
 
     func tick(_ date: Date = .now) {
@@ -98,13 +88,49 @@ final class DayModel {
         if wasOnNow { focusHour = nowHour }
     }
 
-    private static func decimalHour(of date: Date, in timeZone: TimeZone) -> Double {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = timeZone
-        let parts = calendar.dateComponents([.hour, .minute, .second], from: date)
-        return Double(parts.hour ?? 0)
-            + Double(parts.minute ?? 0) / 60
-            + Double(parts.second ?? 0) / 3600
+    // MARK: - Events
+
+    var events: [CalendarEvent] = []
+
+    /// Only events with a place on the arc. All-day events have no hour and
+    /// belong somewhere else on screen.
+    var timedEvents: [CalendarEvent] { events.filter { !$0.isAllDay } }
+
+    var allDayEvents: [CalendarEvent] {
+        events.filter { $0.isAllDay && Int(floor($0.startHour / 24)) == dayIndex }
+    }
+
+    /// The event the dot is inside. Real calendars overlap constantly, so the
+    /// shortest one wins: a standup sitting inside a focus block is what you
+    /// are actually doing.
+    var activeEvent: CalendarEvent? {
+        timedEvents
+            .filter { $0.contains(focusHour) }
+            .min { $0.durationHours < $1.durationHours }
+    }
+
+    private static let jumpEpsilon: Double = 1.0 / 600
+
+    var nextEvent: CalendarEvent? {
+        timedEvents.first { $0.startHour > focusHour + Self.jumpEpsilon }
+    }
+
+    var previousEvent: CalendarEvent? {
+        timedEvents.last { $0.startHour < focusHour - Self.jumpEpsilon }
+    }
+
+    func jumpToNextEvent() {
+        if let next = nextEvent { focusHour = next.startHour }
+    }
+
+    func jumpToPreviousEvent() {
+        if let previous = previousEvent { focusHour = previous.startHour }
+    }
+
+    /// The span the arc can currently show, a day either side of the focus so
+    /// the window is never short of curve or events.
+    var loadedRange: (start: Date, end: Date) {
+        (date(forDayIndex: dayIndex - 1), date(forDayIndex: dayIndex + 2))
     }
 }
 

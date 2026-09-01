@@ -1,72 +1,102 @@
+import EventKit
 import SwiftUI
 
 struct ContentView: View {
     @State private var model = DayModel()
-    @State private var isAdding = false
-    @State private var draft = ""
-    @FocusState private var draftFocused: Bool
+    @State private var calendar = CalendarService()
+    @State private var editorStart: Date?
+    @State private var detailEvent: EKEvent?
 
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                header
-
-                ArcWindow(
-                    day: model.day,
-                    focusHour: model.focusHour,
-                    tasks: model.tasks,
-                    activeTaskID: model.activeTask?.id
-                )
-                .padding(.top, 40)
-
-                Spacer(minLength: 16)
-
-                if isAdding { addField }
-
-                ClickWheel(
-                    onRotate: { model.scrub(byRotations: $0) },
-                    onMenu: {
-                        closeAddField()
-                        springTo { model.returnToNow() }
-                    },
-                    onCentre: toggleAddField,
-                    onPrevious: { springTo { model.jumpToPreviousTask() } },
-                    onNext: { springTo { model.jumpToNextTask() } }
-                )
-                .padding(.top, 16)
-                .padding(.bottom, 24)
+            if calendar.access == .undetermined {
+                CalendarPriming {
+                    Task {
+                        await calendar.requestAccess()
+                        reload()
+                    }
+                }
+                .transition(.opacity)
+            } else {
+                day
             }
-            .padding(.vertical, 24)
+        }
+        .animation(.easeInOut(duration: 0.25), value: calendar.access)
+        .sheet(item: $editorStart) { start in
+            EventEditorSheet(store: calendar.store, start: start) {
+                editorStart = nil
+                reload()
+            }
+            .ignoresSafeArea()
+        }
+        .sheet(item: $detailEvent) { event in
+            EventDetailSheet(event: event) {
+                detailEvent = nil
+                reload()
+            }
+            .ignoresSafeArea()
         }
         .task {
+            reload()
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(30))
                 model.tick()
             }
         }
+        // Someone editing in Calendar.app would otherwise leave the arc stale.
+        .task {
+            for await _ in NotificationCenter.default.notifications(named: .EKEventStoreChanged) {
+                reload()
+            }
+        }
+        .onChange(of: model.dayIndex) { _, _ in reload() }
     }
 
-    // MARK: - Pieces
+    private var day: some View {
+        VStack(spacing: 0) {
+            header
+
+            ArcWindow(model: model)
+                .padding(.top, 40)
+
+            Spacer(minLength: 16)
+
+            ClickWheel(
+                onRotate: { model.scrub(byRotations: $0) },
+                onMenu: { springTo { model.returnToNow() } },
+                onCentre: { editorStart = model.focusDate },
+                onPrevious: { springTo { model.jumpToPreviousEvent() } },
+                onNext: { springTo { model.jumpToNextEvent() } }
+            )
+            .padding(.top, 16)
+            .padding(.bottom, 24)
+        }
+        .padding(.vertical, 24)
+    }
 
     private var header: some View {
         VStack(spacing: 6) {
-            // Within fifteen minutes of a task the title is that task's name.
-            // Outside it, the planetary hour's call to action takes over — that
-            // arrives in step 4, so the clock stands in for now.
-            Text(model.activeTask?.label ?? ArcContent.clock(model.focusHour))
-                .font(.display())
-                .foregroundStyle(Theme.ink)
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .contentTransition(.opacity)
-                .animation(.easeInOut(duration: 0.18), value: model.activeTask?.id)
+            Button {
+                openActiveEvent()
+            } label: {
+                // Inside an event, the title is that event. Outside one, the
+                // planetary hour's call to action takes over; that lands with
+                // the planet cards, so the clock stands in until then.
+                Text(model.activeEvent?.title ?? ArcContent.clock(hourOfDay))
+                    .font(.display())
+                    .foregroundStyle(Theme.ink)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .contentTransition(.opacity)
+            }
+            .buttonStyle(.plain)
+            .disabled(model.activeEvent == nil)
+            .animation(.easeInOut(duration: 0.18), value: model.activeEvent?.id)
 
-            Text(model.activeTask == nil
-                 ? (model.isFocusedOnNow ? Self.dayLine : "\(String(format: "%.1f", model.day.dayLengthHours)) hours of daylight")
-                 : ArcContent.clock(model.activeTask?.hour ?? model.focusHour))
+            Text(subtitle)
                 .font(.footnote)
                 .foregroundStyle(Theme.muted)
                 .monospacedDigit()
@@ -75,63 +105,49 @@ struct ContentView: View {
         .padding(.horizontal, 24)
     }
 
-    /// Creates a task at whatever hour the wheel is currently on.
-    private var addField: some View {
-        VStack(spacing: 6) {
-            TextField("Add something", text: $draft)
-                .font(.display(17))
-                .foregroundStyle(Theme.ink)
-                .focused($draftFocused)
-                .submitLabel(.done)
-                .onSubmit(commitDraft)
-                .multilineTextAlignment(.center)
+    private var hourOfDay: Double {
+        model.focusHour - Double(model.dayIndex) * 24
+    }
 
-            Rectangle()
-                .fill(Theme.hairlineSoft)
-                .frame(height: 1)
-
-            Text("at \(ArcContent.clock(model.focusHour))")
-                .font(.footnote)
-                .foregroundStyle(Theme.mutedLight)
-                .monospacedDigit()
+    /// Carries the day change, since the arc itself deliberately doesn't.
+    private var subtitle: String {
+        if let active = model.activeEvent {
+            return "\(ArcContent.clock(active.startHour - Double(model.dayIndex) * 24)) · \(Self.dayLine(model.focusDate))"
         }
-        .padding(.horizontal, 48)
-        .transition(.opacity)
+        return model.isFocusedOnToday ? Self.dayLine(model.focusDate)
+                                      : "\(Self.dayLine(model.focusDate)) · \(ArcContent.clock(hourOfDay))"
     }
 
     // MARK: - Actions
 
-    private func toggleAddField() {
-        if isAdding {
-            commitDraft()
-        } else {
-            withAnimation(.easeOut(duration: 0.2)) { isAdding = true }
-            draftFocused = true
-        }
+    private func reload() {
+        let range = model.loadedRange
+        calendar.load(from: range.start, to: range.end, anchor: model.anchor)
+        model.events = calendar.events
     }
 
-    private func commitDraft() {
-        model.addTask(label: draft)
-        closeAddField()
-    }
-
-    private func closeAddField() {
-        guard isAdding else { return }
-        draft = ""
-        draftFocused = false
-        withAnimation(.easeOut(duration: 0.2)) { isAdding = false }
+    private func openActiveEvent() {
+        guard let active = model.activeEvent,
+              let event = calendar.event(withIdentifier: active.eventIdentifier) else { return }
+        detailEvent = event
     }
 
     private func springTo(_ change: () -> Void) {
         withAnimation(.spring(response: 0.55, dampingFraction: 0.86), change)
     }
 
-    private static var dayLine: String {
+    private static func dayLine(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE, MMMM d"
-        return formatter.string(from: .now)
+        return formatter.string(from: date)
     }
 }
+
+extension Date: @retroactive Identifiable {
+    public var id: TimeInterval { timeIntervalSince1970 }
+}
+
+extension EKEvent: @retroactive Identifiable {}
 
 #Preview {
     ContentView()
