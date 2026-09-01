@@ -238,9 +238,16 @@ struct ContentView: View {
     /// Carries the day change, since the arc itself deliberately doesn't.
     private var subtitle: String {
         if let active = model.activeEvent {
-            // Date first, time last: the title already names the event, so the
-            // caption reads as context then the moment it happens.
-            return "\(Self.dayLine(model.focusDate)) · \(ArcContent.clock(active.startHour - Double(model.dayIndex) * 24))"
+            // Date first, times last: the title already names the event, so the
+            // caption reads as context then when it runs.
+            let offset = Double(model.dayIndex) * 24
+            let start = ArcContent.clock(active.startHour - offset)
+            // A zero-length event would otherwise read "1:24 PM – 1:24 PM".
+            guard active.durationHours > 1.0 / 60 else {
+                return "\(Self.dayLine(model.focusDate)) · \(start)"
+            }
+            let end = ArcContent.clock(active.endHour - offset)
+            return "\(Self.dayLine(model.focusDate)) · \(start) – \(end)"
         }
         return Self.dayLine(model.focusDate)
     }
