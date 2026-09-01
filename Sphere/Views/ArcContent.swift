@@ -12,6 +12,10 @@ struct ArcContent: View, Equatable {
     /// simply absent, so an empty sky always means "not known" rather than
     /// "clear".
     var skyHours: [SkyHour] = []
+    var skyStyle: SkyStyle = .layered
+    /// Seeds the deterministic wobble, so a shape is stable across redraws but
+    /// different from its neighbour.
+    var daySeed: Int = 0
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -43,16 +47,18 @@ struct ArcContent: View, Equatable {
                     .position(x: x, y: height + 20)
             }
 
-            // The sky band. Each icon sits a fixed distance out along the
-            // curve's normal and turns with its tangent, so the band runs
-            // parallel to the arc instead of sitting in a flat row above it.
-            ForEach(skyHours) { entry in
-                let placement = skyPlacement(atHour: Double(entry.hour) + 0.5)
-
-                WeatherIcon(condition: entry.condition, isDaylight: entry.isDaylight)
-                    .rotationEffect(.radians(placement.angle))
-                    .position(placement.point)
+            // The sky band. Everything in it is placed along the curve's
+            // normal and turned with its tangent, so the band runs parallel to
+            // the arc rather than sitting in a flat row above it.
+            Group {
+                switch skyStyle {
+                case .layered:
+                    SkyLayered(hours: skyHours, daySeed: daySeed, placement: skyPlacement(atHour:))
+                case .continuous:
+                    SkyContinuous(hours: skyHours, daySeed: daySeed, placement: skyPlacement(atHour:))
+                }
             }
+            .frame(width: width, height: height + Self.labelGutter, alignment: .topLeading)
 
             DayArcShape(day: day)
                 .stroke(Theme.ink, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))

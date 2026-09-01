@@ -83,6 +83,21 @@ which matters now the wheel reaches any date. WeatherKit becomes a second
 conformer the day Sphere needs a provider licensed for commercial use. That
 call is deferred with the monetization question.
 
+**Variety comes from data, not from randomness.** The band reads
+`cloud_cover_low`, `cloud_cover_mid`, `cloud_cover_high`, `precipitation` and
+`wind_speed_10m` alongside the condition code, all in the same call. Coverage
+sets a deck's width and lobe count, wind shears it, rainfall sets the number and
+length of the fall strokes, and altitude maps to distance out along the arc's
+normal, so cirrus draws above cumulus. Twelve consecutive "cloudy" hours in a
+real Chicago forecast produce eleven distinct profiles. Where a shape still
+needs to look placed rather than stamped it is perturbed by a hash of the day
+and hour, never by `random`, so nothing shimmers while the wheel turns.
+
+**Two band styles are under comparison**, switchable from the menu: `layered`
+draws each hour's decks separately, `continuous` draws one silhouette per deck
+across the whole day. The loser, the switch, and `SkyStyle` all come out
+together once a verdict lands.
+
 **Outside the forecast window the band shows nothing.** An empty sky always
 means "not known", never "clear". A failed fetch reads the same way.
 

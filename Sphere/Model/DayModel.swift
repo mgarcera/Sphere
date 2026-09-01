@@ -173,11 +173,16 @@ final class DayModel {
                 // Sample the middle of the hour, so an icon never lands on the
                 // midnight seam or an hour tick.
                 let when = midnight.addingTimeInterval(Double(hour) * 3600 + 1800)
-                guard let condition = weather.condition(at: when) else { return nil }
+                guard let reading = weather.hour(at: when) else { return nil }
                 return SkyHour(
                     hour: hour,
-                    condition: condition,
-                    isDaylight: day.elevation(atHour: Double(hour) + 0.5) >= 0
+                    condition: reading.condition,
+                    isDaylight: day.elevation(atHour: Double(hour) + 0.5) >= 0,
+                    cloudLow: reading.cloudLow,
+                    cloudMid: reading.cloudMid,
+                    cloudHigh: reading.cloudHigh,
+                    precipitation: reading.precipitation,
+                    wind: reading.wind
                 )
             }
         }

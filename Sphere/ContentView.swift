@@ -8,6 +8,9 @@ struct ContentView: View {
     @State private var weather = WeatherService()
     @State private var editorTarget: EventTarget?
     @State private var isMenuOpen = false
+    /// Temporary: two sky styles under comparison. Both this and the loser
+    /// come out once a verdict lands.
+    @AppStorage("skyStyle") private var skyStyle: SkyStyle = .layered
 
     var body: some View {
         ZStack {
@@ -40,7 +43,7 @@ struct ContentView: View {
             .ignoresSafeArea()
         }
         .sheet(isPresented: $isMenuOpen) {
-            DayMenu(model: model, calendar: calendar) { isMenuOpen = false }
+            DayMenu(model: model, calendar: calendar, skyStyle: $skyStyle) { isMenuOpen = false }
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
@@ -79,7 +82,7 @@ struct ContentView: View {
         VStack(spacing: 0) {
             header
 
-            ArcWindow(model: model)
+            ArcWindow(model: model, skyStyle: skyStyle)
                 .padding(.top, 40)
 
             Spacer(minLength: 16)
