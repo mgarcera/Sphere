@@ -126,12 +126,17 @@ hours ran a median of 2090. That takes the same year from 8 storm hours to 28,
 and 5 storm days to 13, with no frontal-rain hour wrongly promoted.
 
 **A thunderstorm merges the decks** into one tall form instead of three stacked
-ones, at heavier stroke weight. It is drawn as a TOWERING CUMULUS, the same
-convective cloud before it has spread an anvil: knobbly flanks and a lobed
-crown rather than a flat cap. The anvil version was correct meteorology and
-read as a diagram sitting inside a drawing. Height comes from the strongest
-CAPE in the run, so a marginal cell swells and a violent one climbs to cirrus
-level.
+ones, at heavier stroke weight. It is drawn as ONE TALL PUFFY CELL PER CONVECTIVE HOUR,
+spanning all three decks at once, knobbly the whole way round. Not an anvil:
+that was correct meteorology and read as a diagram inside a drawing. A long
+storm therefore draws a line of cells that cut into each other rather than one
+wide blob. CAPE pushes the top higher, but even the weakest convective hour
+reaches past the high deck.
+
+The cell's outline is parameterized by HEIGHT rather than by hour, which is
+what lets its flanks bulge and tuck back under themselves. A silhouette
+sampled per hour, as the ordinary decks are, can round a corner but never
+overhang one.
 
 **Clouds do not end on a vertical edge.** Both ends of a deck round from the
 base up to the lobe line over a short shoulder, since a straight drop reads as

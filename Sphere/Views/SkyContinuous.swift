@@ -51,10 +51,13 @@ struct SkyContinuous: View {
             // A cumulonimbus is not a low cloud, it is a tower that starts low
             // and spreads an anvil at cirrus height, so a storm merges the
             // three decks into one form instead of stacking them.
-            for run in runs(byHour, where: { $0.isConvective }) {
-                let tower = cumulonimbus(run, byHour: byHour)
-                context.fill(tower, with: ground)
-                context.stroke(tower, with: ink, style: SkyMarks.heavyStroke)
+            // One cell per convective hour rather than one blob per run, so a
+            // long storm reads as a line of cells. Each is filled before it is
+            // stroked, so neighbours cut into each other and cluster.
+            for entry in hours where entry.isConvective {
+                let cell = cumulonimbus(at: entry)
+                context.fill(cell, with: ground)
+                context.stroke(cell, with: ink, style: SkyMarks.heavyStroke)
             }
 
             for entry in hours where entry.hasLightning {
@@ -252,50 +255,46 @@ struct SkyContinuous: View {
         path.addQuadCurve(to: points[points.count - 1], control: points[points.count - 2])
     }
 
-    /// A towering cumulus: the same convective cloud before it has spread an
-    /// anvil. Tall and knobbly rather than flat-topped, because the anvil read
-    /// as a diagram sitting in a drawing.
+    /// One convective cell: a single cloud tall enough to occupy all three
+    /// decks at once, puffy the whole way round rather than tapering into a
+    /// crown, and certainly not an anvil.
     ///
-    /// Both flanks and the crown are lobed from the run's own seed, so two
-    /// storms are never the same tower. Height comes from the strongest CAPE
-    /// in the run, so a marginal cell is a swelling cumulus and a violent one
-    /// climbs to cirrus level.
-    private func cumulonimbus(_ run: ClosedRange<Int>, byHour: [Int: SkyHour]) -> Path {
-        let from = Double(run.lowerBound)
-        let to = Double(run.upperBound) + 1
-        let centre = (from + to) / 2
-        let halfSpan = (to - from) / 2
-        let seedBase = run.lowerBound &* 613
+    /// The outline is parameterized by HEIGHT, not by hour, which is what lets
+    /// the flanks bulge and tuck back under themselves. A silhouette sampled
+    /// per hour can only ever go up and across, so it can round a corner but
+    /// never overhang one.
+    private func cumulonimbus(at entry: SkyHour) -> Path {
+        let centre = Double(entry.hour) + 0.5
+        let seedBase = entry.hour &* 613
+        let base = SkyMarks.lowOffset - 12
+        // Always spans the three decks; stronger cells simply push higher.
+        let climb = CGFloat(min(max(entry.cape / 3_500, 0.95), 1.10))
+        let top = base + (SkyMarks.highOffset + 10 - base) * climb
+        let halfSpan = 0.34 * (0.86 + 0.28 * SkyMarks.jitter(daySeed, seedBase &+ 7))
 
-        let strength = run.compactMap { byHour[$0]?.cape }.max() ?? SkyHour.convectiveCAPE
-        let climb = CGFloat(min(max(strength / 3_500, 0.5), 1))
-        let top = SkyMarks.lowOffset + (SkyMarks.highOffset + 6 - SkyMarks.lowOffset) * climb
+        let steps = 26
 
-        let steps = 22
-
-        /// Widest a little above the base, tapering into a knobbly crown.
+        /// Broad most of the way up, doming over near the top. The knobbles are
+        /// what make it read as cauliflower rather than as a column.
         func halfWidth(_ u: Double, side: Int) -> Double {
-            let knob = SkyMarks.jitter(daySeed, seedBase &+ side &* 97 &+ Int(u * 14))
-            let profile = 0.42 + 0.6 * sin(.pi * pow(u, 0.78))
-            return halfSpan * profile * (0.82 + 0.36 * knob)
+            let knob = SkyMarks.jitter(daySeed, seedBase &+ side &* 97 &+ Int(u * 20))
+            let shoulder = 0.80
+            let profile: Double
+            if u < shoulder {
+                profile = 0.74 + 0.26 * sin(.pi * u / shoulder)
+            } else {
+                let v = min((u - shoulder) / (1 - shoulder), 0.96)
+                profile = 0.74 * sqrt(max(0, 1 - v * v))
+            }
+            return halfSpan * profile * (0.78 + 0.44 * knob)
         }
 
-        func out(_ u: Double) -> CGFloat {
-            SkyMarks.lowOffset + (top - SkyMarks.lowOffset) * CGFloat(u)
-        }
+        func out(_ u: Double) -> CGFloat { base + (top - base) * CGFloat(u) }
 
         var crest: [CGPoint] = []
         for step in 0...steps {
             let u = Double(step) / Double(steps)
             crest.append(point(hour: centre - halfWidth(u, side: 0), out: out(u)))
-        }
-        // Across the crown, so the top is a run of puffs rather than a cap.
-        for step in 0...4 {
-            let t = Double(step) / 4
-            let bump = SkyMarks.jitter(daySeed, seedBase &+ 401 &+ step)
-            let w = halfWidth(1, side: step % 2)
-            crest.append(point(hour: centre - w + 2 * w * t,
-                               out: top + CGFloat(bump) * 4))
         }
         for step in stride(from: steps, through: 0, by: -1) {
             let u = Double(step) / Double(steps)
@@ -305,12 +304,6 @@ struct SkyContinuous: View {
         var path = Path()
         path.move(to: crest[0])
         appendSmooth(Array(crest.dropFirst()), to: &path)
-
-        let backSteps = max(2, run.count * 3)
-        for step in stride(from: backSteps, through: 0, by: -1) {
-            let hour = from + (to - from) * Double(step) / Double(backSteps)
-            path.addLine(to: point(hour: hour, out: SkyMarks.lowOffset))
-        }
         path.closeSubpath()
         return path
     }
