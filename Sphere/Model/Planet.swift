@@ -15,14 +15,18 @@ enum Planet: String, CaseIterable, Identifiable {
         Color(displayName)
     }
 
-    /// Call-to-action shown as the default title text during this planet's hour.
-    /// The brief supplies Mars and Venus; the remaining five come from the
-    /// prototype's `PLANET_CTA` table, which has not been transferred yet.
-    var callToAction: String? {
+    /// Title text shown for the whole of this planet's hour — the screen's
+    /// default state, replaced only when the time dot comes within 15 minutes
+    /// of a task.
+    var callToAction: String {
         switch self {
-        case .mars:  "Mars hour. Take action."
-        case .venus: "Venus hour. Connect."
-        default:     nil
+        case .sun:     "Sun hour. Be Seen."
+        case .moon:    "Moon hour. Rest and reflect."
+        case .mercury: "Mercury hour. Reach out."
+        case .venus:   "Venus hour. Connect."
+        case .mars:    "Mars hour. Take action."
+        case .jupiter: "Jupiter hour. Think big."
+        case .saturn:  "Saturn hour. Get it done."
         }
     }
 }
