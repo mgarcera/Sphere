@@ -43,7 +43,12 @@ struct OpenMeteoProvider: WeatherProvider {
             .init(name: "forecast_days", value: String(Self.forecastDays)),
         ]
 
-        let (data, _) = try await URLSession.shared.data(from: components.url!)
+        let (data, response) = try await URLSession.shared.data(from: components.url!)
+        // A non-200 comes back as a JSON error object with no `hourly` key, so
+        // catching it here gives a clearer failure than a decoding error.
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
         let decoded = try JSONDecoder().decode(Response.self, from: data)
 
         let formatter = DateFormatter()
