@@ -74,6 +74,19 @@ final class DayModel {
         return solarDay(index).normalizedElevation(atHour: hour - Double(index) * 24)
     }
 
+    /// Degrees above the horizon at any absolute hour. Negative at night.
+    /// The dot reads this same number the arc's height comes from, so the two
+    /// can never disagree and sunrise needs no separate trigger: it is simply
+    /// where this crosses zero.
+    func elevationDegrees(atAbsoluteHour hour: Double) -> Double {
+        let index = Int(floor(hour / 24))
+        return solarDay(index).elevation(atHour: hour - Double(index) * 24)
+    }
+
+    var focusMoonPhase: MoonPhase { MoonPhase(date: focusDate) }
+
+    var focusSolarDay: SolarDay { solarDay(dayIndex) }
+
     func scrub(byRotations rotations: Double) {
         focusHour += rotations * Self.hoursPerRotation
     }

@@ -9,14 +9,6 @@ struct ArcContent: View, Equatable {
     let width: CGFloat
     let height: CGFloat
 
-    private var markers: [(hour: Double, label: String)] {
-        var result: [(Double, String)] = []
-        if let sunrise = day.sunrise { result.append((sunrise, "Sunrise")) }
-        result.append((day.solarNoon, "Midday"))
-        if let sunset = day.sunset { result.append((sunset, "Sunset")) }
-        return result
-    }
-
     var body: some View {
         ZStack(alignment: .topLeading) {
             Rectangle()
@@ -51,24 +43,6 @@ struct ArcContent: View, Equatable {
                 .stroke(Theme.ink, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
                 .frame(width: width, height: height)
 
-            ForEach(markers, id: \.label) { marker in
-                let point = DayArcShape.point(
-                    forHour: marker.hour,
-                    day: day,
-                    in: CGRect(x: 0, y: 0, width: width, height: height)
-                )
-
-                Circle()
-                    .fill(Theme.ink)
-                    .frame(width: 5, height: 5)
-                    .position(point)
-
-                Text(marker.label)
-                    .font(.footnote)
-                    .foregroundStyle(Theme.muted)
-                    .fixedSize()
-                    .position(x: point.x, y: point.y - 16)
-            }
         }
         .frame(width: width, height: height + Self.labelGutter, alignment: .topLeading)
     }

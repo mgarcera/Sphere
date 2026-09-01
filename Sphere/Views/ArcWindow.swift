@@ -6,6 +6,10 @@ import SwiftUI
 struct ArcWindow: View {
     let model: DayModel
     var arcHeight: CGFloat = 190
+    /// Headroom above the curve's peak. The dot is 42pt across at full ray
+    /// length, and at midsummer noon it sits on y = 0, so without this the rays
+    /// are clipped exactly when they are longest.
+    var topInset: CGFloat = 24
 
     var body: some View {
         GeometryReader { proxy in
@@ -15,7 +19,7 @@ struct ArcWindow: View {
             let originHour = Double(firstDay) * 24
             let centreX = proxy.size.width / 2
             let pan = centreX - (model.focusHour - originHour) * pointsPerHour
-            let dotY = arcHeight - arcHeight * model.normalizedElevation(atAbsoluteHour: model.focusHour)
+            let dotY = topInset + arcHeight - arcHeight * model.normalizedElevation(atAbsoluteHour: model.focusHour)
 
             ZStack(alignment: .topLeading) {
                 // Each day is its own cached layer, so only the set of three
@@ -28,7 +32,7 @@ struct ArcWindow: View {
                     }
                 }
                 .frame(width: dayWidth * 3, alignment: .topLeading)
-                .offset(x: pan)
+                .offset(x: pan, y: topInset)
 
                 EventLayer(
                     events: model.timedEvents,
@@ -39,28 +43,23 @@ struct ArcWindow: View {
                     activeID: model.activeEvent?.id,
                     elevation: { model.normalizedElevation(atAbsoluteHour: $0) }
                 )
-                .offset(x: pan)
+                .offset(x: pan, y: topInset)
 
                 Rectangle()
                     .fill(Theme.hairlineSoft)
-                    .frame(width: 1, height: max(0, arcHeight - dotY))
-                    .position(x: centreX, y: (arcHeight + dotY) / 2)
+                    .frame(width: 1, height: max(0, topInset + arcHeight - dotY))
+                    .position(x: centreX, y: (topInset + arcHeight + dotY) / 2)
 
-                // A ring of background sits under the dot so it stays legible
-                // wherever a capsule runs beneath it.
-                Circle()
-                    .fill(Theme.background)
-                    .frame(width: 20, height: 20)
-                    .position(x: centreX, y: dotY)
-
-                Circle()
-                    .fill(Theme.ink)
-                    .frame(width: 13, height: 13)
-                    .position(x: centreX, y: dotY)
+                TimeDot(
+                    elevationDegrees: model.elevationDegrees(atAbsoluteHour: model.focusHour),
+                    moon: model.focusMoonPhase,
+                    ceilingDegrees: model.focusSolarDay.seasonalCeiling
+                )
+                .position(x: centreX, y: dotY)
             }
-            .frame(width: proxy.size.width, height: arcHeight + ArcContent.labelGutter, alignment: .topLeading)
+            .frame(width: proxy.size.width, height: topInset + arcHeight + ArcContent.labelGutter, alignment: .topLeading)
             .clipped()
         }
-        .frame(height: arcHeight + ArcContent.labelGutter)
+        .frame(height: topInset + arcHeight + ArcContent.labelGutter)
     }
 }

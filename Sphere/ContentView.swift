@@ -4,13 +4,17 @@ import SwiftUI
 struct ContentView: View {
     @State private var model = DayModel()
     @State private var calendar = CalendarService()
-    @State private var editorStart: Date?
-    @State private var detailEvent: EKEvent?
+    @State private var editorTarget: EventTarget?
     @State private var isMenuOpen = false
 
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
+
+            TwilightBackground(
+                elevationDegrees: model.elevationDegrees(atAbsoluteHour: model.focusHour),
+                isMorning: model.focusHour - Double(model.dayIndex) * 24 < model.focusSolarDay.solarNoon
+            )
 
             if calendar.access == .undetermined {
                 CalendarPriming {
@@ -25,9 +29,9 @@ struct ContentView: View {
             }
         }
         .animation(.easeInOut(duration: 0.25), value: calendar.access)
-        .sheet(item: $editorStart) { start in
-            EventEditorSheet(store: calendar.store, start: start) {
-                editorStart = nil
+        .sheet(item: $editorTarget) { target in
+            EventEditorSheet(store: calendar.store, target: target) {
+                editorTarget = nil
                 reload()
             }
             .ignoresSafeArea()
@@ -36,13 +40,6 @@ struct ContentView: View {
             DayMenu(model: model, calendar: calendar) { isMenuOpen = false }
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
-        }
-        .sheet(item: $detailEvent) { event in
-            EventDetailSheet(event: event) {
-                detailEvent = nil
-                reload()
-            }
-            .ignoresSafeArea()
         }
         .task {
             reload()
@@ -74,7 +71,7 @@ struct ContentView: View {
                 onRotate: { model.scrub(byRotations: $0) },
                 onMenu: { isMenuOpen = true },
                 onNow: { springTo { model.returnToNow() } },
-                onCentre: { editorStart = model.focusDate },
+                onCentre: openEditor,
                 onPrevious: { springTo { model.jumpToPreviousEvent() } },
                 onNext: { springTo { model.jumpToNextEvent() } }
             )
@@ -87,7 +84,7 @@ struct ContentView: View {
     private var header: some View {
         VStack(spacing: 6) {
             Button {
-                openActiveEvent()
+                openEditor()
             } label: {
                 // Inside an event, the title is that event. Outside one, the
                 // planetary hour's call to action takes over; that lands with
@@ -135,10 +132,15 @@ struct ContentView: View {
         model.events = calendar.events
     }
 
-    private func openActiveEvent() {
-        guard let active = model.activeEvent,
-              let event = calendar.event(withIdentifier: active.eventIdentifier) else { return }
-        detailEvent = event
+    /// On an event, the centre button edits that event. Anywhere else it
+    /// starts a new one at the hour the wheel is on.
+    private func openEditor() {
+        if let active = model.activeEvent,
+           let event = calendar.event(withIdentifier: active.eventIdentifier) {
+            editorTarget = .existing(event)
+        } else {
+            editorTarget = .new(model.focusDate)
+        }
     }
 
     private func springTo(_ change: () -> Void) {
@@ -151,12 +153,6 @@ struct ContentView: View {
         return formatter.string(from: date)
     }
 }
-
-extension Date: @retroactive Identifiable {
-    public var id: TimeInterval { timeIntervalSince1970 }
-}
-
-extension EKEvent: @retroactive Identifiable {}
 
 #Preview {
     ContentView()

@@ -1,8 +1,9 @@
 import SwiftUI
 
-/// What MENU opens. Three things that have nowhere else to live: the way back
-/// to now, the way to another date, and the two lists the arc cannot hold —
-/// all-day events, which have no hour, and which calendars count.
+/// What MENU opens. Everything that has nowhere else to live: another date,
+/// all-day events (which have no hour, so the arc cannot hold them), which
+/// calendars count, and the sun's times now that the arc no longer labels
+/// them. The times are readings, not controls.
 struct DayMenu: View {
     let model: DayModel
     let calendar: CalendarService
@@ -13,9 +14,6 @@ struct DayMenu: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                nowRow
-                divider
-
                 HStack {
                     Text("Date")
                         .font(.subheadline)
@@ -43,6 +41,25 @@ struct DayMenu: View {
                             .padding(.vertical, 7)
                         }
                     }
+                }
+
+                divider
+                section("Sun") {
+                    let day = model.focusSolarDay
+                    reading("Sunrise", day.sunrise)
+                    reading("Midday", day.solarNoon)
+                    reading("Sunset", day.sunset)
+                    HStack {
+                        Text(model.focusMoonPhase.name)
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.ink)
+                        Spacer()
+                        Text("\(Int((model.focusMoonPhase.illuminated * 100).rounded()))% lit")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.muted)
+                            .monospacedDigit()
+                    }
+                    .padding(.vertical, 6)
                 }
 
                 if !calendar.sources.isEmpty {
@@ -79,27 +96,19 @@ struct DayMenu: View {
         }
     }
 
-    private var nowRow: some View {
-        Button {
-            withAnimation(.spring(response: 0.55, dampingFraction: 0.86)) {
-                model.returnToNow()
-            }
-            onDismiss()
-        } label: {
-            HStack {
-                Text("Now")
-                    .font(.display(19))
-                    .foregroundStyle(Theme.ink)
-                Spacer()
-                Text(ArcContent.clock(model.nowHour.truncatingRemainder(dividingBy: 24)))
-                    .font(.footnote)
-                    .foregroundStyle(Theme.muted)
-                    .monospacedDigit()
-            }
-            .contentShape(.rect)
-            .padding(.vertical, 14)
+    /// Information only. NOW on the wheel is what moves you.
+    private func reading(_ title: String, _ hour: Double?) -> some View {
+        HStack {
+            Text(title)
+                .font(.subheadline)
+                .foregroundStyle(Theme.ink)
+            Spacer()
+            Text(hour.map(ArcContent.clock) ?? "—")
+                .font(.footnote)
+                .foregroundStyle(Theme.muted)
+                .monospacedDigit()
         }
-        .buttonStyle(.plain)
+        .padding(.vertical, 6)
     }
 
     private var divider: some View {
