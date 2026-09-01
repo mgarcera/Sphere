@@ -59,14 +59,14 @@ struct ArcContent: View, Equatable {
     private static let markHalfWidth: CGFloat = 5.5
     private static let markDepth: CGFloat = 9
 
-    /// A solid wedge hanging from the timeline at each day boundary.
+    /// A solid wedge standing on the timeline at each day boundary.
     private var dayMark: some View {
         Path { path in
             let base = ArcGeometry.baseline(height)
             for x in [CGFloat(0), width] {
                 path.move(to: CGPoint(x: x - Self.markHalfWidth, y: base))
                 path.addLine(to: CGPoint(x: x + Self.markHalfWidth, y: base))
-                path.addLine(to: CGPoint(x: x, y: base + Self.markDepth))
+                path.addLine(to: CGPoint(x: x, y: base - Self.markDepth))
                 path.closeSubpath()
             }
         }
