@@ -125,9 +125,17 @@ separates convective from stratiform cleanly. A cumulonimbus draws at CAPE
 hours ran a median of 2090. That takes the same year from 8 storm hours to 28,
 and 5 storm days to 13, with no frontal-rain hour wrongly promoted.
 
-**A thunderstorm merges the decks.** A cumulonimbus is not a low cloud, it is a
-tower starting low and spreading an anvil at cirrus height, so storm hours draw
-one tall form instead of three stacked ones, at heavier stroke weight.
+**A thunderstorm merges the decks** into one tall form instead of three stacked
+ones, at heavier stroke weight. It is drawn as a TOWERING CUMULUS, the same
+convective cloud before it has spread an anvil: knobbly flanks and a lobed
+crown rather than a flat cap. The anvil version was correct meteorology and
+read as a diagram sitting inside a drawing. Height comes from the strongest
+CAPE in the run, so a marginal cell swells and a violent one climbs to cirrus
+level.
+
+**Clouds do not end on a vertical edge.** Both ends of a deck round from the
+base up to the lobe line over a short shoulder, since a straight drop reads as
+cut off rather than as a cloud edge.
 
 **Overlapping events: the shortest one names the title.** A standup sitting
 inside a focus block is what you are actually doing. Tested and confirmed.

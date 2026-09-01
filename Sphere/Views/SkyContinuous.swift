@@ -100,6 +100,16 @@ struct SkyContinuous: View {
             }
         }
 
+        /// Without this every deck over the same run drew the identical
+        /// outline, since the salt was built from the run alone.
+        var saltBase: Int {
+            switch self {
+            case .high: 0
+            case .mid: 5_003
+            case .low: 9_973
+            }
+        }
+
         func coverage(_ hour: SkyHour) -> Double {
             switch self {
             case .high: hour.cloudHigh
@@ -162,19 +172,28 @@ struct SkyContinuous: View {
         let to = Double(run.upperBound) + 1
         let plinth = deck.amplitude * 0.55
 
+        // A cloud that stops on a vertical edge reads as cut off. Both ends
+        // now round from the base up to the lobe line over a short shoulder.
+        let shoulder = min(0.16, (to - from) * 0.18)
+
         var path = Path()
         path.move(to: point(hour: from, out: deck.offset))
+        appendSmooth((1...4).map { step in
+            let t = Double(step) / 4
+            return point(hour: from + shoulder * t,
+                         out: deck.offset + plinth * CGFloat(sin(.pi / 2 * t)))
+        }, to: &path)
 
-        var hour = from
+        var hour = from + shoulder
         var index = 0
-        while hour < to - 1e-6 {
-            let salt = run.lowerBound &* 31 &+ index
+        while hour < to - shoulder - 1e-6 {
+            let salt = deck.saltBase &+ run.lowerBound &* 31 &+ index
             let widthRoll = SkyMarks.jitter(daySeed, salt)
             let heightRoll = SkyMarks.jitter(daySeed, salt &+ 911)
             let skewRoll = SkyMarks.jitter(daySeed, salt &+ 1_733)
             let microRoll = SkyMarks.jitter(daySeed, salt &+ 2_591)
 
-            let span = min(Self.lobeHours * (0.55 + 1.0 * widthRoll), to - hour)
+            let span = min(Self.lobeHours * (0.55 + 1.0 * widthRoll), to - shoulder - hour)
             let coverage = reading(byHour, at: hour + span / 2).map { deck.coverage($0) } ?? 0
             let peak = deck.amplitude * CGFloat(0.45 + coverage * 0.7) * CGFloat(0.8 + heightRoll * 0.5)
             // Barely off centre. Any more and the lobe becomes a slope.
@@ -200,7 +219,12 @@ struct SkyContinuous: View {
             index += 1
         }
 
-        path.addLine(to: point(hour: to, out: deck.offset))
+        appendSmooth((1...4).map { step in
+            let t = Double(step) / 4
+            return point(hour: to - shoulder + shoulder * t,
+                         out: deck.offset + plinth * CGFloat(cos(.pi / 2 * t)))
+        }, to: &path)
+
         let backSteps = max(2, run.count * 3)
         for step in stride(from: backSteps, through: 0, by: -1) {
             let h = from + (to - from) * Double(step) / Double(backSteps)
@@ -228,24 +252,59 @@ struct SkyContinuous: View {
         path.addQuadCurve(to: points[points.count - 1], control: points[points.count - 2])
     }
 
-    /// Base low, tower rising, anvil flaring flat at cirrus height.
+    /// A towering cumulus: the same convective cloud before it has spread an
+    /// anvil. Tall and knobbly rather than flat-topped, because the anvil read
+    /// as a diagram sitting in a drawing.
+    ///
+    /// Both flanks and the crown are lobed from the run's own seed, so two
+    /// storms are never the same tower. Height comes from the strongest CAPE
+    /// in the run, so a marginal cell is a swelling cumulus and a violent one
+    /// climbs to cirrus level.
     private func cumulonimbus(_ run: ClosedRange<Int>, byHour: [Int: SkyHour]) -> Path {
         let from = Double(run.lowerBound)
         let to = Double(run.upperBound) + 1
-        let flare = min(0.45, (to - from) * 0.3)
-        let top = SkyMarks.highOffset
-        let shoulder = SkyMarks.midOffset
+        let centre = (from + to) / 2
+        let halfSpan = (to - from) / 2
+        let seedBase = run.lowerBound &* 613
+
+        let strength = run.compactMap { byHour[$0]?.cape }.max() ?? SkyHour.convectiveCAPE
+        let climb = CGFloat(min(max(strength / 3_500, 0.5), 1))
+        let top = SkyMarks.lowOffset + (SkyMarks.highOffset + 6 - SkyMarks.lowOffset) * climb
+
+        let steps = 22
+
+        /// Widest a little above the base, tapering into a knobbly crown.
+        func halfWidth(_ u: Double, side: Int) -> Double {
+            let knob = SkyMarks.jitter(daySeed, seedBase &+ side &* 97 &+ Int(u * 14))
+            let profile = 0.42 + 0.6 * sin(.pi * pow(u, 0.78))
+            return halfSpan * profile * (0.82 + 0.36 * knob)
+        }
+
+        func out(_ u: Double) -> CGFloat {
+            SkyMarks.lowOffset + (top - SkyMarks.lowOffset) * CGFloat(u)
+        }
+
+        var crest: [CGPoint] = []
+        for step in 0...steps {
+            let u = Double(step) / Double(steps)
+            crest.append(point(hour: centre - halfWidth(u, side: 0), out: out(u)))
+        }
+        // Across the crown, so the top is a run of puffs rather than a cap.
+        for step in 0...4 {
+            let t = Double(step) / 4
+            let bump = SkyMarks.jitter(daySeed, seedBase &+ 401 &+ step)
+            let w = halfWidth(1, side: step % 2)
+            crest.append(point(hour: centre - w + 2 * w * t,
+                               out: top + CGFloat(bump) * 4))
+        }
+        for step in stride(from: steps, through: 0, by: -1) {
+            let u = Double(step) / Double(steps)
+            crest.append(point(hour: centre + halfWidth(u, side: 1), out: out(u)))
+        }
 
         var path = Path()
-        path.move(to: point(hour: from, out: SkyMarks.lowOffset))
-        path.addLine(to: point(hour: from + (to - from) * 0.1, out: shoulder))
-        // Anvil overhangs the tower on both sides.
-        path.addLine(to: point(hour: from - flare, out: top - 3))
-        path.addLine(to: point(hour: from - flare * 0.6, out: top + 2))
-        path.addLine(to: point(hour: to + flare * 0.6, out: top + 2))
-        path.addLine(to: point(hour: to + flare, out: top - 3))
-        path.addLine(to: point(hour: to - (to - from) * 0.1, out: shoulder))
-        path.addLine(to: point(hour: to, out: SkyMarks.lowOffset))
+        path.move(to: crest[0])
+        appendSmooth(Array(crest.dropFirst()), to: &path)
 
         let backSteps = max(2, run.count * 3)
         for step in stride(from: backSteps, through: 0, by: -1) {
