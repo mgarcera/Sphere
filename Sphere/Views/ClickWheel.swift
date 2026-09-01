@@ -9,12 +9,22 @@ struct ClickWheel: View {
     /// Signed rotations, positive clockwise. One whole turn is one unit.
     let onRotate: (Double) -> Void
     let onMenu: () -> Void
+    let onNow: () -> Void
     let onCentre: () -> Void
     let onPrevious: () -> Void
     let onNext: () -> Void
 
     static let diameter: CGFloat = 240
     private static let buttonDiameter: CGFloat = 92
+
+    /// A real tap drifts a few points under the thumb. Anything under about ten
+    /// was being read as the start of a turn, which is why the printed buttons
+    /// took several attempts. A rotation travels far, so it loses nothing.
+    private static let scrubThreshold: CGFloat = 10
+
+    /// Below the 44pt floor a target is missed as often as it is hit, and every
+    /// label here was smaller than that.
+    private static let hitTarget: CGFloat = 46
 
     private var outerRadius: CGFloat { Self.diameter / 2 }
     private var innerRadius: CGFloat { Self.buttonDiameter / 2 }
@@ -42,10 +52,8 @@ struct ClickWheel: View {
                 .overlay(Circle().strokeBorder(edge, lineWidth: 1))
                 .shadow(color: .black.opacity(0.06), radius: 10, y: 3)
                 .contentShape(.circle)
-                // minimumDistance keeps a stationary tap available to the MENU
-                // button stacked above; anything past a couple of points is a turn.
                 .gesture(
-                    DragGesture(minimumDistance: 2)
+                    DragGesture(minimumDistance: Self.scrubThreshold)
                         .onChanged { value in
                             let dx = value.location.x - outerRadius
                             let dy = value.location.y - outerRadius
@@ -55,6 +63,8 @@ struct ClickWheel: View {
 
                             let angle = atan2(dy, dx)
                             defer { lastAngle = angle }
+                            // The first sample only sets the reference, so
+                            // clearing the threshold never jumps time.
                             guard let previous = lastAngle else { return }
 
                             var delta = angle - previous
@@ -77,40 +87,35 @@ struct ClickWheel: View {
             }
             .buttonStyle(WheelButtonStyle())
 
-            Button(action: onMenu) {
-                Text("MENU")
-                    .font(.system(size: 11, weight: .semibold))
-                    .tracking(1.2)
-                    .foregroundStyle(label)
-                    .padding(8)
-            }
-            .buttonStyle(WheelButtonStyle())
-            .position(x: outerRadius, y: 26)
+            printedButton("MENU", action: onMenu)
+                .position(x: outerRadius, y: 26)
 
-            // These jump straight to the previous and next task's hour. They
+            printedButton("NOW", action: onNow)
+                .position(x: outerRadius, y: Self.diameter - 26)
+
+            // These jump straight to the previous and next event's start. They
             // are not a generic time nudge — the wheel already does that.
-            Button(action: onPrevious) {
-                Text("‹")
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(label)
-                    .padding(10)
-            }
-            .buttonStyle(WheelButtonStyle())
-            .position(x: 26, y: outerRadius)
+            printedButton("‹", size: 20, action: onPrevious)
+                .position(x: 26, y: outerRadius)
 
-            Button(action: onNext) {
-                Text("›")
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(label)
-                    .padding(10)
-            }
-            .buttonStyle(WheelButtonStyle())
-            .position(x: Self.diameter - 26, y: outerRadius)
+            printedButton("›", size: 20, action: onNext)
+                .position(x: Self.diameter - 26, y: outerRadius)
         }
         .frame(width: Self.diameter, height: Self.diameter)
     }
-}
 
+    private func printedButton(_ text: String, size: CGFloat = 11, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(text)
+                .font(.system(size: size, weight: size > 14 ? .medium : .semibold))
+                .tracking(size > 14 ? 0 : 1.2)
+                .foregroundStyle(label)
+                .frame(width: Self.hitTarget, height: Self.hitTarget)
+                .contentShape(.rect)
+        }
+        .buttonStyle(WheelButtonStyle())
+    }
+}
 
 /// Presses dim rather than scale — the wheel is meant to read as a solid
 /// object, and a growing button would break that.

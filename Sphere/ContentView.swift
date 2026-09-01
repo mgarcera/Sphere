@@ -73,6 +73,7 @@ struct ContentView: View {
             ClickWheel(
                 onRotate: { model.scrub(byRotations: $0) },
                 onMenu: { isMenuOpen = true },
+                onNow: { springTo { model.returnToNow() } },
                 onCentre: { editorStart = model.focusDate },
                 onPrevious: { springTo { model.jumpToPreviousEvent() } },
                 onNext: { springTo { model.jumpToNextEvent() } }
