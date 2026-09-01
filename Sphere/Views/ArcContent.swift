@@ -16,15 +16,23 @@ struct ArcContent: View, Equatable {
                 .frame(width: width, height: 1)
                 .position(x: width / 2, y: ArcGeometry.baseline(height))
 
-            // Midnight. Days are drawn edge to edge, so this is the seam — the
-            // curve itself runs straight through it, since the sun's elevation
-            // really is continuous here.
-            Rectangle()
-                .fill(Theme.hairlineSoft)
-                .frame(width: 1, height: height + 8)
-                .position(x: 0, y: ArcGeometry.baseline(height) - (height + 8) / 2 + 4)
+            // Midnight, marked on the timeline rather than ruled through the
+            // drawing. A vertical line contradicted the one thing the arc
+            // insists on, that the sun's elevation runs continuously through
+            // the day boundary.
+            //
+            // Drawn at BOTH ends of every day. Days sit edge to edge and each
+            // is clipped to its own width, so a boundary gets its left half
+            // from the day before it and its right half from the day after.
+            dayMark
 
-            ForEach(0..<24) { hour in
+            Text(Self.hourLabel(0))
+                .font(.footnote)
+                .foregroundStyle(Theme.mutedLighter)
+                .fixedSize()
+                .position(x: 0, y: ArcGeometry.baseline(height) + 20)
+
+            ForEach(1..<24) { hour in
                 let x = width * (Double(hour) / 24)
 
                 Rectangle()
@@ -48,6 +56,24 @@ struct ArcContent: View, Equatable {
     }
 
     /// "6 AM", "12 PM" — hour 24 reads as midnight again.
+    private static let markHalfWidth: CGFloat = 5.5
+    private static let markDepth: CGFloat = 9
+
+    /// A solid wedge hanging from the timeline at each day boundary.
+    private var dayMark: some View {
+        Path { path in
+            let base = ArcGeometry.baseline(height)
+            for x in [CGFloat(0), width] {
+                path.move(to: CGPoint(x: x - Self.markHalfWidth, y: base))
+                path.addLine(to: CGPoint(x: x + Self.markHalfWidth, y: base))
+                path.addLine(to: CGPoint(x: x, y: base + Self.markDepth))
+                path.closeSubpath()
+            }
+        }
+        .fill(Theme.ink)
+        .frame(width: width, height: ArcGeometry.totalHeight(height), alignment: .topLeading)
+    }
+
     static func hourLabel(_ hour: Double) -> String {
         let h24 = Int(hour) % 24
         let h12 = h24 % 12 == 0 ? 12 : h24 % 12
