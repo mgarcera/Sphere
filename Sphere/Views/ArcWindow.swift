@@ -5,6 +5,8 @@ import SwiftUI
 struct ArcWindow: View {
     let day: SolarDay
     let focusHour: Double
+    var tasks: [DayTask] = []
+    var activeTaskID: DayTask.ID?
     var arcHeight: CGFloat = 190
 
     var body: some View {
@@ -15,9 +17,20 @@ struct ArcWindow: View {
             let dotY = arcHeight - arcHeight * day.normalizedElevation(atHour: focusHour)
 
             ZStack(alignment: .topLeading) {
+                let pan = centreX - focusHour * pointsPerHour
+
                 ArcContent(day: day, width: fullWidth, height: arcHeight)
                     .equatable()
-                    .offset(x: centreX - focusHour * pointsPerHour)
+                    .offset(x: pan)
+
+                TaskLayer(
+                    tasks: tasks,
+                    day: day,
+                    width: fullWidth,
+                    height: arcHeight,
+                    activeTaskID: activeTaskID
+                )
+                .offset(x: pan)
 
                 // The dot and its drop line are the only things that move with
                 // focusHour, and both are cheap.
@@ -27,7 +40,7 @@ struct ArcWindow: View {
                     .position(x: centreX, y: (arcHeight + dotY) / 2)
 
                 Circle()
-                    .fill(Theme.taskActive)
+                    .fill(Theme.ink)
                     .frame(width: 9, height: 9)
                     .position(x: centreX, y: dotY)
             }

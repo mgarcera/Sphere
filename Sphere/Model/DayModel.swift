@@ -21,6 +21,11 @@ final class DayModel {
     /// Width of the visible slice of the day.
     static let windowHours: Double = 3
 
+    /// A task names the title only while the dot is this close to it. There is
+    /// deliberately no "next upcoming task" fallback — the title is driven by
+    /// proximity, not by the schedule.
+    static let proximityWindowHours: Double = 15.0 / 60
+
     init(date: Date = .now, coordinate: Coordinate = .chicago, timeZone: TimeZone = .autoupdatingCurrent) {
         self.day = SolarDay(date: date, coordinate: coordinate, timeZone: timeZone)
         self.realNow = date
@@ -43,6 +48,48 @@ final class DayModel {
 
     func returnToNow() {
         focusHour = nowHour
+    }
+
+    // MARK: - Tasks
+
+    /// The task under the dot, if the dot is within fifteen minutes of one.
+    /// Nearest wins when two are in range.
+    var activeTask: DayTask? {
+        tasks
+            .filter { abs($0.hour - focusHour) <= Self.proximityWindowHours }
+            .min { abs($0.hour - focusHour) < abs($1.hour - focusHour) }
+    }
+
+    @discardableResult
+    func addTask(label: String) -> DayTask? {
+        let trimmed = label.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let task = DayTask(hour: focusHour, label: trimmed)
+        tasks.append(task)
+        tasks.sort { $0.hour < $1.hour }
+        return task
+    }
+
+    /// A few seconds of slack, so tapping next while parked on a task moves to
+    /// the one after it rather than re-selecting where you already are.
+    private static let jumpEpsilon: Double = 1.0 / 600
+
+    var nextTask: DayTask? {
+        tasks.first { $0.hour > focusHour + Self.jumpEpsilon }
+    }
+
+    var previousTask: DayTask? {
+        tasks.last { $0.hour < focusHour - Self.jumpEpsilon }
+    }
+
+    /// Both jumps land on the task's hour exactly. They do nothing at the ends
+    /// of the list rather than wrapping around.
+    func jumpToNextTask() {
+        if let next = nextTask { focusHour = next.hour }
+    }
+
+    func jumpToPreviousTask() {
+        if let previous = previousTask { focusHour = previous.hour }
     }
 
     func tick(_ date: Date = .now) {
