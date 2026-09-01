@@ -82,10 +82,10 @@ struct ClickWheel: View {
             }
             .buttonStyle(WheelButtonStyle())
 
-            printedButton("NOW", action: onNow)
+            printedButton("MENU", action: onMenu)
                 .position(x: outerRadius, y: Self.labelInset)
 
-            printedButton("MENU", action: onMenu)
+            printedButton("NOW", action: onNow)
                 .position(x: outerRadius, y: Self.diameter - Self.labelInset)
 
             // These jump straight to the previous and next event's start. They
