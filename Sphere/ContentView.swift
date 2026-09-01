@@ -290,12 +290,15 @@ struct ContentView: View {
 
         // Critically damped, both here and on the reveal: a jump should land,
         // not settle.
-        withAnimation(.spring(response: 0.5, dampingFraction: 1)) {
+        //
+        // The reveal hangs off the animation's own completion rather than a
+        // timer. It was a 440ms guess at when a spring settles, which is not
+        // something to guess: `.removed` fires when the pan has actually
+        // finished, so the capsule can never appear while the arc is still
+        // moving under it.
+        withAnimation(.spring(response: 0.5, dampingFraction: 1), completionCriteria: .removed) {
             model.focusHour = event.startHour
-        }
-
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(440))
+        } completion: {
             withAnimation(.easeOut(duration: 0.22)) { suppressedEventID = nil }
         }
     }
