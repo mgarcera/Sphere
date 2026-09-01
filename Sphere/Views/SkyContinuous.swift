@@ -57,11 +57,11 @@ struct SkyContinuous: View {
             for entry in hours where entry.isConvective {
                 let cell = cumulonimbus(at: entry)
                 context.fill(cell, with: ground)
-                context.stroke(cell, with: ink, style: SkyMarks.heavyStroke)
+                context.stroke(cell, with: ink, style: SkyMarks.stroke)
             }
 
             for entry in hours where entry.hasLightning {
-                context.stroke(strike(at: entry), with: ink, style: SkyMarks.heavyStroke)
+                context.stroke(strike(at: entry), with: ink, style: SkyMarks.stroke)
             }
 
             for run in runs(byHour, where: { $0.condition == .fog }) {
@@ -255,55 +255,44 @@ struct SkyContinuous: View {
         path.addQuadCurve(to: points[points.count - 1], control: points[points.count - 2])
     }
 
-    /// One convective cell: a single cloud tall enough to occupy all three
-    /// decks at once, puffy the whole way round rather than tapering into a
-    /// crown, and certainly not an anvil.
+    /// A storm cloud: bigger and puffier than the decks, and nothing more.
     ///
-    /// The outline is parameterized by HEIGHT, not by hour, which is what lets
-    /// the flanks bulge and tuck back under themselves. A silhouette sampled
-    /// per hour can only ever go up and across, so it can round a corner but
-    /// never overhang one.
+    /// Built radially rather than as a profile walked from base to top, which
+    /// is both far simpler and inherently puffy: every point on the outline is
+    /// a radius from one centre, so the lobes bulge and undercut on their own
+    /// instead of needing a construction that allows it. Two sine harmonics at
+    /// seeded phases give the cauliflower edge.
     private func cumulonimbus(at entry: SkyHour) -> Path {
-        let centre = Double(entry.hour) + 0.5
-        let seedBase = entry.hour &* 613
-        let base = SkyMarks.lowOffset - 12
-        // Always spans the three decks; stronger cells simply push higher.
-        let climb = CGFloat(min(max(entry.cape / 3_500, 0.95), 1.10))
-        let top = base + (SkyMarks.highOffset + 10 - base) * climb
-        let halfSpan = 0.34 * (0.86 + 0.28 * SkyMarks.jitter(daySeed, seedBase &+ 7))
+        let seed = entry.hour &* 613
+        let base = SkyMarks.lowOffset - 14
+        let top = SkyMarks.highOffset + 12
 
-        let steps = 26
+        // Bigger storms are a little bigger. That is the whole of the physics.
+        let scale = CGFloat(0.9 + 0.2 * min(entry.cape / 4_000, 1))
+        let centreOut = (base + top) / 2
+        let radiusOut = (top - base) / 2 * scale
+        let radiusHours = 0.34 * (0.88 + 0.24 * SkyMarks.jitter(daySeed, seed &+ 7)) * Double(scale)
 
-        /// Broad most of the way up, doming over near the top. The knobbles are
-        /// what make it read as cauliflower rather than as a column.
-        func halfWidth(_ u: Double, side: Int) -> Double {
-            let knob = SkyMarks.jitter(daySeed, seedBase &+ side &* 97 &+ Int(u * 20))
-            let shoulder = 0.80
-            let profile: Double
-            if u < shoulder {
-                profile = 0.74 + 0.26 * sin(.pi * u / shoulder)
-            } else {
-                let v = min((u - shoulder) / (1 - shoulder), 0.96)
-                profile = 0.74 * sqrt(max(0, 1 - v * v))
-            }
-            return halfSpan * profile * (0.78 + 0.44 * knob)
-        }
+        let lobes = 6.0 + (SkyMarks.jitter(daySeed, seed &+ 11) * 3).rounded()
+        let phase = SkyMarks.jitter(daySeed, seed &+ 13) * 2 * .pi
+        let phase2 = SkyMarks.jitter(daySeed, seed &+ 17) * 2 * .pi
 
-        func out(_ u: Double) -> CGFloat { base + (top - base) * CGFloat(u) }
-
-        var crest: [CGPoint] = []
+        let steps = 72
+        var outline: [CGPoint] = []
         for step in 0...steps {
-            let u = Double(step) / Double(steps)
-            crest.append(point(hour: centre - halfWidth(u, side: 0), out: out(u)))
-        }
-        for step in stride(from: steps, through: 0, by: -1) {
-            let u = Double(step) / Double(steps)
-            crest.append(point(hour: centre + halfWidth(u, side: 1), out: out(u)))
+            let angle = Double(step) / Double(steps) * 2 * .pi
+            let bump = 1
+                + 0.16 * sin(lobes * angle + phase)
+                + 0.07 * sin(lobes * 2 * angle + phase2)
+            outline.append(point(
+                hour: Double(entry.hour) + 0.5 + radiusHours * bump * cos(angle),
+                out: centreOut + radiusOut * CGFloat(bump) * CGFloat(sin(angle))
+            ))
         }
 
         var path = Path()
-        path.move(to: crest[0])
-        appendSmooth(Array(crest.dropFirst()), to: &path)
+        path.move(to: outline[0])
+        appendSmooth(Array(outline.dropFirst()), to: &path)
         path.closeSubpath()
         return path
     }

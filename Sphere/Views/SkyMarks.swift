@@ -8,7 +8,6 @@ import SwiftUI
 /// the wheel turns.
 enum SkyMarks {
     static let stroke = StrokeStyle(lineWidth: 1.3, lineCap: .round, lineJoin: .round)
-    static let heavyStroke = StrokeStyle(lineWidth: 1.9, lineCap: .round, lineJoin: .round)
 
     /// The sky is a co-equal element, not a backdrop: it holds the atmosphere
     /// half of the name while the capsules hold the work-and-social half. It
