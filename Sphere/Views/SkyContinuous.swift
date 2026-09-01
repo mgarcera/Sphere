@@ -13,6 +13,7 @@ import SwiftUI
 struct SkyContinuous: View {
     let hours: [SkyHour]
     let daySeed: Int
+    var shape: SkyShape = .lobed
     let placement: (Double) -> (point: CGPoint, angle: Double)
 
     /// Roughly a third of an hour per lobe, which is a cloud-sized bump at the
@@ -37,9 +38,15 @@ struct SkyContinuous: View {
             for deck in [Deck.high, .mid, .low] {
                 for run in runs(byHour, where: { deck.coverage($0) >= SkyHour.layerThreshold
                                                  && !stormHours.contains($0.hour) }) {
-                    let path = silhouette(run, deck: deck, byHour: byHour)
-                    context.fill(path, with: ground)
-                    context.stroke(path, with: ink, style: SkyMarks.stroke)
+                    switch shape {
+                    case .lobed:
+                        let path = lobedSilhouette(run, deck: deck, byHour: byHour)
+                        context.fill(path, with: ground)
+                        context.stroke(path, with: ink, style: SkyMarks.stroke)
+                    case .circles:
+                        drawCircleDeck(run, deck: deck, byHour: byHour,
+                                       in: context, ink: ink, ground: ground)
+                    }
                 }
             }
 
@@ -130,40 +137,131 @@ struct SkyContinuous: View {
         return result
     }
 
-    /// A closed body: scalloped along the top, flat along the base.
-    private func silhouette(_ run: ClosedRange<Int>, deck: Deck, byHour: [Int: SkyHour]) -> Path {
+    /// A closed body, scalloped along the top and flat along the base.
+    ///
+    /// Three things keep it off a decorative border. Lobe WIDTH varies, not
+    /// just height: uniform width is what read as a repeating pattern, more
+    /// than uniform height ever did. Each lobe peaks off-centre so it leans.
+    /// And a second, smaller octave rides the big lobes, because two scales of
+    /// detail is most of what separates a cloud from a scallop.
+    private func lobedSilhouette(_ run: ClosedRange<Int>, deck: Deck, byHour: [Int: SkyHour]) -> Path {
         let from = Double(run.lowerBound)
         let to = Double(run.upperBound) + 1
-        let lobes = max(1, Int(((to - from) / Self.lobeHours).rounded()))
-        let lobeSpan = (to - from) / Double(lobes)
+        let plinth = deck.amplitude * 0.3
 
         var path = Path()
         path.move(to: point(hour: from, out: deck.offset))
 
-        for lobe in 0..<lobes {
-            let lobeStart = from + lobeSpan * Double(lobe)
-            let coverage = reading(byHour, at: lobeStart + lobeSpan / 2).map { deck.coverage($0) } ?? 0
-            let wobble = SkyMarks.jitter(daySeed, run.lowerBound &* 31 &+ lobe) - 0.5
-            let peak = deck.amplitude * CGFloat(0.35 + coverage) * CGFloat(1 + wobble * 0.5)
-            // A plinth under the lobes so the top scallops without the body
-            // pinching shut between them.
-            let plinth = deck.amplitude * 0.3
+        var hour = from
+        var index = 0
+        while hour < to - 1e-6 {
+            let salt = run.lowerBound &* 31 &+ index
+            let widthRoll = SkyMarks.jitter(daySeed, salt)
+            let heightRoll = SkyMarks.jitter(daySeed, salt &+ 911)
+            let skewRoll = SkyMarks.jitter(daySeed, salt &+ 1_733)
+            let microRoll = SkyMarks.jitter(daySeed, salt &+ 2_591)
 
-            let steps = 7
+            let span = min(Self.lobeHours * (0.5 + 1.1 * widthRoll), to - hour)
+            let coverage = reading(byHour, at: hour + span / 2).map { deck.coverage($0) } ?? 0
+            let peak = deck.amplitude * CGFloat(0.35 + coverage) * CGFloat(0.7 + heightRoll * 0.8)
+            // Peak position inside the lobe: 0.5 is symmetric, away from it leans.
+            let skew = 0.28 + 0.44 * skewRoll
+            let microCycles = 2.0 + (microRoll * 2).rounded()
+            let microAmp = peak * 0.22
+
+            let steps = 9
             for step in 1...steps {
                 let t = Double(step) / Double(steps)
-                let hour = lobeStart + lobeSpan * t
-                let bulge = plinth + peak * CGFloat(sin(.pi * t))
-                path.addLine(to: point(hour: hour, out: deck.offset + bulge))
+                // Warp t so the crest lands at `skew` rather than the middle.
+                let warped = t < skew ? 0.5 * t / skew : 0.5 + 0.5 * (t - skew) / (1 - skew)
+                let big = peak * CGFloat(sin(.pi * warped))
+                let micro = microAmp * CGFloat(sin(.pi * microCycles * t + microRoll * 6.28)) * CGFloat(sin(.pi * t))
+                path.addLine(to: point(hour: hour + span * t, out: deck.offset + plinth + big + micro))
             }
+
+            hour += span
+            index += 1
         }
 
         path.addLine(to: point(hour: to, out: deck.offset))
-        // Back along the base.
-        let backSteps = max(2, run.count * 3)
-        for step in stride(from: backSteps, through: 0, by: -1) {
-            let hour = from + (to - from) * Double(step) / Double(backSteps)
-            path.addLine(to: point(hour: hour, out: deck.offset))
+        for step in stride(from: max(2, run.count * 3), through: 0, by: -1) {
+            let h = from + (to - from) * Double(step) / Double(max(2, run.count * 3))
+            path.addLine(to: point(hour: h, out: deck.offset))
+        }
+        path.closeSubpath()
+        return path
+    }
+
+    /// The other construction: a run of overlapping circles of varying radius,
+    /// the way a drawn cloud is actually built. The cusps fall out of the
+    /// geometry instead of being jittered in.
+    ///
+    /// The outline is the union's boundary, drawn by filling the union in ink
+    /// and then filling a shrunk copy in the background, which leaves a ring.
+    /// Stroking the compound path directly would draw every interior arc.
+    private func drawCircleDeck(_ run: ClosedRange<Int>, deck: Deck, byHour: [Int: SkyHour],
+                                in context: GraphicsContext,
+                                ink: GraphicsContext.Shading, ground: GraphicsContext.Shading) {
+        let from = Double(run.lowerBound)
+        let to = Double(run.upperBound) + 1
+        let weight = SkyMarks.stroke.lineWidth
+
+        var outer = Path()
+        var inner = Path()
+        var hour = from
+        var index = 0
+
+        while hour < to - 1e-6 {
+            let salt = run.lowerBound &* 47 &+ index
+            let radiusRoll = SkyMarks.jitter(daySeed, salt)
+            let liftRoll = SkyMarks.jitter(daySeed, salt &+ 613)
+            let coverage = reading(byHour, at: hour).map { deck.coverage($0) } ?? 0
+
+            let radius = deck.amplitude * CGFloat(0.42 + coverage * 0.7) * CGFloat(0.6 + radiusRoll * 0.9)
+            let lift = radius * CGFloat(0.35 + liftRoll * 0.45)
+            let centre = point(hour: hour, out: deck.offset + lift)
+
+            outer.addEllipse(in: CGRect(x: centre.x - radius, y: centre.y - radius,
+                                        width: radius * 2, height: radius * 2))
+            let shrunk = max(radius - weight, 0.5)
+            inner.addEllipse(in: CGRect(x: centre.x - shrunk, y: centre.y - shrunk,
+                                        width: shrunk * 2, height: shrunk * 2))
+
+            // Circles overlap by roughly half so the union stays continuous.
+            hour += Self.lobeHours * (0.34 + 0.4 * radiusRoll)
+            index += 1
+        }
+
+        // Clip to the sky side of the base, so the union gets a flat underside
+        // rather than a row of bulges.
+        context.drawLayer { layer in
+            layer.clip(to: skySide(from: from - 0.6, to: to + 0.6, base: deck.offset))
+            layer.fill(outer, with: ink, style: FillStyle(eoFill: false))
+            layer.fill(inner, with: ground, style: FillStyle(eoFill: false))
+        }
+
+        var base = Path()
+        let steps = max(2, run.count * 4)
+        for step in 0...steps {
+            let h = from + (to - from) * Double(step) / Double(steps)
+            let position = point(hour: h, out: deck.offset)
+            if step == 0 { base.move(to: position) } else { base.addLine(to: position) }
+        }
+        context.stroke(base, with: ink, style: SkyMarks.stroke)
+    }
+
+    /// Everything outward of the base line across an hour span.
+    private func skySide(from: Double, to: Double, base: CGFloat) -> Path {
+        var path = Path()
+        let steps = max(4, Int((to - from) * 6))
+        for step in 0...steps {
+            let h = from + (to - from) * Double(step) / Double(steps)
+            let position = point(hour: h, out: base)
+            if step == 0 { path.move(to: position) } else { path.addLine(to: position) }
+        }
+        for step in stride(from: steps, through: 0, by: -1) {
+            let h = from + (to - from) * Double(step) / Double(steps)
+            path.addLine(to: point(hour: h, out: base + 140))
         }
         path.closeSubpath()
         return path

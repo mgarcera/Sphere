@@ -8,6 +8,7 @@ struct DayMenu: View {
     let model: DayModel
     let calendar: CalendarService
     let location: LocationService
+    @Binding var skyShape: SkyShape
     let onDismiss: () -> Void
 
     @State private var pickedDate: Date = .now
@@ -101,6 +102,17 @@ struct DayMenu: View {
                             .monospacedDigit()
                     }
                     .padding(.vertical, 6)
+                }
+
+                divider
+                section("Cloud shape") {
+                    Picker("Cloud shape", selection: $skyShape) {
+                        ForEach(SkyShape.allCases) { shape in
+                            Text(shape.title).tag(shape)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.vertical, 4)
                 }
 
                 if !calendar.sources.isEmpty {
