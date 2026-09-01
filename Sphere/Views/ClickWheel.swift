@@ -14,6 +14,10 @@ struct ClickWheel: View {
     let onPrevious: () -> Void
     let onNext: () -> Void
     var style: WheelStyle = .chrome
+    /// The header's own colours, so the control is drawn in the same ink as
+    /// the type above it.
+    var lineColor: Color = Theme.ink
+    var labelColor: Color = Theme.muted
 
     static let diameter: CGFloat = 240
     private static let buttonDiameter: CGFloat = 92
@@ -44,7 +48,7 @@ struct ClickWheel: View {
         endPoint: .bottom
     )
     private let edge = Theme.Wheel.edge
-    private var label: Color { style == .chrome ? Theme.Wheel.label : Theme.ink }
+    private var label: Color { labelColor }
 
     var body: some View {
         ZStack {
@@ -57,7 +61,7 @@ struct ClickWheel: View {
                 } else {
                     // Same weight as the arc, so the control is drawn in the
                     // same hand as everything else on the screen.
-                    Circle().strokeBorder(Theme.ink, lineWidth: 1.5)
+                    Circle().strokeBorder(lineColor, lineWidth: 1.5)
                 }
             }
                 .contentShape(.circle)
@@ -95,17 +99,17 @@ struct ClickWheel: View {
                             .overlay(Circle().strokeBorder(edge, lineWidth: 1))
                             .shadow(color: .black.opacity(0.05), radius: 4, y: 1)
                     } else {
-                        Circle().strokeBorder(Theme.ink, lineWidth: 1.5)
+                        Circle().strokeBorder(lineColor, lineWidth: 1.5)
                     }
                 }
                 .frame(width: Self.buttonDiameter, height: Self.buttonDiameter)
             }
             .buttonStyle(WheelButtonStyle())
 
-            printedButton("MENU", action: onMenu)
+            printedButton("NOW", action: onNow)
                 .position(x: outerRadius, y: 26)
 
-            printedButton("NOW", action: onNow)
+            printedButton("MENU", action: onMenu)
                 .position(x: outerRadius, y: Self.diameter - 26)
 
             // These jump straight to the previous and next event's start. They

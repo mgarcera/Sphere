@@ -107,7 +107,9 @@ struct ContentView: View {
                 onCentre: openEditor,
                 onPrevious: { springTo { model.jumpToPreviousEvent() } },
                 onNext: { springTo { model.jumpToNextEvent() } },
-                style: wheelStyle
+                style: wheelStyle,
+                lineColor: wheelLine,
+                labelColor: wheelLabel
             )
             .padding(.top, 16)
             .padding(.bottom, 24)
@@ -162,6 +164,20 @@ struct ContentView: View {
     private var captionColor: Color {
         guard effectiveScheme == .light else { return Theme.muted }
         return ContrastHold.color(ContrastHold.muted, target: Self.captionContrast, on: headerLuminance)
+    }
+
+    /// The wheel gets the same treatment as the header, but measured against
+    /// its OWN ground. The wash clears well above it, so the wheel always sits
+    /// on plain background; handing it the header's colours directly would turn
+    /// it white on white the moment a storm flipped the title.
+    private var wheelLine: Color {
+        guard effectiveScheme == .light else { return Theme.ink }
+        return ContrastHold.color(ContrastHold.ink, target: Self.titleContrast, on: 1)
+    }
+
+    private var wheelLabel: Color {
+        guard effectiveScheme == .light else { return Theme.muted }
+        return ContrastHold.color(ContrastHold.muted, target: Self.captionContrast, on: 1)
     }
 
     private var isMorning: Bool {
