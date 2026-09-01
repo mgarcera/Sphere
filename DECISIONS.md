@@ -178,7 +178,17 @@ composites to a light grey that dark ink reads on at 8:1, while a storm scores
 all, because any blend puts the glyphs mid-grey on a mid-grey ground; measured,
 a crossfade bottoms out at 1.00:1 while a storm rolls in. The threshold sits
 where dark and light ink measure equal, 3.79:1 each, so neither side of the flip
-is the weak one. Settled states measure 15:1 clear, 8:1 heavy rain, 5.6:1 storm.
+is the weak one. The flip is biased slightly earlier than the measured optimum, to 0.26, because
+the caption is what disappears first and should be light by the time it does.
+
+**The caption darkens before it flips.** `#8A8A8A` is a light grey whose
+luminance passes straight THROUGH the wash's, so it fell to 1.8:1 in medium rain
+and to literally 1:1 where the two crossed. Flipping earlier alone does not fix
+that, since both sides of the flip are weak there. It now darkens toward the ink
+as the ground darkens, moving away from the background rather than into it, and
+flips only once light text wins outright. Settled states: title 15:1 clear,
+8.0:1 heavy rain, 5.6:1 storm; caption 3.5:1, 6.2:1, 4.5:1, worst 2.7:1 exactly
+at the flip against 1.0:1 before.
 
 **All the washes share one set of stops**, weighted to the top of the screen and
 gone before the arc block, so twilight reads as sky in the same way weather

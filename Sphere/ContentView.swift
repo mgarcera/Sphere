@@ -137,7 +137,7 @@ struct ContentView: View {
 
             Text(subtitle)
                 .font(.footnote)
-                .foregroundStyle(onWash(Theme.muted))
+                .foregroundStyle(captionColor)
                 .monospacedDigit()
         }
         .frame(maxWidth: .infinity)
@@ -161,24 +161,40 @@ struct ContentView: View {
     /// This switches on the MEASURED luminance under the header, not on how
     /// much wash there is. Those are different: heavy rain scores 0.5 on amount
     /// yet composites to a light grey that dark ink reads on at 8:1, while a
-    /// storm scores 0.78 and composites to near-black. Keying on amount put the
-    /// text half-way to white in heavy rain, at 1:1 against its own background.
+    /// storm scores 0.78 and composites to near-black.
     private func onWash(_ base: Color) -> Color {
         guard effectiveScheme == .light else { return base }
         return base.mix(with: Theme.background, by: washSwitch)
     }
 
-    /// A hard flip, not a fade. Any blend puts the glyphs mid-grey on a
-    /// mid-grey ground: measured, a crossfade bottoms out at 1.00:1 while a
-    /// storm rolls in, which is invisible. Flipping outright is never worse
-    /// than the better of the two colours.
-    ///
-    /// The threshold is where dark ink and light ink measure equally, 3.79:1
-    /// each, so neither side of the flip is the weak one.
-    private var washSwitch: Double {
+    /// The caption is the one that vanishes, because #8A8A8A is a light grey
+    /// whose luminance passes straight THROUGH the wash's: measured against
+    /// medium rain it fell to 1.8:1 and at the crossing point it is literally
+    /// 1:1. Flipping earlier alone does not fix that, since both sides of the
+    /// flip are weak there. So it darkens toward the ink as the ground darkens,
+    /// moving away from the background rather than into it, and only flips once
+    /// the ground is dark enough for light text to win outright.
+    private var captionColor: Color {
+        guard effectiveScheme == .light else { return Theme.muted }
+        if headerLuminance < Self.flipLuminance {
+            // Not pure white: it stays subordinate to the title.
+            return Theme.background.mix(with: Theme.ink, by: 0.12)
+        }
+        let darkening = min(max((1 - headerLuminance) / 0.6, 0), 1)
+        return Theme.muted.mix(with: Theme.ink, by: darkening)
+    }
+
+    private var headerLuminance: Double {
         let sky = model.weather(atAbsoluteHour: model.focusHour)
-        let luminance = WeatherWash.topLuminance(precipitation: sky.precipitation, lightning: sky.lightning)
-        return luminance < 0.227 ? 1 : 0
+        return WeatherWash.topLuminance(precipitation: sky.precipitation, lightning: sky.lightning)
+    }
+
+    /// Biased earlier than the measured optimum of 0.20, deliberately: the
+    /// caption is the one that disappears first and it should be white by then.
+    private static let flipLuminance: Double = 0.26
+
+    private var washSwitch: Double {
+        headerLuminance < Self.flipLuminance ? 1 : 0
     }
 
     private var hourOfDay: Double {
