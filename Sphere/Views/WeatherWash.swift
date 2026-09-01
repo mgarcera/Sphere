@@ -23,12 +23,37 @@ struct WeatherWash: View {
         min(precipitation / 2.5, 1) * (1 - min(lightning, 1) * 0.6)
     }
 
-    /// How much the top of the screen has been darkened, 0 to 1. The header
-    /// reads this to keep its text legible, and the twilight wash reads it to
-    /// get out of the way.
-    static func darkness(precipitation: Double, lightning: Double) -> Double {
+    /// How much wash is present, 0 to 1. Twilight reads this to get out of the
+    /// way. It is NOT a measure of how dark the result is: full rain scores 0.5
+    /// yet composites to a light grey, while a storm scores 0.78 and composites
+    /// to near-black. Anything deciding a text colour must use the luminance
+    /// below instead.
+    static func amount(precipitation: Double, lightning: Double) -> Double {
         min(rainStrength(precipitation: precipitation, lightning: lightning) * rainPeak
             + min(lightning, 1) * stormPeak, 1)
+    }
+
+    /// Top-of-screen colours as components, so the header can composite them
+    /// and measure what it is actually sitting on.
+    static let lightRainTop = (r: 0.42, g: 0.49, b: 0.58)
+    static let lightStormTop = (r: 0.22, g: 0.27, b: 0.37)
+
+    /// Relative luminance at the top of the screen in light mode, where the
+    /// header sits.
+    static func topLuminance(precipitation: Double, lightning: Double) -> Double {
+        var c = (r: 1.0, g: 1.0, b: 1.0)
+        func over(_ top: (r: Double, g: Double, b: Double), _ alpha: Double) {
+            c = (c.r * (1 - alpha) + top.r * alpha,
+                 c.g * (1 - alpha) + top.g * alpha,
+                 c.b * (1 - alpha) + top.b * alpha)
+        }
+        over(lightRainTop, rainStrength(precipitation: precipitation, lightning: lightning) * rainPeak)
+        over(lightStormTop, min(lightning, 1) * stormPeak)
+
+        func linear(_ v: Double) -> Double {
+            v <= 0.03928 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4)
+        }
+        return 0.2126 * linear(c.r) + 0.7152 * linear(c.g) + 0.0722 * linear(c.b)
     }
 
     var body: some View {
@@ -62,7 +87,7 @@ struct WeatherWash: View {
             ? [Color(red: 0.11, green: 0.15, blue: 0.21),
                Color(red: 0.14, green: 0.18, blue: 0.23),
                Color(red: 0.16, green: 0.19, blue: 0.24)]
-            : [Color(red: 0.42, green: 0.49, blue: 0.58),
+            : [Color(red: Self.lightRainTop.r, green: Self.lightRainTop.g, blue: Self.lightRainTop.b),
                Color(red: 0.56, green: 0.62, blue: 0.69),
                Color(red: 0.74, green: 0.78, blue: 0.83)]
     }
@@ -74,7 +99,7 @@ struct WeatherWash: View {
             ? [Color(red: 0.07, green: 0.10, blue: 0.16),
                Color(red: 0.10, green: 0.13, blue: 0.20),
                Color(red: 0.13, green: 0.16, blue: 0.23)]
-            : [Color(red: 0.22, green: 0.27, blue: 0.37),
+            : [Color(red: Self.lightStormTop.r, green: Self.lightStormTop.g, blue: Self.lightStormTop.b),
                Color(red: 0.35, green: 0.40, blue: 0.49),
                Color(red: 0.58, green: 0.63, blue: 0.70)]
     }

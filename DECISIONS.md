@@ -170,12 +170,19 @@ arc block begins. Darkening the band would cost the arc and the clouds their
 contrast, and they cannot be recoloured per frame without giving up the cached
 layers. Overhead is where weather belongs anyway.
 
-**Header ink switches rather than blends.** Interpolating it linearly parks the
-text mid-grey exactly where the background is also mid-grey: measured against
-the rain wash it took contrast from 8:1 to 2:1, worse than doing nothing. It is
-now a narrow switch, plus a halo in whichever colour the text is not, because
-even a narrow switch has a band where nothing legible exists and a soft glow
-covers it at any luminance.
+**Header ink flips outright, on measured luminance.** Two things had to be got
+right. It keys on the composited luminance under the header, not on how much
+wash is present: those diverge badly, since heavy rain scores 0.5 on amount yet
+composites to a light grey that dark ink reads on at 8:1, while a storm scores
+0.78 and composites to near-black. And the flip is hard, with no crossfade at
+all, because any blend puts the glyphs mid-grey on a mid-grey ground; measured,
+a crossfade bottoms out at 1.00:1 while a storm rolls in. The threshold sits
+where dark and light ink measure equal, 3.79:1 each, so neither side of the flip
+is the weak one. Settled states measure 15:1 clear, 8:1 heavy rain, 5.6:1 storm.
+
+**All the washes share one set of stops**, weighted to the top of the screen and
+gone before the arc block, so twilight reads as sky in the same way weather
+does rather than as a tint over the whole screen.
 
 **Rain and storms wash the ground, as dawn and dusk do.** Rain darkens it to
 slate, a storm darkens it further with the flash low down where the cloud base

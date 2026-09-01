@@ -58,7 +58,19 @@ struct TwilightBackground: View {
     }
 
     var body: some View {
-        LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom)
+        // Same stops as the weather wash: full strength across the header,
+        // gone before the arc block, so every wash reads as sky rather than as
+        // a tint over the whole screen.
+        LinearGradient(
+            stops: [
+                .init(color: colors[0], location: 0),
+                .init(color: colors[1], location: 0.20),
+                .init(color: colors[2], location: 0.40),
+                .init(color: Theme.background.opacity(0), location: 0.52),
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
             .opacity(strength * Self.peakOpacity * (1 - min(suppressedBy, 1)))
             .ignoresSafeArea()
             .allowsHitTesting(false)
