@@ -124,6 +124,12 @@ struct ContentView: View {
                 // planetary hour's call to action takes over; that lands with
                 // the planet cards, so the clock stands in until then.
                 Text(model.activeEvent?.title ?? ArcContent.clock(hourOfDay))
+                    // The string changes inside the jump's own withAnimation,
+                    // so without this SwiftUI applies the transaction's DEFAULT
+                    // content transition and crossfades the old text into the
+                    // new one. That was the fade that survived removing the
+                    // opacity: it was never ours.
+                    .contentTransition(.identity)
                     .font(.display())
                     .foregroundStyle(titleColor)
                     .monospacedDigit()
@@ -138,6 +144,7 @@ struct ContentView: View {
             .disabled(model.activeEvent == nil)
 
             Text(subtitle)
+                .contentTransition(.identity)
                 .font(.footnote)
                 .foregroundStyle(captionColor)
                 .monospacedDigit()
