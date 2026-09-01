@@ -9,6 +9,10 @@ struct ContentView: View {
     @State private var editorTarget: EventTarget?
     @Environment(\.colorScheme) private var systemScheme
     @State private var isMenuOpen = false
+    @State private var titleScale: CGFloat = 1
+    @State private var titleFade: Double = 1
+    @State private var captionScale: CGFloat = 1
+    @State private var captionFade: Double = 1
     @AppStorage("appearance") private var appearance: Appearance = .system
 
     var body: some View {
@@ -126,23 +130,55 @@ struct ContentView: View {
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
-                    .contentTransition(.opacity)
-                    // The button's label would centre inside the row without
-                    // this, so a short title would not sit on the same left
-                    // edge as the caption under it.
+                    // Anchored left, not centre: the pair share a left edge and
+                    // scaling about the middle would slide them off it.
+                    .scaleEffect(titleScale, anchor: .leading)
+                    .opacity(titleFade)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.plain)
             .disabled(model.activeEvent == nil)
-            .animation(.easeInOut(duration: 0.18), value: model.activeEvent?.id)
 
             Text(subtitle)
                 .font(.footnote)
                 .foregroundStyle(captionColor)
                 .monospacedDigit()
+                .scaleEffect(captionScale, anchor: .leading)
+                .opacity(captionFade)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)
+        .onChange(of: headerKey) { _, _ in pop() }
+    }
+
+    /// What counts as the header CHANGING.
+    ///
+    /// Not the rendered strings: when no event is under the dot the title is a
+    /// live clock, so keying off its text would fire the pop every second and
+    /// on every frame of a scrub. This is the identity of what is being shown,
+    /// which moves when you enter or leave an event, cross to another one, or
+    /// cross a day boundary.
+    private var headerKey: String {
+        "\(model.activeEvent?.id ?? "-")|\(Self.dayLine(model.focusDate))"
+    }
+
+    /// Both lines drop to 94% and fade out, then spring back, the caption 40ms
+    /// behind the title. Scale and opacity are leaf modifiers driven from a
+    /// discrete change, so the body runs once per pop and Core Animation does
+    /// the rest.
+    private func pop() {
+        let spring = Animation.spring(response: 0.26, dampingFraction: 0.62)
+        let fade = Animation.easeOut(duration: 0.20)
+
+        titleScale = 0.94
+        titleFade = 0
+        captionScale = 0.94
+        captionFade = 0
+
+        withAnimation(spring) { titleScale = 1 }
+        withAnimation(fade) { titleFade = 1 }
+        withAnimation(spring.delay(0.04)) { captionScale = 1 }
+        withAnimation(fade.delay(0.04)) { captionFade = 1 }
     }
 
     /// How much wash is present, for twilight to yield to.
