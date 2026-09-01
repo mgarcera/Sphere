@@ -18,11 +18,22 @@ struct TwilightBackground: View {
     var suppressedBy: Double = 0
 
     /// How far either side of the horizon the wash reaches.
-    private static let spanDegrees: Double = 8
-    private static let peakOpacity: Double = 0.85
+    static let spanDegrees: Double = 8
+    static let peakOpacity: Double = 0.85
+
+    static func strength(elevationDegrees: Double) -> Double {
+        max(0, 1 - abs(elevationDegrees) / spanDegrees)
+    }
+
+    /// Top-of-screen colour as components, so the header can composite it and
+    /// measure what it is sitting on. Light mode only; in dark mode the ink is
+    /// already light and the ground only gets darker.
+    static func lightTopColor(isMorning: Bool) -> (r: Double, g: Double, b: Double) {
+        isMorning ? (0.62, 0.70, 0.88) : (0.70, 0.55, 0.66)
+    }
 
     private var strength: Double {
-        max(0, 1 - abs(elevationDegrees) / Self.spanDegrees)
+        Self.strength(elevationDegrees: elevationDegrees)
     }
 
     /// Dawn runs cool into cream, dusk runs plum into amber. They were two

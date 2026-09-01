@@ -21,7 +21,7 @@ struct ContentView: View {
 
             TwilightBackground(
                 elevationDegrees: model.elevationDegrees(atAbsoluteHour: model.focusHour),
-                isMorning: model.focusHour - Double(model.dayIndex) * 24 < model.focusSolarDay.solarNoon,
+                isMorning: isMorning,
                 suppressedBy: washAmount / WeatherWash.stormPeak
             )
 
@@ -184,9 +184,25 @@ struct ContentView: View {
         return Theme.muted.mix(with: Theme.ink, by: darkening)
     }
 
+    private var isMorning: Bool {
+        model.focusHour - Double(model.dayIndex) * 24 < model.focusSolarDay.solarNoon
+    }
+
+    /// Everything painted over the background at the top of the screen, in the
+    /// order it is drawn. Leaving twilight out of this was a real bug: at full
+    /// dusk the ground is 0.386 while this reported 1.000, so the caption was
+    /// left at plain grey and measured 1.4:1.
     private var headerLuminance: Double {
         let sky = model.weather(atAbsoluteHour: model.focusHour)
-        return WeatherWash.topLuminance(precipitation: sky.precipitation, lightning: sky.lightning)
+        let elevation = model.elevationDegrees(atAbsoluteHour: model.focusHour)
+        let twilight = TwilightBackground.strength(elevationDegrees: elevation)
+            * TwilightBackground.peakOpacity
+            * (1 - min(washAmount / WeatherWash.stormPeak, 1))
+        return WeatherWash.topLuminance(
+            precipitation: sky.precipitation,
+            lightning: sky.lightning,
+            twilight: (TwilightBackground.lightTopColor(isMorning: isMorning), twilight)
+        )
     }
 
     /// Biased earlier than the measured optimum of 0.20, deliberately: the

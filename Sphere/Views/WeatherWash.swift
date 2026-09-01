@@ -40,13 +40,16 @@ struct WeatherWash: View {
 
     /// Relative luminance at the top of the screen in light mode, where the
     /// header sits.
-    static func topLuminance(precipitation: Double, lightning: Double) -> Double {
+    static func topLuminance(precipitation: Double, lightning: Double,
+                             twilight: (color: (r: Double, g: Double, b: Double), opacity: Double)) -> Double {
         var c = (r: 1.0, g: 1.0, b: 1.0)
         func over(_ top: (r: Double, g: Double, b: Double), _ alpha: Double) {
             c = (c.r * (1 - alpha) + top.r * alpha,
                  c.g * (1 - alpha) + top.g * alpha,
                  c.b * (1 - alpha) + top.b * alpha)
         }
+        // Twilight goes on first, since it sits under the weather.
+        over(twilight.color, twilight.opacity)
         over(lightRainTop, rainStrength(precipitation: precipitation, lightning: lightning) * rainPeak)
         over(lightStormTop, min(lightning, 1) * stormPeak)
 
