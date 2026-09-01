@@ -11,9 +11,9 @@ enum Planet: String, CaseIterable, Identifiable {
         rawValue.prefix(1).uppercased() + rawValue.dropFirst()
     }
 
-    /// Title text shown for the whole of this planet's hour — the screen's
-    /// default state, replaced only when the time dot comes within 15 minutes
-    /// of a task.
+    /// Mason's copy, kept deliberately. Planetary hours are out of v1 (see
+    /// DECISIONS.md, "Planetary hours have no surface"), so nothing calls this
+    /// yet; re-deriving the seven lines later is the worse cost.
     var callToAction: String {
         switch self {
         case .sun:     "Sun hour. Be Seen."

@@ -17,7 +17,7 @@ struct DayArcShape: Shape {
             let hour = Double(step) / Double(samplesPerHour)
             let point = CGPoint(
                 x: rect.minX + rect.width * (hour / 24),
-                y: rect.maxY - rect.height * day.normalizedElevation(atHour: hour)
+                y: rect.minY + ArcGeometry.y(normalized: day.normalizedElevation(atHour: hour), height: rect.height)
             )
             if step == 0 {
                 path.move(to: point)
@@ -35,7 +35,7 @@ extension DayArcShape {
     static func point(forHour hour: Double, day: SolarDay, in rect: CGRect) -> CGPoint {
         CGPoint(
             x: rect.minX + rect.width * (hour / 24),
-            y: rect.maxY - rect.height * day.normalizedElevation(atHour: hour)
+            y: rect.minY + ArcGeometry.y(normalized: day.normalizedElevation(atHour: hour), height: rect.height)
         )
     }
 }

@@ -33,7 +33,7 @@ struct EventLayer: View {
     private func point(at hour: Double) -> CGPoint {
         CGPoint(
             x: (hour - originHour) * pointsPerHour,
-            y: height - height * elevation(hour)
+            y: ArcGeometry.y(normalized: elevation(hour), height: height)
         )
     }
 

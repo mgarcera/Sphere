@@ -13,7 +13,7 @@ import Observation
 @Observable
 final class DayModel {
     let anchor: Date
-    let coordinate: Coordinate
+    private(set) var coordinate: Coordinate
     let timeZone: TimeZone
 
     /// Hours from `anchor`, unbounded in both directions.
@@ -52,6 +52,15 @@ final class DayModel {
     var isFocusedOnNow: Bool { abs(focusHour - nowHour) < 1.0 / 60 }
 
     var isFocusedOnToday: Bool { dayIndex == Int(floor(nowHour / 24)) }
+
+    /// A new fix invalidates every cached day, since sunrise, sunset and the
+    /// curve's whole shape belong to a place.
+    func relocate(to coordinate: Coordinate) {
+        guard coordinate != self.coordinate else { return }
+        self.coordinate = coordinate
+        solarDays.removeAll()
+        skyByDay.removeAll()
+    }
 
     func date(forDayIndex index: Int) -> Date {
         calendar.date(byAdding: .day, value: index, to: anchor) ?? anchor
@@ -145,6 +154,34 @@ final class DayModel {
 
     func jumpToPreviousEvent() {
         if let previous = previousEvent { focusHour = previous.startHour }
+    }
+
+    // MARK: - Sky
+
+    /// Precomputed per day rather than per frame, since the band only changes
+    /// when a fetch lands or the wheel crosses into a new day.
+    private(set) var skyByDay: [Int: [SkyHour]] = [:]
+
+    func sky(forDayIndex index: Int) -> [SkyHour] { skyByDay[index] ?? [] }
+
+    func applySky(from weather: WeatherService) {
+        var result: [Int: [SkyHour]] = [:]
+        for index in (dayIndex - 1)...(dayIndex + 1) {
+            let day = solarDay(index)
+            let midnight = date(forDayIndex: index)
+            result[index] = (0..<24).compactMap { hour in
+                // Sample the middle of the hour, so an icon never lands on the
+                // midnight seam or an hour tick.
+                let when = midnight.addingTimeInterval(Double(hour) * 3600 + 1800)
+                guard let condition = weather.condition(at: when) else { return nil }
+                return SkyHour(
+                    hour: hour,
+                    condition: condition,
+                    isDaylight: day.elevation(atHour: Double(hour) + 0.5) >= 0
+                )
+            }
+        }
+        skyByDay = result
     }
 
     /// The span the arc can currently show, a day either side of the focus so

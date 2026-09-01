@@ -16,8 +16,9 @@ struct CalendarPriming: View {
 
             Text("""
                  Sphere draws today as the sun's own elevation curve and lays \
-                 your calendar along it. To do that it needs to read your \
-                 events. Nothing leaves your phone.
+                 your calendar along it. To do that it needs where you are, so \
+                 the curve is your sky, and your events, so the day is yours. \
+                 Nothing leaves your phone.
                  """)
                 .font(.callout)
                 .foregroundStyle(Theme.muted)

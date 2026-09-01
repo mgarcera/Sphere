@@ -4,6 +4,8 @@ import SwiftUI
 struct ContentView: View {
     @State private var model = DayModel()
     @State private var calendar = CalendarService()
+    @State private var location = LocationService()
+    @State private var weather = WeatherService()
     @State private var editorTarget: EventTarget?
     @State private var isMenuOpen = false
 
@@ -18,6 +20,7 @@ struct ContentView: View {
 
             if calendar.access == .undetermined {
                 CalendarPriming {
+                    location.request()
                     Task {
                         await calendar.requestAccess()
                         reload()
@@ -42,6 +45,8 @@ struct ContentView: View {
                 .presentationDragIndicator(.visible)
         }
         .task {
+            await weather.load(coordinate: location.coordinate)
+            model.applySky(from: weather)
             reload()
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(30))
@@ -54,7 +59,19 @@ struct ContentView: View {
                 reload()
             }
         }
-        .onChange(of: model.dayIndex) { _, _ in reload() }
+        .onChange(of: model.dayIndex) { _, _ in
+            reload()
+            model.applySky(from: weather)
+        }
+        // A fix moves the whole arc, since the curve is the sun's elevation
+        // where you actually are.
+        .onChange(of: location.coordinate) { _, coordinate in
+            model.relocate(to: coordinate)
+            Task {
+                await weather.load(coordinate: coordinate)
+                model.applySky(from: weather)
+            }
+        }
         .onChange(of: calendar.hiddenSourceIDs) { _, _ in reload() }
     }
 

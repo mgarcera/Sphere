@@ -64,15 +64,46 @@ longer pins itself to light. The wheel's chrome was hardcoded greys; it now has
 its own named colours and becomes the black iPod in dark. The twilight wash
 carries a second palette, since pastels on a dark ground blow out.
 
+## 2026-09-01 — Weather, location, and the sky band
+
+**Weather sits above the arc, not on it.** Icons live in the empty region above
+the curve, each offset along the curve's normal and rotated to its tangent, so
+the band runs parallel to the arc and the space reads as sky. One icon per
+hour. Line art only, no fill and no colour, at the same weight as everything
+else.
+
+**The arc's peak is capped at 65% of its box** so that sky exists at every
+season, including midsummer noon when the sun is at its highest. The cost is
+that the summer-to-winter height difference now plays out over two thirds of
+the box rather than all of it.
+
+**Weather goes behind a `WeatherProvider` protocol, with Open-Meteo first.** It
+needs no App ID, no key and no attribution mark, and it reaches 92 days back,
+which matters now the wheel reaches any date. WeatherKit becomes a second
+conformer the day Sphere needs a provider licensed for commercial use. That
+call is deferred with the monetization question.
+
+**Outside the forecast window the band shows nothing.** An empty sky always
+means "not known", never "clear". A failed fetch reads the same way.
+
+**Core Location is in, folded into the existing priming screen.** It was always
+required: the arc is the sun's elevation curve for a place, and hardcoded
+Chicago was a v1 blocker in the brief regardless of weather. Chicago stands in
+until a fix arrives and permanently if permission is refused.
+
 ## Still open
 
 - **All-day events.** They have no hour and cannot sit on the arc. Going in a
   small modal opened from a navbar button. The navbar does not exist yet and has
   not been designed. The brief says "one screen, no navigation stack in v1",
   so this is a change to that too.
-- **Overlapping events** need a tiebreak for the header title. Implemented as
-  shortest-wins, since a standup inside a focus block is what you are actually
-  doing, but never confirmed.
+- **Overlapping events** need a tiebreak for the header title. Shortest-wins is
+  live and Mason is testing it before confirming.
+- **Monetization**, which decides whether Open-Meteo's non-commercial free tier
+  is enough or WeatherKit is needed. Deferred to a 6pm block, 2026-09-01.
+- **The tilt of the sky band is gentle**, about 8° at most, because a day is
+  eight screens wide and the arc is 190pt tall. Exaggerating it is a one-line
+  multiplier if the spatial effect needs more.
 - **Where the planetary hours live**, now that both the arc tinting and the
   tarot cards are gone.
 

@@ -8,6 +8,10 @@ struct ArcContent: View, Equatable {
     let day: SolarDay
     let width: CGFloat
     let height: CGFloat
+    /// One entry per hour we have weather for. Hours outside the forecast are
+    /// simply absent, so an empty sky always means "not known" rather than
+    /// "clear".
+    var skyHours: [SkyHour] = []
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -39,12 +43,44 @@ struct ArcContent: View, Equatable {
                     .position(x: x, y: height + 20)
             }
 
+            // The sky band. Each icon sits a fixed distance out along the
+            // curve's normal and turns with its tangent, so the band runs
+            // parallel to the arc instead of sitting in a flat row above it.
+            ForEach(skyHours) { entry in
+                let placement = skyPlacement(atHour: Double(entry.hour) + 0.5)
+
+                WeatherIcon(condition: entry.condition, isDaylight: entry.isDaylight)
+                    .rotationEffect(.radians(placement.angle))
+                    .position(placement.point)
+            }
+
             DayArcShape(day: day)
                 .stroke(Theme.ink, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
                 .frame(width: width, height: height)
 
         }
         .frame(width: width, height: height + Self.labelGutter, alignment: .topLeading)
+    }
+
+    /// How far out along the curve's normal the sky band sits.
+    private static let skyOffset: CGFloat = 34
+
+    private func skyPlacement(atHour hour: Double) -> (point: CGPoint, angle: Double) {
+        let delta = 0.35
+        func x(_ h: Double) -> CGFloat { width * (h / 24) }
+        func y(_ h: Double) -> CGFloat {
+            ArcGeometry.y(normalized: day.normalizedElevation(atHour: h), height: height)
+        }
+
+        let angle = atan2(y(hour + delta) - y(hour - delta), x(hour + delta) - x(hour - delta))
+        // (sin, -cos) is the normal pointing away from the ground.
+        return (
+            CGPoint(
+                x: x(hour) + sin(angle) * Self.skyOffset,
+                y: y(hour) - cos(angle) * Self.skyOffset
+            ),
+            angle
+        )
     }
 
     /// Room below the baseline for the hour ticks and their labels.

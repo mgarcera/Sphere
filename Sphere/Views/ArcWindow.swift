@@ -19,7 +19,7 @@ struct ArcWindow: View {
             let originHour = Double(firstDay) * 24
             let centreX = proxy.size.width / 2
             let pan = centreX - (model.focusHour - originHour) * pointsPerHour
-            let dotY = topInset + arcHeight - arcHeight * model.normalizedElevation(atAbsoluteHour: model.focusHour)
+            let dotY = topInset + ArcGeometry.y(normalized: model.normalizedElevation(atAbsoluteHour: model.focusHour), height: arcHeight)
 
             ZStack(alignment: .topLeading) {
                 // Each day is its own cached layer, so only the set of three
@@ -27,8 +27,13 @@ struct ArcWindow: View {
                 // re-samples a path.
                 HStack(alignment: .top, spacing: 0) {
                     ForEach(firstDay...(firstDay + 2), id: \.self) { index in
-                        ArcContent(day: model.solarDay(index), width: dayWidth, height: arcHeight)
-                            .equatable()
+                        ArcContent(
+                            day: model.solarDay(index),
+                            width: dayWidth,
+                            height: arcHeight,
+                            skyHours: model.sky(forDayIndex: index)
+                        )
+                        .equatable()
                     }
                 }
                 .frame(width: dayWidth * 3, alignment: .topLeading)
