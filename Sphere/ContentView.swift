@@ -201,7 +201,9 @@ struct ContentView: View {
     /// Carries the day change, since the arc itself deliberately doesn't.
     private var subtitle: String {
         if let active = model.activeEvent {
-            return "\(ArcContent.clock(active.startHour - Double(model.dayIndex) * 24)) · \(Self.dayLine(model.focusDate))"
+            // Date first, time last: the title already names the event, so the
+            // caption reads as context then the moment it happens.
+            return "\(Self.dayLine(model.focusDate)) · \(ArcContent.clock(active.startHour - Double(model.dayIndex) * 24))"
         }
         return Self.dayLine(model.focusDate)
     }
