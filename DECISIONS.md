@@ -99,6 +99,16 @@ on it, sharing one arc. They stay apart by register, ink above versus calendar
 colour on the line, rather than by one of them being quiet. Band ink went to
 0.8 and inactive capsules to 0.72 to meet it.
 
+**Cloud lobes are puffs, not peaks.** The first attempt at varied lobes read
+as a mountain range. Five causes, all fixed together: the lobe profile is a
+semicircle rather than a sine, so the sides stand up and the top is round; each
+lobe is emitted as smooth quadratic curves through its samples rather than
+straight segments; the plinth carries over half the deck's amplitude, so the
+deck is a mass with bumps rather than peaks rising from a plain; the lean is
+shallow; and the second octave is quiet. Lobe width still varies more than
+height, which is what fixed the original uniformity. An overlapping-circles
+construction was built as an alternative, compared on device, and removed.
+
 **Clouds are closed bodies, not curves.** The first draft read as wind because
 each deck was a stroked open polyline with sine bulges. Three fixes: every deck
 is a closed shape with a base and a scalloped top, the scallops are convex

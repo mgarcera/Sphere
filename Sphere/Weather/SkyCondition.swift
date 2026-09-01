@@ -62,25 +62,3 @@ struct SkyHour: Identifiable, Equatable {
     /// Whether the sun or moon can be seen through what is above it.
     var bodyVisible: Bool { cloudLow < 0.75 }
 }
-
-/// Temporary. Two ways of building a cloud deck's outline, switchable from the
-/// menu so they can be compared on device. The loser and this enum both come
-/// out once a verdict lands.
-enum SkyShape: String, CaseIterable, Identifiable {
-    /// Scalloped lobes of varying width, each skewed and carrying a second,
-    /// smaller octave of detail.
-    case lobed
-    /// The outline of a union of overlapping circles, the way a drawn cloud is
-    /// built, with the cusps falling out of the construction rather than being
-    /// jittered in.
-    case circles
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .lobed: "Lobes"
-        case .circles: "Circles"
-        }
-    }
-}
