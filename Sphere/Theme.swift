@@ -30,3 +30,27 @@ extension Font {
         .system(size: size, weight: .regular, design: .serif)
     }
 }
+
+/// Light, dark, or follow the device. Every colour is an asset-catalog pair,
+/// so overriding the scheme is all this has to do.
+enum Appearance: String, CaseIterable, Identifiable {
+    case system, light, dark
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .system: "Auto"
+        case .light: "Light"
+        case .dark: "Dark"
+        }
+    }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: nil
+        case .light: .light
+        case .dark: .dark
+        }
+    }
+}

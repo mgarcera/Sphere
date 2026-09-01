@@ -13,8 +13,6 @@ import SwiftUI
 struct SkyContinuous: View {
     let hours: [SkyHour]
     let daySeed: Int
-    var style: CloudStyle = .puffs
-    let pointsPerHour: CGFloat
     let placement: (Double) -> (point: CGPoint, angle: Double)
 
     /// Roughly a third of an hour per lobe, which is a cloud-sized bump at the
@@ -44,21 +42,9 @@ struct SkyContinuous: View {
             for deck in [Deck.high, .mid, .low] {
                 for run in runs(byHour, where: { deck.coverage($0) >= SkyHour.layerThreshold
                                                  && !stormHours.contains($0.hour) }) {
-                    switch style {
-                    case .puffs:
-                        drawPuffs(deckPuffs(run, deck: deck, byHour: byHour),
-                                  clippedAbove: deck.offset, from: Double(run.lowerBound) - 0.5,
-                                  to: Double(run.upperBound) + 1.5,
-                                  in: context, ink: ink, ground: ground)
-                    case .scallop, .hybrid:
-                        let path = lobedSilhouette(run, deck: deck, byHour: byHour)
-                        context.fill(path, with: ground)
-                        context.stroke(path, with: ink, style: SkyMarks.stroke)
-                        if style == .hybrid {
-                            context.stroke(interiorArcs(run, deck: deck, byHour: byHour),
-                                           with: faint, style: SkyMarks.stroke)
-                        }
-                    }
+                    let path = lobedSilhouette(run, deck: deck, byHour: byHour)
+                    context.fill(path, with: ground)
+                    context.stroke(path, with: ink, style: SkyMarks.stroke)
                 }
             }
 
@@ -69,20 +55,9 @@ struct SkyContinuous: View {
             // long storm reads as a line of cells. Each is filled before it is
             // stroked, so neighbours cut into each other and cluster.
             for entry in hours where entry.isConvective {
-                switch style {
-                case .puffs:
-                    drawPuffs(stormPuffs(entry),
-                              clippedAbove: SkyMarks.lowOffset - 16,
-                              from: Double(entry.hour) - 0.4, to: Double(entry.hour) + 1.4,
-                              in: context, ink: ink, ground: ground)
-                case .scallop, .hybrid:
-                    let cell = cumulonimbus(at: entry)
-                    context.fill(cell, with: ground)
-                    context.stroke(cell, with: ink, style: SkyMarks.stroke)
-                    if style == .hybrid {
-                        context.stroke(stormInteriorArcs(entry), with: faint, style: SkyMarks.stroke)
-                    }
-                }
+                let cell = cumulonimbus(at: entry)
+                context.fill(cell, with: ground)
+                context.stroke(cell, with: ink, style: SkyMarks.stroke)
             }
 
             for entry in hours where entry.hasLightning {
@@ -93,14 +68,6 @@ struct SkyContinuous: View {
                 context.stroke(fog(run), with: ink, style: SkyMarks.stroke)
             }
 
-            // A clear hour in range still draws something, so that an empty
-            // band always means "no data" and never "nothing in the sky".
-            for run in runs(byHour, where: { $0.cloudLow < SkyHour.layerThreshold
-                                             && $0.cloudMid < SkyHour.layerThreshold
-                                             && $0.cloudHigh < SkyHour.layerThreshold
-                                             && !$0.condition.isWet }) {
-                context.stroke(wisp(run), with: faint, style: SkyMarks.stroke)
-            }
         }
     }
 
@@ -145,103 +112,6 @@ struct SkyContinuous: View {
             case .low: hour.cloudLow
             }
         }
-    }
-
-    // MARK: - Puff construction
-
-    /// Draws a cluster back to front, each puff filled then stroked, so a puff
-    /// in front paints over the one behind and leaves only its visible arc.
-    private func drawPuffs(_ field: [(centre: CGPoint, radius: CGFloat, depth: CGFloat)],
-                           clippedAbove base: CGFloat, from: Double, to: Double,
-                           in context: GraphicsContext,
-                           ink: GraphicsContext.Shading, ground: GraphicsContext.Shading) {
-        context.drawLayer { layer in
-            // Keeps the underside flat rather than a row of bulges.
-            layer.clip(to: skySide(from: from, to: to, base: base))
-            for puff in field {
-                let rect = CGRect(x: puff.centre.x - puff.radius, y: puff.centre.y - puff.radius,
-                                  width: puff.radius * 2, height: puff.radius * 2)
-                let circle = Path(ellipseIn: rect)
-                layer.fill(circle, with: ground)
-                layer.stroke(circle, with: ink, style: SkyMarks.stroke)
-            }
-        }
-    }
-
-    private func deckPuffs(_ run: ClosedRange<Int>, deck: Deck,
-                           byHour: [Int: SkyHour]) -> [(centre: CGPoint, radius: CGFloat, depth: CGFloat)] {
-        SkyMarks.puffField(
-            seed: daySeed, salt: deck.saltBase &+ run.lowerBound &* 31,
-            spanStart: Double(run.lowerBound), spanEnd: Double(run.upperBound) + 1,
-            baseOut: deck.offset, depth: deck.amplitude * 0.9,
-            radius: deck.amplitude * 1.1, rows: deck == .high ? 1 : 2,
-            pointsPerHour: pointsPerHour,
-            coverage: { hour in self.reading(byHour, at: hour).map { deck.coverage($0) } ?? 0 },
-            place: { hour, out in self.point(hour: hour, out: out) }
-        )
-    }
-
-    private func stormPuffs(_ entry: SkyHour) -> [(centre: CGPoint, radius: CGFloat, depth: CGFloat)] {
-        let scale = 0.9 + 0.2 * min(entry.cape / 4_000, 1)
-        return SkyMarks.puffField(
-            seed: daySeed, salt: entry.hour &* 613,
-            spanStart: Double(entry.hour) + 0.16, spanEnd: Double(entry.hour) + 0.84,
-            baseOut: SkyMarks.lowOffset - 14,
-            depth: (SkyMarks.highOffset + 12 - SkyMarks.lowOffset + 14) * CGFloat(scale),
-            radius: 12 * CGFloat(scale), rows: 5,
-            pointsPerHour: pointsPerHour,
-            coverage: { _ in 1 },
-            place: { hour, out in self.point(hour: hour, out: out) }
-        )
-    }
-
-    /// Everything outward of the base line across an hour span.
-    private func skySide(from: Double, to: Double, base: CGFloat) -> Path {
-        var path = Path()
-        let steps = max(4, Int((to - from) * 6))
-        for step in 0...steps {
-            let hour = from + (to - from) * Double(step) / Double(steps)
-            let position = point(hour: hour, out: base)
-            if step == 0 { path.move(to: position) } else { path.addLine(to: position) }
-        }
-        for step in stride(from: steps, through: 0, by: -1) {
-            let hour = from + (to - from) * Double(step) / Double(steps)
-            path.addLine(to: point(hour: hour, out: base + 160))
-        }
-        path.closeSubpath()
-        return path
-    }
-
-    /// A few arcs inside the mass, suggesting puff boundaries without stacking
-    /// whole circles.
-    private func interiorArcs(_ run: ClosedRange<Int>, deck: Deck, byHour: [Int: SkyHour]) -> Path {
-        var path = Path()
-        let from = Double(run.lowerBound), to = Double(run.upperBound) + 1
-        var hour = from + 0.12
-        var index = 0
-        while hour < to - 0.12 {
-            let j = SkyMarks.jitter(daySeed, deck.saltBase &+ run.lowerBound &* 17 &+ index)
-            let r = deck.amplitude * CGFloat(0.32 + 0.3 * j)
-            let centre = point(hour: hour, out: deck.offset + r * 0.75)
-            path.addArc(center: centre, radius: r, startAngle: .degrees(200),
-                        endAngle: .degrees(340), clockwise: false)
-            hour += 0.17 * (0.7 + 0.7 * j)
-            index += 1
-        }
-        return path
-    }
-
-    private func stormInteriorArcs(_ entry: SkyHour) -> Path {
-        var path = Path()
-        for index in 0..<7 {
-            let j1 = SkyMarks.jitter(daySeed, entry.hour &* 733 &+ index)
-            let j2 = SkyMarks.jitter(daySeed, entry.hour &* 733 &+ index &+ 71)
-            let centre = point(hour: Double(entry.hour) + 0.2 + 0.6 * j1,
-                               out: SkyMarks.lowOffset - 6 + CGFloat(j2) * 70)
-            path.addArc(center: centre, radius: 9 + CGFloat(j1) * 7,
-                        startAngle: .degrees(195), endAngle: .degrees(345), clockwise: false)
-        }
-        return path
     }
 
     // MARK: - Geometry
@@ -377,39 +247,51 @@ struct SkyContinuous: View {
         path.addQuadCurve(to: points[points.count - 1], control: points[points.count - 2])
     }
 
-    /// A storm cloud: bigger and puffier than the decks, and nothing more.
+    /// A storm cloud: the same scalloped language as the decks, but closed all
+    /// the way round and much bigger.
     ///
-    /// Built radially rather than as a profile walked from base to top, which
-    /// is both far simpler and inherently puffy: every point on the outline is
-    /// a radius from one centre, so the lobes bulge and undercut on their own
-    /// instead of needing a construction that allows it. Two sine harmonics at
-    /// seeded phases give the cauliflower edge.
+    /// The lobes are walked in POLAR coordinates, so the same semicircular
+    /// bulge that gives a deck its puffs runs around the whole perimeter here,
+    /// meeting at cusps. Working radially is also what lets a lobe overhang:
+    /// a deck is sampled per hour and can only ever round a corner.
     private func cumulonimbus(at entry: SkyHour) -> Path {
         let seed = entry.hour &* 613
-        let base = SkyMarks.lowOffset - 14
-        let top = SkyMarks.highOffset + 12
-
-        // Bigger storms are a little bigger. That is the whole of the physics.
-        let scale = CGFloat(0.9 + 0.2 * min(entry.cape / 4_000, 1))
+        let base = SkyMarks.lowOffset - 16
+        let top = SkyMarks.highOffset + 14
         let centreOut = (base + top) / 2
+
+        let scale = CGFloat(0.92 + 0.2 * min(entry.cape / 4_000, 1))
         let radiusOut = (top - base) / 2 * scale
-        let radiusHours = 0.34 * (0.88 + 0.24 * SkyMarks.jitter(daySeed, seed &+ 7)) * Double(scale)
+        let radiusHours = 0.38 * Double(scale) * (0.9 + 0.2 * SkyMarks.jitter(daySeed, seed &+ 7))
+        let centreHour = Double(entry.hour) + 0.5
 
-        let lobes = 6.0 + (SkyMarks.jitter(daySeed, seed &+ 11) * 3).rounded()
-        let phase = SkyMarks.jitter(daySeed, seed &+ 13) * 2 * .pi
-        let phase2 = SkyMarks.jitter(daySeed, seed &+ 17) * 2 * .pi
+        let lobeCount = 9 + Int((SkyMarks.jitter(daySeed, seed &+ 11) * 4).rounded())
+        let nominal = 2 * Double.pi / Double(lobeCount)
 
-        let steps = 72
         var outline: [CGPoint] = []
-        for step in 0...steps {
-            let angle = Double(step) / Double(steps) * 2 * .pi
-            let bump = 1
-                + 0.16 * sin(lobes * angle + phase)
-                + 0.07 * sin(lobes * 2 * angle + phase2)
-            outline.append(point(
-                hour: Double(entry.hour) + 0.5 + radiusHours * bump * cos(angle),
-                out: centreOut + radiusOut * CGFloat(bump) * CGFloat(sin(angle))
-            ))
+        var angle = 0.0
+        var index = 0
+
+        while angle < 2 * .pi - 1e-6 {
+            let widthRoll = SkyMarks.jitter(daySeed, seed &+ index &* 29)
+            let heightRoll = SkyMarks.jitter(daySeed, seed &+ index &* 37 &+ 91)
+            let span = min(nominal * (0.62 + 0.85 * widthRoll), 2 * .pi - angle)
+            let peak = 0.09 + 0.19 * heightRoll
+
+            let steps = 8
+            for step in 1...steps {
+                let t = Double(step) / Double(steps)
+                let bulge = peak * sqrt(max(0, 1 - pow(2 * t - 1, 2)))
+                let r = 1 + bulge
+                let a = angle + span * t
+                outline.append(point(
+                    hour: centreHour + radiusHours * r * cos(a),
+                    out: centreOut + radiusOut * CGFloat(r) * CGFloat(sin(a))
+                ))
+            }
+
+            angle += span
+            index += 1
         }
 
         var path = Path()
@@ -510,23 +392,6 @@ struct SkyContinuous: View {
             var transform = CGAffineTransform(translationX: anchor.x, y: anchor.y)
             transform = transform.rotated(by: base.angle)
             path.addPath(SkyMarks.fogLines(width: 26).applying(transform))
-        }
-        return path
-    }
-
-    /// One long thin stroke for an empty sky, so "clear" and "no data" never
-    /// look the same.
-    private func wisp(_ run: ClosedRange<Int>) -> Path {
-        var path = Path()
-        let from = Double(run.lowerBound) + 0.25
-        let to = Double(run.upperBound) + 0.75
-        let steps = max(3, run.count * 4)
-
-        for step in 0...steps {
-            let hour = from + (to - from) * Double(step) / Double(steps)
-            let wobble = CGFloat(SkyMarks.jitter(daySeed, Int(hour * 3)) - 0.5) * 2
-            let position = point(hour: hour, out: SkyMarks.highOffset + wobble)
-            if step == 0 { path.move(to: position) } else { path.addLine(to: position) }
         }
         return path
     }

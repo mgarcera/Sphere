@@ -8,7 +8,7 @@ struct DayMenu: View {
     let model: DayModel
     let calendar: CalendarService
     let location: LocationService
-    @Binding var cloudStyle: CloudStyle
+    @Binding var appearance: Appearance
     let onDismiss: () -> Void
 
     @State private var pickedDate: Date = .now
@@ -105,10 +105,10 @@ struct DayMenu: View {
                 }
 
                 divider
-                section("Cloud style") {
-                    Picker("Cloud style", selection: $cloudStyle) {
-                        ForEach(CloudStyle.allCases) { style in
-                            Text(style.title).tag(style)
+                section("Appearance") {
+                    Picker("Appearance", selection: $appearance) {
+                        ForEach(Appearance.allCases) { option in
+                            Text(option.title).tag(option)
                         }
                     }
                     .pickerStyle(.segmented)

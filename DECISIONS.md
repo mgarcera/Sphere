@@ -99,6 +99,10 @@ on it, sharing one arc. They stay apart by register, ink above versus calendar
 colour on the line, rather than by one of them being quiet. Band ink went to
 0.8 and inactive capsules to 0.72 to meet it.
 
+**The notch between lobes is shallow.** Deep valleys made the decks read as a
+row of humps. The plinth carries 0.78 of a deck's amplitude and the peaks came
+down to match, so the valley is 46% of the crest rather than 27%.
+
 **Cloud lobes are puffs, not peaks.** The first attempt at varied lobes read
 as a mountain range. Five causes, all fixed together: the lobe profile is a
 semicircle rather than a sine, so the sides stand up and the top is round; each
@@ -126,13 +130,24 @@ hours ran a median of 2090. That takes the same year from 8 storm hours to 28,
 and 5 storm days to 13, with no frontal-rain hour wrongly promoted.
 
 **A storm draws one big puffy cloud per convective hour**, spanning all three
-decks, bigger and rounder than anything else in the band. It is built radially:
-every point on its outline is a radius from one centre, perturbed by two sine
-harmonics at seeded phases, which is far simpler than a profile walked from
-base to top and is inherently puffy, since the lobes bulge and undercut without
-needing a construction that permits it. It deliberately does not model a real
-cumulonimbus; the anvil version did, and read as a diagram inside a drawing.
-CAPE only scales it slightly.
+decks and much bigger than anything else in the band. It uses the same
+scalloped lobes as the decks, but walked in POLAR coordinates so the closed
+outline scallops all the way round and meets at cusps. Working radially is also
+what lets a lobe overhang, which a deck sampled per hour can never do. It
+deliberately does not model a real cumulonimbus; the anvil version did, and read
+as a diagram inside a drawing. CAPE only scales it.
+
+An overlapping-circles construction, where each puff keeps its own stroked
+outline and is occluded by the puffs in front, was built for both the decks and
+the storms and compared on device against this and against a silhouette with
+interior arcs. The plain scallop won and the other two were removed.
+
+**Clear skies draw nothing.** The band is simply empty. This gives up telling
+"clear" apart from "outside the forecast window", which was the reason a thin
+wisp was drawn there; the wisp was worse.
+
+**Appearance is light, dark, or auto**, chosen in the menu. Every colour is
+already an asset-catalog pair, so the setting only has to override the scheme.
 
 Everything in the band is drawn at one stroke weight. The storm cloud and its
 bolt carried a heavier line and it separated them from the drawing.
