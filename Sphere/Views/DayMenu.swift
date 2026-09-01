@@ -8,6 +8,7 @@ struct DayMenu: View {
     let model: DayModel
     let calendar: CalendarService
     let location: LocationService
+    @Binding var cloudStyle: CloudStyle
     let onDismiss: () -> Void
 
     @State private var pickedDate: Date = .now
@@ -101,6 +102,17 @@ struct DayMenu: View {
                             .monospacedDigit()
                     }
                     .padding(.vertical, 6)
+                }
+
+                divider
+                section("Cloud style") {
+                    Picker("Cloud style", selection: $cloudStyle) {
+                        ForEach(CloudStyle.allCases) { style in
+                            Text(style.title).tag(style)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.vertical, 4)
                 }
 
                 if !calendar.sources.isEmpty {

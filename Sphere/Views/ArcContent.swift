@@ -15,6 +15,7 @@ struct ArcContent: View, Equatable {
     /// Seeds the deterministic wobble, so a shape is stable across redraws but
     /// different from its neighbour.
     var daySeed: Int = 0
+    var cloudStyle: CloudStyle = .puffs
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -49,7 +50,8 @@ struct ArcContent: View, Equatable {
             // The sky band. Everything in it is placed along the curve's
             // normal and turned with its tangent, so the band runs parallel to
             // the arc rather than sitting in a flat row above it.
-            SkyContinuous(hours: skyHours, daySeed: daySeed, placement: skyPlacement(atHour:))
+            SkyContinuous(hours: skyHours, daySeed: daySeed, style: cloudStyle,
+                          pointsPerHour: width / 24, placement: skyPlacement(atHour:))
                 .frame(width: width, height: ArcGeometry.totalHeight(height), alignment: .topLeading)
 
             DayArcShape(day: day, arcHeight: height)

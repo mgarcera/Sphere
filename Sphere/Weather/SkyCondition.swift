@@ -85,3 +85,28 @@ struct SkyHour: Identifiable, Equatable {
     /// Whether the sun or moon can be seen through what is above it.
     var bodyVisible: Bool { cloudLow < 0.75 }
 }
+
+/// Temporary. Three ways of constructing a cloud, switchable from the menu so
+/// they can be compared on device. The losers and this enum come out together.
+enum CloudStyle: String, CaseIterable, Identifiable {
+    /// Every cloud is a cluster of overlapping circles, each one filled and
+    /// stroked and drawn back to front, so the arcs where puffs overlap stay
+    /// visible. This is the technique in the reference drawing.
+    case puffs
+    /// One clean silhouette, with the notches between lobes made shallow so it
+    /// stops reading as a row of humps.
+    case scallop
+    /// A clean outer silhouette with a few interior arcs suggesting the puffs
+    /// inside the mass.
+    case hybrid
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .puffs: "Puffs"
+        case .scallop: "Scallop"
+        case .hybrid: "Hybrid"
+        }
+    }
+}

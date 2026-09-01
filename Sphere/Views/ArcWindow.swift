@@ -5,6 +5,7 @@ import SwiftUI
 /// crossing midnight needs no separate control and no seam.
 struct ArcWindow: View {
     let model: DayModel
+    var cloudStyle: CloudStyle = .puffs
     var arcHeight: CGFloat = 190
 
     var body: some View {
@@ -28,7 +29,8 @@ struct ArcWindow: View {
                             width: dayWidth,
                             height: arcHeight,
                             skyHours: model.sky(forDayIndex: index),
-                            daySeed: index
+                            daySeed: index,
+                            cloudStyle: cloudStyle
                         )
                         .equatable()
                     }

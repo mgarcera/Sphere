@@ -8,6 +8,9 @@ struct ContentView: View {
     @State private var weather = WeatherService()
     @State private var editorTarget: EventTarget?
     @State private var isMenuOpen = false
+    /// Temporary: three cloud constructions under comparison. This and the
+    /// losers come out together.
+    @AppStorage("cloudStyle") private var cloudStyle: CloudStyle = .puffs
 
     var body: some View {
         ZStack {
@@ -40,7 +43,7 @@ struct ContentView: View {
             .ignoresSafeArea()
         }
         .sheet(isPresented: $isMenuOpen) {
-            DayMenu(model: model, calendar: calendar, location: location) { isMenuOpen = false }
+            DayMenu(model: model, calendar: calendar, location: location, cloudStyle: $cloudStyle) { isMenuOpen = false }
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
@@ -83,7 +86,7 @@ struct ContentView: View {
         VStack(spacing: 0) {
             header
 
-            ArcWindow(model: model)
+            ArcWindow(model: model, cloudStyle: cloudStyle)
                 .padding(.top, 8)
 
             Spacer(minLength: 16)
