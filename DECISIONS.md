@@ -130,12 +130,13 @@ hours ran a median of 2090. That takes the same year from 8 storm hours to 28,
 and 5 storm days to 13, with no frontal-rain hour wrongly promoted.
 
 **A storm draws one big puffy cloud per convective hour**, spanning all three
-decks and much bigger than anything else in the band. It uses the same
-scalloped lobes as the decks, but walked in POLAR coordinates so the closed
-outline scallops all the way round and meets at cusps. Working radially is also
-what lets a lobe overhang, which a deck sampled per hour can never do. It
-deliberately does not model a real cumulonimbus; the anvil version did, and read
-as a diagram inside a drawing. CAPE only scales it.
+decks and much bigger than anything else in the band. It is the same flat-bottomed
+scalloped mass as a deck, just far bigger: one shared construction draws both,
+so they cannot drift apart. It sits on a base like everything else and does its
+growing upward. A radial version that scalloped all the way round was tried and
+left the cloud floating with a lumpy underside, out of step with the rest of the
+band. It deliberately does not model a real cumulonimbus; the anvil version did,
+and read as a diagram inside a drawing. CAPE only scales it.
 
 An overlapping-circles construction, where each puff keeps its own stroked
 outline and is occluded by the puffs in front, was built for both the decks and

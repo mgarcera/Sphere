@@ -163,39 +163,54 @@ struct SkyContinuous: View {
     /// mountain flank, and the second octave is much QUIETER, because that is
     /// where the serration was coming from.
     private func lobedSilhouette(_ run: ClosedRange<Int>, deck: Deck, byHour: [Int: SkyHour]) -> Path {
-        let from = Double(run.lowerBound)
-        let to = Double(run.upperBound) + 1
-        let plinth = deck.amplitude * 0.78
+        scallopedMass(
+            from: Double(run.lowerBound), to: Double(run.upperBound) + 1,
+            baseOut: deck.offset,
+            plinth: deck.amplitude * 0.78,
+            peakAmplitude: deck.amplitude,
+            lobeHours: Self.lobeHours,
+            salt: deck.saltBase &+ run.lowerBound &* 31,
+            coverage: { hour in self.reading(byHour, at: hour).map { deck.coverage($0) } ?? 0 }
+        )
+    }
+
+    /// A flat-bottomed body with a scalloped top. Decks and storms are the same
+    /// shape at different scales, which is what keeps them looking like one
+    /// drawing.
+    private func scallopedMass(from: Double, to: Double, baseOut: CGFloat,
+                               plinth: CGFloat, peakAmplitude: CGFloat,
+                               lobeHours: Double, salt saltBase: Int,
+                               coverage: (Double) -> Double) -> Path {
 
         // A cloud that stops on a vertical edge reads as cut off. Both ends
         // now round from the base up to the lobe line over a short shoulder.
         let shoulder = min(0.16, (to - from) * 0.18)
 
         var path = Path()
-        path.move(to: point(hour: from, out: deck.offset))
+        path.move(to: point(hour: from, out: baseOut))
         appendSmooth((1...4).map { step in
             let t = Double(step) / 4
             return point(hour: from + shoulder * t,
-                         out: deck.offset + plinth * CGFloat(sin(.pi / 2 * t)))
+                         out: baseOut + plinth * CGFloat(sin(.pi / 2 * t)))
         }, to: &path)
 
         var hour = from + shoulder
         var index = 0
         while hour < to - shoulder - 1e-6 {
-            let salt = deck.saltBase &+ run.lowerBound &* 31 &+ index
+            let salt = saltBase &+ index
             let widthRoll = SkyMarks.jitter(daySeed, salt)
             let heightRoll = SkyMarks.jitter(daySeed, salt &+ 911)
             let skewRoll = SkyMarks.jitter(daySeed, salt &+ 1_733)
             let microRoll = SkyMarks.jitter(daySeed, salt &+ 2_591)
 
-            let span = min(Self.lobeHours * (0.55 + 1.0 * widthRoll), to - shoulder - hour)
-            let coverage = reading(byHour, at: hour + span / 2).map { deck.coverage($0) } ?? 0
-            let peak = deck.amplitude * CGFloat(0.28 + coverage * 0.42) * CGFloat(0.8 + heightRoll * 0.5)
+            let span = min(lobeHours * (0.55 + 1.0 * widthRoll), to - shoulder - hour)
+            let cover = coverage(hour + span / 2)
+            let peak = peakAmplitude * CGFloat(0.28 + cover * 0.42) * CGFloat(0.8 + heightRoll * 0.5)
             // Barely off centre. Any more and the lobe becomes a slope.
             let skew = 0.42 + 0.16 * skewRoll
             let microAmp = peak * 0.09
 
-            var crest: [CGPoint] = [point(hour: hour, out: deck.offset + plinth)]
+            var crest: [CGPoint] = [point(hour: hour, out: baseOut + plinth)]
             let steps = 12
             for step in 1...steps {
                 let t = Double(step) / Double(steps)
@@ -203,7 +218,7 @@ struct SkyContinuous: View {
                 // Semicircular, so the sides stand up and the top is round.
                 let big = peak * CGFloat(sqrt(max(0, 1 - pow(2 * warped - 1, 2))))
                 let micro = microAmp * CGFloat(sin(.pi * 2 * t + microRoll * 6.28)) * CGFloat(sin(.pi * t))
-                crest.append(point(hour: hour + span * t, out: deck.offset + plinth + big + micro))
+                crest.append(point(hour: hour + span * t, out: baseOut + plinth + big + micro))
             }
 
             // Smooth within the lobe; the join to the next one stays a cusp,
@@ -217,13 +232,13 @@ struct SkyContinuous: View {
         appendSmooth((1...4).map { step in
             let t = Double(step) / 4
             return point(hour: to - shoulder + shoulder * t,
-                         out: deck.offset + plinth * CGFloat(cos(.pi / 2 * t)))
+                         out: baseOut + plinth * CGFloat(cos(.pi / 2 * t)))
         }, to: &path)
 
-        let backSteps = max(2, run.count * 3)
+        let backSteps = max(4, Int((to - from) * 4))
         for step in stride(from: backSteps, through: 0, by: -1) {
             let h = from + (to - from) * Double(step) / Double(backSteps)
-            path.addLine(to: point(hour: h, out: deck.offset))
+            path.addLine(to: point(hour: h, out: baseOut))
         }
         path.closeSubpath()
         return path
@@ -247,58 +262,21 @@ struct SkyContinuous: View {
         path.addQuadCurve(to: points[points.count - 1], control: points[points.count - 2])
     }
 
-    /// A storm cloud: the same scalloped language as the decks, but closed all
-    /// the way round and much bigger.
-    ///
-    /// The lobes are walked in POLAR coordinates, so the same semicircular
-    /// bulge that gives a deck its puffs runs around the whole perimeter here,
-    /// meeting at cusps. Working radially is also what lets a lobe overhang:
-    /// a deck is sampled per hour and can only ever round a corner.
+    /// A storm cloud is the same flat-bottomed scalloped mass as a deck, just
+    /// far bigger: it sits on a base like everything else and does its growing
+    /// upward. The radial version scalloped all the way round, which left it
+    /// floating with a lumpy underside and out of step with the rest.
     private func cumulonimbus(at entry: SkyHour) -> Path {
-        let seed = entry.hour &* 613
-        let base = SkyMarks.lowOffset - 16
-        let top = SkyMarks.highOffset + 14
-        let centreOut = (base + top) / 2
-
-        let scale = CGFloat(0.92 + 0.2 * min(entry.cape / 4_000, 1))
-        let radiusOut = (top - base) / 2 * scale
-        let radiusHours = 0.38 * Double(scale) * (0.9 + 0.2 * SkyMarks.jitter(daySeed, seed &+ 7))
-        let centreHour = Double(entry.hour) + 0.5
-
-        let lobeCount = 9 + Int((SkyMarks.jitter(daySeed, seed &+ 11) * 4).rounded())
-        let nominal = 2 * Double.pi / Double(lobeCount)
-
-        var outline: [CGPoint] = []
-        var angle = 0.0
-        var index = 0
-
-        while angle < 2 * .pi - 1e-6 {
-            let widthRoll = SkyMarks.jitter(daySeed, seed &+ index &* 29)
-            let heightRoll = SkyMarks.jitter(daySeed, seed &+ index &* 37 &+ 91)
-            let span = min(nominal * (0.62 + 0.85 * widthRoll), 2 * .pi - angle)
-            let peak = 0.09 + 0.19 * heightRoll
-
-            let steps = 8
-            for step in 1...steps {
-                let t = Double(step) / Double(steps)
-                let bulge = peak * sqrt(max(0, 1 - pow(2 * t - 1, 2)))
-                let r = 1 + bulge
-                let a = angle + span * t
-                outline.append(point(
-                    hour: centreHour + radiusHours * r * cos(a),
-                    out: centreOut + radiusOut * CGFloat(r) * CGFloat(sin(a))
-                ))
-            }
-
-            angle += span
-            index += 1
-        }
-
-        var path = Path()
-        path.move(to: outline[0])
-        appendSmooth(Array(outline.dropFirst()), to: &path)
-        path.closeSubpath()
-        return path
+        let scale = CGFloat(0.9 + 0.24 * min(entry.cape / 4_000, 1))
+        return scallopedMass(
+            from: Double(entry.hour) + 0.02, to: Double(entry.hour) + 0.98,
+            baseOut: SkyMarks.lowOffset - 12,
+            plinth: 46 * scale,
+            peakAmplitude: 28 * scale,
+            lobeHours: 0.17,
+            salt: entry.hour &* 613,
+            coverage: { _ in 1 }
+        )
     }
 
     /// Rain as a curtain between the cloud base and the arc.
