@@ -11,6 +11,8 @@ struct DayMenu: View {
     let weather: WeatherService
     @Binding var appearance: Appearance
     @AppStorage(WheelMapping.bottomKey) private var bottomPrimary: WheelAction = .now
+    // TEMPORARY — new-event icon study.
+    @AppStorage("newEventMark") private var newMark: NewEventMark = .plus
     let onDismiss: () -> Void
 
     @State private var placeQuery = ""
@@ -54,6 +56,25 @@ struct DayMenu: View {
                             .padding(.vertical, 3)
                         }
                     }
+                }
+
+                divider
+                section("New event icon") {
+                    Picker("New event icon", selection: $newMark) {
+                        ForEach(NewEventMark.allCases) { option in
+                            Text(option.title).tag(option)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.vertical, 4)
+
+                    HStack(spacing: 22) {
+                        ForEach(NewEventMark.allCases) { option in
+                            ActionMark(mark: option.mark, size: 44, stroke: 1.6)
+                        }
+                        Spacer()
+                    }
+                    .padding(.top, 6)
                 }
 
                 divider

@@ -5,6 +5,26 @@ enum EventChoice {
     case create
 }
 
+// TEMPORARY — new-event icon study. Strip with the losing marks.
+enum NewEventMark: String, CaseIterable, Identifiable {
+    case plus, nested, onDay
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .plus: "A · Plus"
+        case .nested: "B · Nested"
+        case .onDay: "C · On the day"
+        }
+    }
+    var mark: Mark {
+        switch self {
+        case .plus: .newEvent
+        case .nested: .newEventNested
+        case .onDay: .newEventOnDay
+        }
+    }
+}
+
 /// What the centre button does when the dot is already inside an event.
 ///
 /// Opening it was the only thing on offer, so an hour that already held
@@ -16,17 +36,20 @@ enum EventChoice {
 /// more made a choice that should take no thought look like a form.
 struct EventChoiceSheet: View {
     let onChoose: (EventChoice) -> Void
+    // TEMPORARY — new-event icon study.
+    @AppStorage("newEventMark") private var newMark: NewEventMark = .plus
 
-    static let height: CGFloat = 172
+    /// Tall enough that the two read as cards rather than as a pair of tiles.
+    static let height: CGFloat = 320
 
     var body: some View {
         HStack(spacing: 14) {
             button(.openEvent, title: "Open") { onChoose(.open) }
-            button(.newEvent, title: "New") { onChoose(.create) }
+            button(newMark.mark, title: "New") { onChoose(.create) }
         }
         .padding(.horizontal, 24)
         .padding(.top, 18)
-        .padding(.bottom, 26)
+        .padding(.bottom, 30)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Theme.background)
     }
@@ -36,8 +59,8 @@ struct EventChoiceSheet: View {
     /// they do there.
     private func button(_ mark: Mark, title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(spacing: 12) {
-                ActionMark(mark: mark, size: 34, color: Theme.ink)
+            VStack(spacing: 18) {
+                ActionMark(mark: mark, size: 96, color: Theme.ink, stroke: 2.0)
                 Text(title)
                     .font(.system(size: 11, weight: .semibold))
                     .tracking(1.2)
@@ -46,7 +69,7 @@ struct EventChoiceSheet: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background {
-                RoundedRectangle(cornerRadius: 18)
+                RoundedRectangle(cornerRadius: 22)
                     .strokeBorder(Theme.mutedLighter, lineWidth: 1.5)
             }
             .contentShape(.rect)
