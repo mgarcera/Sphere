@@ -96,6 +96,14 @@ final class DayModel {
 
     var focusSolarDay: SolarDay { solarDay(dayIndex) }
 
+    // The sheet's sun and moon material is anchored to the real now rather
+    // than to the wheel, so it stays a reference for the actual day however
+    // far the wheel has wandered.
+    var todayIndex: Int { Int(floor(nowHour / 24)) }
+    var todaySolarDay: SolarDay { solarDay(todayIndex) }
+    var todayHourOfDay: Double { nowHour - Double(todayIndex) * 24 }
+    var nowMoonPhase: MoonPhase { MoonPhase(date: realNow) }
+
     func scrub(byRotations rotations: Double) {
         focusHour += rotations * Self.hoursPerRotation
     }

@@ -28,6 +28,7 @@ struct OpenMeteoProvider: WeatherProvider {
             let precipitation: [Double?]
             let wind_speed_10m: [Double?]
             let cape: [Double?]
+            let temperature_2m: [Double?]
         }
         let hourly: Hourly
     }
@@ -37,7 +38,7 @@ struct OpenMeteoProvider: WeatherProvider {
         components.queryItems = [
             .init(name: "latitude", value: String(coordinate.latitude)),
             .init(name: "longitude", value: String(coordinate.longitude)),
-            .init(name: "hourly", value: "weather_code,cloud_cover_low,cloud_cover_mid,cloud_cover_high,precipitation,wind_speed_10m,cape"),
+            .init(name: "hourly", value: "weather_code,cloud_cover_low,cloud_cover_mid,cloud_cover_high,precipitation,wind_speed_10m,cape,temperature_2m"),
             .init(name: "timezone", value: "UTC"),
             .init(name: "past_days", value: String(Self.pastDays)),
             .init(name: "forecast_days", value: String(Self.forecastDays)),
@@ -71,7 +72,8 @@ struct OpenMeteoProvider: WeatherProvider {
                 cloudHigh: percent(hourly.cloud_cover_high),
                 precipitation: hourly.precipitation.indices.contains(index) ? hourly.precipitation[index] ?? 0 : 0,
                 wind: hourly.wind_speed_10m.indices.contains(index) ? hourly.wind_speed_10m[index] ?? 0 : 0,
-                cape: hourly.cape.indices.contains(index) ? hourly.cape[index] ?? 0 : 0
+                cape: hourly.cape.indices.contains(index) ? hourly.cape[index] ?? 0 : 0,
+                celsius: hourly.temperature_2m.indices.contains(index) ? hourly.temperature_2m[index] : nil
             )
         }
     }

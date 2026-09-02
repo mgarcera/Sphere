@@ -240,8 +240,17 @@ reads as a grey ring rather than as ticks.
 The menu opens at full height only, one detent. Its date, place and sun material
 is one BLOCK, not a linear list: the place in display type with the date picker
 opposite it on the same line, the search and the location action under that, then
-a rule and the sun's three moments, each a drawn mark with its label and time
-left-aligned beside it. The place carries its state or region, so Chicago reads
+a rule and a MINI ARC of today, with sunrise, midday and sunset marked on the
+curve and a dot where the real day has got to. Three timestamps make you do
+arithmetic to picture a day; the arc is the picture, and it reads better here
+than on the main screen, where 24 hours spread over eight screen widths is
+locally almost flat.
+
+The sheet's sun, moon and weather are anchored to the real NOW, not to the
+wheel, so they stay a reference for the actual day however far the wheel has
+wandered. The corner beside the city carries tonight's moon and the temperature
+and condition right now; hourly temperature is fetched in celsius and localised
+at the point of display. The place carries its state or region, so Chicago reads
 as "Chicago, IL".
 
 Switches and pickers tint with `ControlAccent`, not `Ink`. In dark mode ink is

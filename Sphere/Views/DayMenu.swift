@@ -8,6 +8,7 @@ struct DayMenu: View {
     let model: DayModel
     let calendar: CalendarService
     let location: LocationService
+    let weather: WeatherService
     @Binding var appearance: Appearance
     let onDismiss: () -> Void
 
@@ -77,6 +78,7 @@ struct DayMenu: View {
                         .foregroundStyle(Theme.mutedLight)
                 }
                 Spacer(minLength: 8)
+                nowCorner
             }
 
             VStack(alignment: .leading, spacing: 0) {
@@ -89,8 +91,8 @@ struct DayMenu: View {
             }
 
             Rectangle().fill(Theme.hairline).frame(height: 1).padding(.top, 4)
-            sunRow
-            moonRow
+            MiniArc(day: model.todaySolarDay, nowHour: model.todayHourOfDay)
+                .padding(.top, 2)
         }
         .padding(.vertical, 12)
     }
@@ -186,46 +188,39 @@ struct DayMenu: View {
         }
     }
 
-    /// Three moments across the width, each one a mark with its label and time
-    /// left-aligned beside it rather than centred under it.
-    private var sunRow: some View {
-        let day = model.focusSolarDay
-        return HStack(alignment: .center, spacing: 8) {
-            sunCell(.rise, "Sunrise", day.sunrise)
-            sunCell(.noon, "Midday", day.solarNoon)
-            sunCell(.set, "Sunset", day.sunset)
-        }
-    }
-
-    private func sunCell(_ moment: SunMark.Moment, _ title: String, _ hour: Double?) -> some View {
-        HStack(spacing: 7) {
-            SunMark(moment: moment)
-                .stroke(Theme.muted, style: StrokeStyle(lineWidth: 1.1, lineCap: .round, lineJoin: .round))
-                .frame(width: 17, height: 17)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(title)
+    /// The real now, in the corner: tonight's moon and what it is doing
+    /// outside, both independent of where the wheel is.
+    private var nowCorner: some View {
+        let sky = weather.hour(at: .now)
+        return HStack(spacing: 10) {
+            HStack(spacing: 5) {
+                MoonShape(illuminated: model.nowMoonPhase.illuminated,
+                          isWaxing: model.nowMoonPhase.isWaxing)
+                    .fill(Theme.muted)
+                    .overlay(Circle().strokeBorder(Theme.muted.opacity(0.35), lineWidth: 1))
+                    .frame(width: 13, height: 13)
+                Text("\(Int((model.nowMoonPhase.illuminated * 100).rounded()))%")
                     .font(.caption2)
                     .foregroundStyle(Theme.mutedLight)
-                Text(hour.map(ArcContent.clock) ?? "—")
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.ink)
                     .monospacedDigit()
             }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
 
-    private var moonRow: some View {
-        HStack {
-            Text(model.focusMoonPhase.name)
-                .font(.footnote)
-                .foregroundStyle(Theme.muted)
-            Spacer()
-            Text("\(Int((model.focusMoonPhase.illuminated * 100).rounded()))% lit")
-                .font(.footnote)
-                .foregroundStyle(Theme.muted)
-                .monospacedDigit()
+            if let sky {
+                HStack(spacing: 5) {
+                    SkyGlyph(condition: sky.condition)
+                        .stroke(Theme.muted, style: StrokeStyle(lineWidth: 1.1, lineCap: .round, lineJoin: .round))
+                        .frame(width: 15, height: 15)
+                    if let celsius = sky.celsius {
+                        Text(Measurement(value: celsius, unit: UnitTemperature.celsius)
+                            .formatted(.measurement(width: .narrow, usage: .weather)))
+                            .font(.caption2)
+                            .foregroundStyle(Theme.mutedLight)
+                            .monospacedDigit()
+                    }
+                }
+            }
         }
+        .fixedSize()
     }
 
     private func submitPlace() {

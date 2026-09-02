@@ -101,15 +101,14 @@ struct ClickWheel: View {
         .frame(width: Self.diameter, height: Self.diameter)
     }
 
-    /// Labelled DAY, which covers both gestures: tap gives you this day,
-    /// holding lets you choose one. NOW named only the tap.
+    /// Tap returns to the current moment, holding opens a date picker.
     ///
     /// Not a Button: a Button with a long press bolted on fires BOTH on a long
     /// press. A tap gesture and a long press gesture on a plain shape resolve
     /// against each other properly, and the long press's `pressing` callback
     /// gives back the dim the button style was providing.
     private var nowButton: some View {
-        Text("DAY")
+        Text("JUMP")
             .font(.system(size: 11, weight: .semibold))
             .tracking(1.2)
             .foregroundStyle(line)

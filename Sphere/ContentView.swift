@@ -93,7 +93,7 @@ struct ContentView: View {
             .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $isMenuOpen) {
-            DayMenu(model: model, calendar: calendar, location: location, appearance: $appearance) { isMenuOpen = false }
+            DayMenu(model: model, calendar: calendar, location: location, weather: weather, appearance: $appearance) { isMenuOpen = false }
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
