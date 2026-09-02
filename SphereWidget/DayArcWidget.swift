@@ -73,12 +73,12 @@ struct DayArcView: View {
         return entry.date.timeIntervalSince(midnight) / 3600
     }
 
+    /// The name alone. The time is already on the lock screen, and where the
+    /// dot sits against the event says when better than repeating a clock does.
     private func caption(_ snapshot: SphereSnapshot) -> String {
         guard let title = snapshot.nextEventTitle, let start = snapshot.nextEventStart,
               start > entry.date else { return snapshot.placeName }
-        var formatter = Date.FormatStyle.dateTime.hour().minute()
-        formatter.timeZone = snapshot.timeZone
-        return "\(title) · \(start.formatted(formatter))"
+        return title
     }
 }
 
