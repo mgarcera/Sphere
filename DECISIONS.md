@@ -272,3 +272,34 @@ compared on device and removed.
 - Ascendant/Midheaven and the Equal House system are still unverified against a
   reference ephemeris.
 - Personal mode, the natal chart and transits are untouched by any of the above.
+
+## Event editor: three separate faults behind one report (2026-09-01)
+
+Tapping an all-day event took ten seconds to open, and editing it did nothing.
+Instrumented on device with a trace that survives a launch; three unrelated
+causes.
+
+**Opening was slow.** The tap dismissed the all-day sheet and set the editor
+target in the same tick. UIKit will not present over a sheet still on its way
+out, and SwiftUI does not call `updateUIViewController` again on its own, so the
+target sat dropped until an unrelated re-render happened along — 10.3s in the
+trace, and variable. `EventEditorHost` now waits for the presentation to clear,
+bounded at two seconds. Tap to editor is ~600ms.
+
+**Deleting never called the delegate.** `EKEventEditViewController` commits a
+delete to the store and skips `didCompleteWith` entirely; saving and cancelling
+both call it. One trace holds a working save and a broken delete three seconds
+apart through identical code. The editor stayed open over an event that was
+already gone, and nothing reloaded until relaunch. `closeIfEventDeleted` treats
+`EKEventStoreChanged` as the completion signal: if the event being edited no
+longer exists, close and reload. This is the same bug as the earlier timed-event
+delete, which the move to a real presenting controller did not actually reach.
+
+**Saving did nothing, and that one was correct.** The event under test was
+created by Gmail with the user as an attendee, so EventKit refuses the write —
+Calendar.app refuses it too. The containing calendar still reports
+`allowsContentModifications = true`, which is why it looked like a defect. The
+discriminator is the organizer: an event you own has none
+(`organizer == nil`), one you were invited to has `organizer.isCurrentUser ==
+false`. Sphere's actual fault is opening a working-looking editor on an event
+that can never save. Treatment still to decide.

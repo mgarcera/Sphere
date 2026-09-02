@@ -53,9 +53,7 @@ struct ContentView: View {
             // Invisible, and behind everything: it only exists to present the
             // event editor from a real view controller.
             EventEditorHost(target: $editorTarget, store: calendar.store) {
-                let before = model.timedEvents.count
                 reloadAfterEdit()
-                Trace.log("reload: timed \(before) -> \(model.timedEvents.count)")
             }
             .frame(width: 0, height: 0)
             .allowsHitTesting(false)
@@ -101,7 +99,6 @@ struct ContentView: View {
                 .presentationDragIndicator(.hidden)
         }
         .task {
-            Trace.dump()
             allDayCount = model.allDayEvents.count
             // Ask independently of priming. Anyone who granted calendar before
             // location existed never sees that screen again, and was silently
@@ -401,10 +398,8 @@ struct ContentView: View {
     private func openEditor() {
         if let active = model.activeEvent,
            let event = calendar.occurrence(for: active.id) {
-            Trace.log("editing existing '\(event.title ?? "?")' id=\(event.eventIdentifier ?? "nil") calendar=\(event.calendar?.title ?? "nil")")
             editorTarget = .existing(event)
         } else {
-            Trace.log("NEW editor: active=\(model.activeEvent?.title ?? "none") occurrence=\(model.activeEvent.flatMap { calendar.occurrence(for: $0.id) } != nil)")
             editorTarget = .new(model.focusDate)
         }
     }
