@@ -52,7 +52,9 @@ struct DayArcView: View {
                                coordinate: snapshot.coordinate,
                                timeZone: snapshot.timeZone)
             VStack(alignment: .leading, spacing: 3) {
-                LockArc(day: day, hour: hourOfDay(snapshot.timeZone))
+                LockArc(day: day,
+                        hour: hourOfDay(snapshot.timeZone),
+                        events: spans(snapshot))
                     .frame(height: 26)
                 Text(caption(snapshot))
                     .font(.system(size: 13, weight: .medium))
@@ -75,6 +77,26 @@ struct DayArcView: View {
 
     /// The name alone. The time is already on the lock screen, and where the
     /// dot sits against the event says when better than repeating a clock does.
+    /// Today's events as hour ranges on the day being drawn. Anything outside
+    /// it is dropped rather than clamped: a capsule pinned to midnight would
+    /// claim an event starts there.
+    private func spans(_ snapshot: SphereSnapshot) -> [ClosedRange<Double>] {
+        guard let events = snapshot.events else { return [] }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = snapshot.timeZone
+        let midnight = calendar.startOfDay(for: entry.date)
+
+        return events.compactMap { event in
+            let start = event.start.timeIntervalSince(midnight) / 3600
+            let end = event.end.timeIntervalSince(midnight) / 3600
+            guard end > 0, start < 24 else { return nil }
+            // A minimum width, or a fifteen-minute event is thinner than the
+            // line it sits on and disappears.
+            let low = max(0, start)
+            return low...min(24, max(end, low + 0.35))
+        }
+    }
+
     private func caption(_ snapshot: SphereSnapshot) -> String {
         guard let title = snapshot.nextEventTitle, let start = snapshot.nextEventStart,
               start > entry.date else { return snapshot.placeName }
@@ -90,6 +112,7 @@ struct DayArcView: View {
 struct LockArc: View {
     let day: SolarDay
     let hour: Double
+    var events: [ClosedRange<Double>] = []
 
     var body: some View {
         Canvas { context, size in
@@ -115,6 +138,21 @@ struct LockArc: View {
             ground.addLine(to: CGPoint(x: size.width, y: baseline))
             context.stroke(ground, with: .color(.white.opacity(0.25)),
                            style: StrokeStyle(lineWidth: 1, lineCap: .round))
+
+            // Laid ALONG the curve, the way the app draws them: a thick
+            // round-capped stroke over the stretch of day the event occupies.
+            for span in events {
+                var capsule = Path()
+                let steps = max(2, Int((span.upperBound - span.lowerBound) * 4))
+                for step in 0...steps {
+                    let h = span.lowerBound
+                        + (span.upperBound - span.lowerBound) * Double(step) / Double(steps)
+                    let point = CGPoint(x: x(h), y: y(h))
+                    if step == 0 { capsule.move(to: point) } else { capsule.addLine(to: point) }
+                }
+                context.stroke(capsule, with: .color(.white.opacity(0.9)),
+                               style: StrokeStyle(lineWidth: 3.4, lineCap: .round))
+            }
 
             let dot = CGPoint(x: x(hour), y: y(hour))
             context.fill(Path(ellipseIn: CGRect(x: dot.x - 2.6, y: dot.y - 2.6,

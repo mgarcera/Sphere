@@ -443,7 +443,15 @@ struct ContentView: View {
             timeZoneIdentifier: location.timeZone.identifier,
             placeName: location.placeName,
             nextEventTitle: next?.title,
-            nextEventStart: next?.startDate
+            nextEventStart: next?.startDate,
+            // The loaded window is a day either side, which is more than the
+            // widget draws; it filters to the day it is showing.
+            events: model.timedEvents.map { event in
+                SnapshotEvent(
+                    start: model.anchor.addingTimeInterval(event.startHour * 3600),
+                    end: model.anchor.addingTimeInterval(event.endHour * 3600)
+                )
+            }
         ))
         WidgetCenter.shared.reloadAllTimelines()
     }
