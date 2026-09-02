@@ -29,7 +29,7 @@ extension Font {
 /// Light, dark, or follow the device. Every colour is an asset-catalog pair,
 /// so overriding the scheme is all this has to do.
 enum Appearance: String, CaseIterable, Identifiable {
-    case system, light, dark, dual
+    case system, light, dark
 
     var id: String { rawValue }
 
@@ -38,7 +38,6 @@ enum Appearance: String, CaseIterable, Identifiable {
         case .system: "Auto"
         case .light: "Light"
         case .dark: "Dark"
-        case .dual: "Dual"
         }
     }
 
@@ -47,9 +46,6 @@ enum Appearance: String, CaseIterable, Identifiable {
         case .system: nil
         case .light: .light
         case .dark: .dark
-        // Neither. Dual renders light and inverts one half of it, so the base
-        // has to be the one the inversion is defined against.
-        case .dual: .light
         }
     }
 }
