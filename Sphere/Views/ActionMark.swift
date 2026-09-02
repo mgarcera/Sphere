@@ -306,12 +306,30 @@ struct ActionMark: View {
             break   // drawn by `lens`, which needs ordered layers
 
         case .newEvent:
-            // Just a plus. It sits beside the lens, which already says event,
-            // so restating that in the second mark only made the pair rhyme.
-            line.move(to: CGPoint(x: 10, y: 3))
-            line.addLine(to: CGPoint(x: 10, y: 17))
-            line.move(to: CGPoint(x: 3, y: 10))
-            line.addLine(to: CGPoint(x: 17, y: 10))
+            // The same day the lens draws, with a plus set INTO it rather than
+            // floating above it. Above the line is the all-day mark, which is
+            // about the whole day; on the line is about a moment in it.
+            //
+            // The arc breaks around the plus. At the crest the curve is flat,
+            // so a plus laid over it would have its horizontal arm collinear
+            // with the line and read as a tick rather than a plus.
+            func day(_ t: CGFloat) -> CGPoint {
+                CGPoint(x: 1 + 18 * t, y: 16 - 28 * t + 28 * t * t)
+            }
+            func segment(_ from: CGFloat, _ to: CGFloat) {
+                line.move(to: day(from))
+                for step in 1...40 {
+                    line.addLine(to: day(from + (to - from) * CGFloat(step) / 40))
+                }
+            }
+            segment(0, 0.30)
+            segment(0.70, 1)
+
+            let crest = day(0.5)
+            line.move(to: CGPoint(x: crest.x, y: crest.y - 2.8))
+            line.addLine(to: CGPoint(x: crest.x, y: crest.y + 2.8))
+            line.move(to: CGPoint(x: crest.x - 2.8, y: crest.y))
+            line.addLine(to: CGPoint(x: crest.x + 2.8, y: crest.y))
 
         case .previousEvent:
             run(arrows: 1, lobes: 1, goingLeft: true)
