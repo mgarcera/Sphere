@@ -16,6 +16,7 @@ struct WheelSettings: View {
     /// the marks could never appear in one; choosing happens inline instead.
     @State private var choosing: WheelGesture?
     @AppStorage(WheelMapping.iconsKey) private var wheelShowsIcons = false
+    @AppStorage(Haptics.key) private var hapticsEnabled = true
 
     private static let diameter: CGFloat = 168
     private static let buttonRatio: CGFloat = 0.383
@@ -29,13 +30,7 @@ struct WheelSettings: View {
         VStack(spacing: 16) {
             wheel
             assignment
-            Toggle(isOn: $wheelShowsIcons) {
-                Text("Icons on the wheel")
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.ink)
-            }
-            .tint(Theme.controlAccent)
-            legend
+            switches
         }
         .padding(.vertical, 4)
     }
@@ -76,29 +71,29 @@ struct WheelSettings: View {
             .animation(.easeOut(duration: 0.16), value: isSelected)
     }
 
-    // TEMPORARY — the whole mark set at once, for judging it as a set rather
-    // than one mark at a time. Strip once the drawing is settled.
-    private var legend: some View {
+    /// Both switches belong to the wheel, so they live with it rather than in
+    /// a section of their own.
+    private var switches: some View {
         VStack(spacing: 0) {
-            ForEach(WheelAction.allCases) { action in
-                HStack(spacing: 12) {
-                    ActionMark(mark: action.mark)
-                    Text(action.title)
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.ink)
-                    Spacer()
-                    // Also at row size and in the muted grey the rows use, so
-                    // a mark that only works large shows itself.
-                    ActionMark(mark: action.mark, size: 16, color: Theme.mutedLight)
-                }
-                .padding(.vertical, 9)
+            Rectangle().fill(Theme.hairline).frame(height: 1)
 
-                if action != WheelAction.allCases.last {
-                    Rectangle().fill(Theme.hairline).frame(height: 1)
-                }
+            Toggle(isOn: $wheelShowsIcons) {
+                Text("Icons instead of words")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.ink)
             }
+            .tint(Theme.controlAccent)
+            .padding(.vertical, 8)
+
+            Toggle(isOn: $hapticsEnabled) {
+                Text("Haptics")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.ink)
+            }
+            .tint(Theme.controlAccent)
+            .padding(.vertical, 8)
         }
-        .padding(.top, 8)
+        .padding(.top, 4)
     }
 
     /// What the selected position does, both ways round.

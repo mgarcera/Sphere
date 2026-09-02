@@ -490,6 +490,17 @@ Calendar is a day with an arrow leaving it. The one exception is the calendar
 itself, a grid of dots four across and three down, because the universal shape
 reads faster there than restating the app's would.
 
-Known limit: iOS context menus render only text and `Image`, so the marks
-cannot appear inside the picker dropdowns. They sit in the printed rows. If the
-marks are wanted in the picker too, the picker has to stop being a system menu.
+iOS context menus render only text and `Image`, so the marks could never appear
+inside a system picker. The picker stopped being one: choosing happens inline,
+underneath the row, so the mark being picked sits beside the one already set.
+
+`Mark` is kept apart from `WheelAction` so that giving MENU a picture does not
+put "menu" in the pool a hold can be set to. Every tap has one: a hamburger for
+MENU, a capsule for an event, and for the four directional marks one
+construction — arrows, a straight line, then that line rising into a day. One
+arrow steps an event and two step a day. Count carries the whole distinction,
+which survives the sixteen-point row where a difference in lobe counts did not.
+
+Icons on the wheel are a setting rather than a replacement: the printed words
+are the reference the control is built on. That switch and the haptics switch
+both live in the Wheel section, since both belong to the wheel.

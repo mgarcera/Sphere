@@ -10,7 +10,6 @@ struct DayMenu: View {
     let location: LocationService
     let weather: WeatherService
     @Binding var appearance: Appearance
-    @AppStorage(Haptics.key) private var hapticsEnabled = true
     @AppStorage(WheelMapping.bottomKey) private var bottomPrimary: WheelAction = .now
     let onDismiss: () -> Void
 
@@ -32,17 +31,6 @@ struct DayMenu: View {
                     }
                     .pickerStyle(.segmented)
                     .padding(.vertical, 4)
-                }
-
-                divider
-                section("Haptics") {
-                    Toggle(isOn: $hapticsEnabled) {
-                        Text("Wheel and jumps")
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.ink)
-                    }
-                    .tint(Theme.controlAccent)
-                    .padding(.vertical, 3)
                 }
 
                 if !calendar.sources.isEmpty {
