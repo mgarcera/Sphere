@@ -72,7 +72,7 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, alignment: .top)
             .background(Theme.background)
             .presentationDetents([.height(420)])
-            .presentationDragIndicator(.visible)
+            .presentationDragIndicator(.hidden)
             .onChange(of: pickedDay) { _, day in
                 isDayPickerOpen = false
                 // Through travel, so a move of days does not sweep every
@@ -95,7 +95,7 @@ struct ContentView: View {
         .sheet(isPresented: $isMenuOpen) {
             DayMenu(model: model, calendar: calendar, location: location, weather: weather, appearance: $appearance) { isMenuOpen = false }
                 .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
+                .presentationDragIndicator(.hidden)
         }
         .task {
             allDayCount = model.allDayEvents.count
