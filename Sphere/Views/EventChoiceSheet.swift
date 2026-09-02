@@ -16,7 +16,7 @@ enum EventChoice {
 /// more made a choice that should take no thought look like a form.
 /// The two cards themselves, with no opinion about how they got on screen.
 struct EventChoiceCards: View {
-    var height: CGFloat = 210
+    var height: CGFloat = 150
     let onChoose: (EventChoice) -> Void
 
     var body: some View {
@@ -57,10 +57,10 @@ struct EventChoiceCards: View {
 struct EventChoiceSheet: View {
     let onChoose: (EventChoice) -> Void
 
-    static let height: CGFloat = 272
+    static let height: CGFloat = 200
 
     var body: some View {
-        EventChoiceCards(height: 210, onChoose: onChoose)
+        EventChoiceCards(height: 150, onChoose: onChoose)
             .padding(.horizontal, 24)
             .padding(.top, 18)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
