@@ -11,6 +11,8 @@ struct DayMenu: View {
     let weather: WeatherService
     @Binding var appearance: Appearance
     @AppStorage(WheelMapping.bottomKey) private var bottomPrimary: WheelAction = .now
+    // TEMPORARY — Dual mode direction study.
+    @AppStorage("dualVariant") private var dualVariant: DualVariant = .ground
     let onDismiss: () -> Void
 
     @State private var placeQuery = ""
@@ -31,6 +33,16 @@ struct DayMenu: View {
                     }
                     .pickerStyle(.segmented)
                     .padding(.vertical, 4)
+
+                    if appearance == .dual {
+                        Picker("Dual", selection: $dualVariant) {
+                            ForEach(DualVariant.allCases) { variant in
+                                Text(variant.title).tag(variant)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .padding(.top, 6)
+                    }
                 }
 
                 if !calendar.sources.isEmpty {

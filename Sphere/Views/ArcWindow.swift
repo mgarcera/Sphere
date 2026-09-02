@@ -20,6 +20,9 @@ struct ArcWindow: View {
             let centreX = proxy.size.width / 2
             let pan = centreX - (model.focusHour - originHour) * pointsPerHour
             let dotY = ArcGeometry.y(normalized: model.normalizedElevation(atAbsoluteHour: model.focusHour), height: arcHeight)
+            // Where this window sits on screen, so the curve can be published
+            // in the root's space and the whole interface split along it.
+            let origin = proxy.frame(in: .named("root")).origin
 
             ZStack(alignment: .topLeading) {
                 // Each day is its own cached layer, so only the set of three
@@ -116,7 +119,31 @@ struct ArcWindow: View {
             }
             .frame(width: proxy.size.width, height: ArcGeometry.totalHeight(arcHeight), alignment: .topLeading)
             .clipped()
+            .preference(key: DualSplitKey.self, value: DualSplit(
+                curve: visibleCurve(width: proxy.size.width, centreX: centreX,
+                                    pointsPerHour: pointsPerHour, origin: origin),
+                level: origin.y + dotY
+            ))
         }
         .frame(height: ArcGeometry.totalHeight(arcHeight))
+    }
+
+    /// The curve actually on screen, sampled straight from the model rather
+    /// than lifted from the day layers: those are three cached paths panned
+    /// under a clip, and reassembling them here would duplicate the panning.
+    private func visibleCurve(width: CGFloat, centreX: CGFloat,
+                              pointsPerHour: CGFloat, origin: CGPoint) -> Path {
+        var path = Path()
+        let step: CGFloat = 3
+        var x: CGFloat = -step
+        while x <= width + step {
+            let hour = model.focusHour + Double((x - centreX) / pointsPerHour)
+            let y = ArcGeometry.y(normalized: model.normalizedElevation(atAbsoluteHour: hour),
+                                  height: arcHeight)
+            let point = CGPoint(x: origin.x + x, y: origin.y + y)
+            if x < 0 { path.move(to: point) } else { path.addLine(to: point) }
+            x += step
+        }
+        return path
     }
 }

@@ -37,8 +37,28 @@ struct ContentView: View {
     /// Fetched when the sheet opens, not on every keystroke.
     @State private var searchable: [EKEvent] = []
     @State private var pickedDay: Date = .now
+    @State private var split = DualSplit()
+    // TEMPORARY — Dual mode direction study.
+    @AppStorage("dualVariant") private var dualVariant: DualVariant = .ground
 
     var body: some View {
+        GeometryReader { root in
+            screen
+                .coordinateSpace(name: "root")
+                .onPreferenceChange(DualSplitKey.self) { split = $0 }
+                // Grouped so the difference blend has the finished interface to
+                // invert and stops at its own edges.
+                .compositingGroup()
+                .overlay {
+                    if appearance == .dual {
+                        DualOverlay(split: split, size: root.size, variant: dualVariant)
+                    }
+                }
+        }
+        .ignoresSafeArea(.keyboard)
+    }
+
+    private var screen: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
 
