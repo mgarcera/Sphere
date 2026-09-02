@@ -7,65 +7,58 @@ enum EventChoice {
 
 /// What the centre button does when the dot is already inside an event.
 ///
-/// Opening it was the only thing on offer, so an hour that already had
-/// something in it could not have anything else put in it. Real days nest: a
-/// call inside a block, a break inside a shift. Both are printed rather than
-/// one being a hidden gesture, and the fork only appears where there is one —
-/// in empty time the centre button still creates without asking.
+/// Opening it was the only thing on offer, so an hour that already held
+/// something could not have anything else put in it. Real days nest: a call
+/// inside a block, a break inside a shift.
+///
+/// Two buttons and nothing else. A heading and a caption under each were tried
+/// and cut: the fork has exactly two answers, both are one word, and anything
+/// more made a choice that should take no thought look like a form.
 struct EventChoiceSheet: View {
-    let eventTitle: String
-    let hour: String
     let onChoose: (EventChoice) -> Void
 
-    static let height: CGFloat = 56 + 86
+    static let height: CGFloat = 172
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("This hour")
-                .font(.system(size: 11, weight: .medium))
-                .tracking(1.1)
-                .textCase(.uppercase)
-                .foregroundStyle(Theme.mutedLight)
-                .padding(.top, 18)
-                .padding(.bottom, 12)
-
-            HStack(alignment: .top, spacing: 18) {
-                column(.openEvent, title: "Open", detail: eventTitle) { onChoose(.open) }
-
-                Rectangle()
-                    .fill(Theme.hairline)
-                    .frame(width: 1)
-
-                column(.newEvent, title: "New", detail: hour) { onChoose(.create) }
-            }
-            .fixedSize(horizontal: false, vertical: true)
+        HStack(spacing: 14) {
+            button(.openEvent, title: "Open") { onChoose(.open) }
+            button(.newEvent, title: "New") { onChoose(.create) }
         }
         .padding(.horizontal, 24)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 18)
+        .padding(.bottom, 26)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Theme.background)
     }
 
-    /// The detail is what distinguishes the two: the event you are in against
-    /// the hour you are on.
-    private func column(_ mark: Mark, title: String, detail: String,
-                        action: @escaping () -> Void) -> some View {
+    /// Drawn in the wheel's line and weight, since it is the wheel's own button
+    /// that opened this. Presses dim rather than scale, for the same reason
+    /// they do there.
+    private func button(_ mark: Mark, title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
-                    ActionMark(mark: mark, size: 18, color: Theme.ink)
-                    Text(title)
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.ink)
-                }
-                Text(detail)
-                    .font(.footnote)
-                    .foregroundStyle(Theme.mutedLight)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
+            VStack(spacing: 12) {
+                ActionMark(mark: mark, size: 34, color: Theme.ink)
+                Text(title)
+                    .font(.system(size: 11, weight: .semibold))
+                    .tracking(1.2)
+                    .textCase(.uppercase)
+                    .foregroundStyle(Theme.ink)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background {
+                RoundedRectangle(cornerRadius: 18)
+                    .strokeBorder(Theme.mutedLighter, lineWidth: 1.5)
+            }
             .contentShape(.rect)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(DimOnPress())
+    }
+}
+
+private struct DimOnPress: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.45 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }

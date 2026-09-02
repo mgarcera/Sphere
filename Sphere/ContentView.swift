@@ -110,10 +110,7 @@ struct ContentView: View {
                 editorTarget = .new(model.focusDate)
             }
         }) {
-            EventChoiceSheet(
-                eventTitle: model.activeEvent?.title ?? "This event",
-                hour: ArcContent.clock(hourOfDay)
-            ) { choice in
+            EventChoiceSheet { choice in
                 pendingChoice = choice
                 isEventChoiceOpen = false
             }
