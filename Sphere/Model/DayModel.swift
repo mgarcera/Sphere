@@ -154,6 +154,17 @@ final class DayModel {
     /// belong somewhere else on screen.
     var timedEvents: [CalendarEvent] { events.filter { !$0.isAllDay } }
 
+    /// What is happening right now, which is not the same as what the wheel is
+    /// pointing at. The arc wanders; this does not.
+    var eventContainingNow: CalendarEvent? {
+        timedEvents.filter { $0.contains(nowHour) }
+            .max { a, b in
+                a.startHour == b.startHour
+                    ? a.durationHours > b.durationHours
+                    : a.startHour < b.startHour
+            }
+    }
+
     var allDayEvents: [CalendarEvent] {
         events.filter { $0.isAllDay && Int(floor($0.startHour / 24)) == dayIndex }
     }

@@ -454,6 +454,14 @@ struct ContentView: View {
             }
         ))
         WidgetCenter.shared.reloadAllTimelines()
+
+        // The event containing the real now, not the one under the wheel: the
+        // activity is about what is happening, not about what is being looked at.
+        LiveActivity.sync(event: model.eventContainingNow,
+                          anchor: model.anchor,
+                          now: model.realNow,
+                          coordinate: location.coordinate,
+                          timeZone: location.timeZone)
     }
 
     private func reload() {

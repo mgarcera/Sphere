@@ -700,3 +700,24 @@ they belong to, so the arc is labelled rather than annotated.
 The sky is not there. Weather is not in the snapshot, and putting it there is a
 second payload with its own staleness; the drawn clouds are the obvious thing
 to add to a large widget once that exists.
+
+## A Live Activity for the event you are in (2026-09-02)
+
+An activity has to be bounded and the system ends one after about eight hours.
+An event supplies its own bound, so that is the shape: started when an event
+contains the real now, ended when it stops doing so.
+
+It watches `eventContainingNow`, not `activeEvent`. The wheel wanders and the
+activity is about what is happening, not about what is being looked at.
+
+**A drawn mark cannot animate itself.** A Live Activity redraws only when a new
+content state is pushed, and pushing from the background needs remote
+notifications. So the arc is static for the length of the event, which is
+correct — the day does not change while one event runs — and everything that
+must move is handed to the system: `Text(timerInterval:)` counts down with no
+updates at all. The dot moves when the app is running to push it, and its
+position simply holds otherwise.
+
+The minimal presentation is one dot at the height the sun actually is. It is
+the whole app at its smallest, and the only thing that fits in that space that
+still means something.
