@@ -139,6 +139,11 @@ struct ContentView: View {
             header
 
             ArcWindow(model: model, eventsHidden: eventsHidden)
+                // Tapping the day returns you to now. The arc is the one
+                // surface big enough to carry a gesture nothing can label,
+                // which is what let DATE become a plain printed tap.
+                .contentShape(.rect)
+                .onTapGesture { travel { model.returnToNow() } }
                 .padding(.top, 8)
 
             Spacer(minLength: 16)
@@ -146,8 +151,7 @@ struct ContentView: View {
             ClickWheel(
                 onRotate: { model.scrub(byRotations: $0) },
                 onMenu: { isMenuOpen = true },
-                onNow: { travel { model.returnToNow() } },
-                onNowHeld: {
+                onDate: {
                     pickedDay = model.focusDate
                     isDayPickerOpen = true
                 },

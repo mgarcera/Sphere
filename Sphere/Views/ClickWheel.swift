@@ -1,7 +1,10 @@
 import SwiftUI
 
 /// The click wheel, drawn in the same line as the arc and in the same grey as
-/// the timeline's hour labels. It is a control, not an object: the chrome
+/// the timeline's hour labels.
+///
+/// Every control on it is a plain tap on a printed word. Returning to now moved
+/// to the arc itself, which retired the one gesture that could not be labelled. It is a control, not an object: the chrome
 /// version was tried against this and removed, and the light grey keeps the
 /// wheel from pulling weight away from the day above it.
 ///
@@ -11,8 +14,7 @@ struct ClickWheel: View {
     /// Signed rotations, positive clockwise. One whole turn is one unit.
     let onRotate: (Double) -> Void
     let onMenu: () -> Void
-    let onNow: () -> Void
-    let onNowHeld: () -> Void
+    let onDate: () -> Void
     let onCentre: () -> Void
     let onPrevious: () -> Void
     let onNext: () -> Void
@@ -41,7 +43,6 @@ struct ClickWheel: View {
 
     /// Angle of the previous drag sample, in radians. Nil between drags.
     @State private var lastAngle: Double?
-    @State private var nowHeld = false
 
     private var line: Color { Theme.mutedLighter }
 
@@ -87,7 +88,7 @@ struct ClickWheel: View {
             printedButton("MENU", action: onMenu)
                 .position(x: outerRadius, y: Self.labelInset)
 
-            nowButton
+            printedButton("DATE", action: onDate)
                 .position(x: outerRadius, y: Self.diameter - Self.labelInset)
 
             // These jump straight to the previous and next event's start. They
@@ -99,30 +100,6 @@ struct ClickWheel: View {
                 .position(x: Self.diameter - Self.labelInset, y: outerRadius)
         }
         .frame(width: Self.diameter, height: Self.diameter)
-    }
-
-    /// Tap returns to the current moment, holding opens a date picker.
-    ///
-    /// Not a Button: a Button with a long press bolted on fires BOTH on a long
-    /// press. A tap gesture and a long press gesture on a plain shape resolve
-    /// against each other properly, and the long press's `pressing` callback
-    /// gives back the dim the button style was providing.
-    private var nowButton: some View {
-        Text("JUMP")
-            .font(.system(size: 11, weight: .semibold))
-            .tracking(1.2)
-            .foregroundStyle(line)
-            .frame(width: Self.hitTarget, height: Self.hitTarget)
-            .contentShape(.rect)
-            .opacity(nowHeld ? 0.45 : 1)
-            .animation(.easeOut(duration: 0.12), value: nowHeld)
-            .onTapGesture { onNow() }
-            .onLongPressGesture(minimumDuration: 0.45) {
-                // A long press has no printed affordance, so the tap confirms
-                // it registered.
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                onNowHeld()
-            } onPressingChanged: { nowHeld = $0 }
     }
 
     private func printedButton(_ text: String, size: CGFloat = 11, action: @escaping () -> Void) -> some View {
