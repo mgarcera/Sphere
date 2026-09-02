@@ -23,6 +23,11 @@ struct ContentView: View {
     @State private var eventsHidden = false
     @State private var isAllDayOpen = false
     @State private var isDayPickerOpen = false
+    @State private var isJumpOpen = false
+    /// Acted on after the fork closes, never while it is closing: presenting a
+    /// sheet from a sheet still dismissing is the same refusal that lost the
+    /// event editor for ten seconds.
+    @State private var pendingJump: JumpChoice?
     @State private var pickedDay: Date = .now
 
     var body: some View {
@@ -84,6 +89,27 @@ struct ContentView: View {
                 travel { model.focus(onStartOf: day) }
             }
         }
+        // onDismiss, not onChange: the binding flips the moment the row is
+        // tapped, while the sheet is still on its way out, and presenting the
+        // picker into that is the refusal that cost the editor ten seconds.
+        .sheet(isPresented: $isJumpOpen, onDismiss: {
+            guard let choice = pendingJump else { return }
+            pendingJump = nil
+            switch choice {
+            case .now:
+                travel { model.returnToNow() }
+            case .calendar:
+                pickedDay = model.focusDate
+                isDayPickerOpen = true
+            }
+        }) {
+            JumpSheet(now: model.realNow, focused: model.focusDate) { choice in
+                pendingJump = choice
+                isJumpOpen = false
+            }
+            .presentationDetents([.height(JumpSheet.height)])
+            .presentationDragIndicator(.hidden)
+        }
         .sheet(isPresented: $isAllDayOpen) {
             AllDaySheet(events: model.allDayEvents) { entry in
                 isAllDayOpen = false
@@ -143,11 +169,6 @@ struct ContentView: View {
             header
 
             ArcWindow(model: model, eventsHidden: eventsHidden)
-                // Tapping the day returns you to now. The arc is the one
-                // surface big enough to carry a gesture nothing can label,
-                // which is what let DATE become a plain printed tap.
-                .contentShape(.rect)
-                .onTapGesture { travel { model.returnToNow() } }
                 .padding(.top, 8)
 
             Spacer(minLength: 16)
@@ -162,10 +183,7 @@ struct ContentView: View {
                     lastDetent = (model.focusHour / Haptics.detentHours).rounded(.towardZero)
                 },
                 onMenu: { isMenuOpen = true },
-                onDate: {
-                    pickedDay = model.focusDate
-                    isDayPickerOpen = true
-                },
+                onDate: { isJumpOpen = true },
                 onCentre: openEditor,
                 onPrevious: { step(.back) },
                 onNext: { step(.forward) }

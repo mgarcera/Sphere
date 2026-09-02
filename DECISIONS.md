@@ -364,3 +364,22 @@ detent, medium for an arrival, rigid for a wall.
 
 One switch in the menu, on by default: the wheel is the app's main control and
 shipping it mute would hide the feature from anyone who never opens settings.
+
+## DATE forks; the arc stops carrying a gesture (2026-09-01)
+
+Returning to now was a tap on the arc, chosen because the arc is the one surface
+big enough to carry a gesture nothing can label. Unlabelled was the cost:
+nothing on screen said the day was tappable, so the fastest move in the app was
+the one you had to be told about.
+
+DATE now opens a two-row fork, Now or Calendar, both printed. Each destination
+costs one tap more than before, and neither has to be discovered.
+
+Each row shows what it is offering — the clock time you would land on, against
+the day you are already looking at — so the fork carries the information the
+choice is actually made on.
+
+The calendar path runs from the sheet's `onDismiss`, not from the binding
+flipping: the binding flips while the fork is still on its way out, and
+presenting into that is the refusal that cost the event editor ten seconds
+earlier the same day.
