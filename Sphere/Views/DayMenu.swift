@@ -13,6 +13,7 @@ struct DayMenu: View {
 
     @State private var pickedDate: Date = .now
     @State private var placeQuery = ""
+    @State private var search = PlaceSearch()
     @FocusState private var placeFocused: Bool
 
     var body: some View {
@@ -87,10 +88,13 @@ struct DayMenu: View {
                     .fixedSize()
             }
 
-            HStack {
-                placeSearch
-                Spacer(minLength: 8)
-                placeAction
+            VStack(alignment: .leading, spacing: 0) {
+                HStack {
+                    placeSearch
+                    Spacer(minLength: 8)
+                    placeAction
+                }
+                suggestions
             }
 
             Rectangle().fill(Theme.hairline).frame(height: 1).padding(.top, 4)
@@ -133,15 +137,61 @@ struct DayMenu: View {
 
     private var placeSearch: some View {
         HStack(spacing: 8) {
-            TextField("Search a city", text: $placeQuery)
+            TextField("City, postcode or address", text: $placeQuery)
                 .font(.subheadline)
                 .foregroundStyle(Theme.ink)
                 .focused($placeFocused)
+                .autocorrectionDisabled()
                 .submitLabel(.search)
                 .onSubmit { submitPlace() }
+                .onChange(of: placeQuery) { _, query in search.update(query: query) }
             if location.isSearching {
                 ProgressView().controlSize(.small)
             }
+        }
+    }
+
+    /// Results as you type, so the field answers before you commit to it.
+    @ViewBuilder
+    private var suggestions: some View {
+        if !search.suggestions.isEmpty {
+            VStack(spacing: 0) {
+                ForEach(search.suggestions) { suggestion in
+                    Button { choose(suggestion) } label: {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(suggestion.title)
+                                .font(.subheadline)
+                                .foregroundStyle(Theme.ink)
+                                .lineLimit(1)
+                            if !suggestion.subtitle.isEmpty {
+                                Text(suggestion.subtitle)
+                                    .font(.caption2)
+                                    .foregroundStyle(Theme.mutedLight)
+                                    .lineLimit(1)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(.rect)
+                        .padding(.vertical, 8)
+                    }
+                    .buttonStyle(.plain)
+
+                    if suggestion.id != search.suggestions.last?.id {
+                        Rectangle().fill(Theme.hairline).frame(height: 1)
+                    }
+                }
+            }
+            .padding(.top, 6)
+        }
+    }
+
+    private func choose(_ suggestion: PlaceSearch.Suggestion) {
+        Task {
+            guard let resolved = await search.resolve(suggestion) else { return }
+            location.adopt(coordinate: resolved.coordinate, name: resolved.name)
+            placeQuery = ""
+            placeFocused = false
+            search.clear()
         }
     }
 
@@ -193,6 +243,7 @@ struct DayMenu: View {
             if await location.search(query) {
                 placeQuery = ""
                 placeFocused = false
+                search.clear()
             }
         }
     }
