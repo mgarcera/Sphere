@@ -145,6 +145,23 @@ struct ClearSky: View, Equatable {
         let byHour = Dictionary(uniqueKeysWithValues: hours.map { ($0.hour, $0) })
         var result: [Mark] = []
 
+        // Which hours could carry a mark at all, worked out BEFORE any are
+        // placed. Sampling the whole day and then rejecting is what made birds
+        // vanish: with three candidates spread over twenty-four hours and only
+        // a handful of them clear, most days drew none at all.
+        let eligible = hours.filter { entry in
+            let elevation = day.normalizedElevation(atHour: Double(entry.hour) + 0.5)
+            let night = (1 - elevation * 6).clamped(to: 0...1)
+            return drawsStars
+                ? night > 0.25
+                : night < 0.75 && isClear(entry)
+        }.map(\.hour)
+        guard !eligible.isEmpty else { return [] }
+
+        // A flock shares one hour, so it reads as a group rather than a spread.
+        let anchor = eligible[Int(SkyMarks.jitter(daySeed &+ deck.saltBase, 31)
+                                  * Double(eligible.count)) % eligible.count]
+
         for index in 0..<budget {
             let salt = index &* 5_701
             let roll = SkyMarks.jitter(daySeed &+ deck.saltBase, salt)
@@ -152,17 +169,18 @@ struct ClearSky: View, Equatable {
 
             switch variant {
             case .field:
-                hour = roll * 24
+                let pick = eligible[Int(roll * Double(eligible.count)) % eligible.count]
+                hour = Double(pick) + SkyMarks.jitter(daySeed &+ deck.saltBase, salt &+ 7)
             case .flock:
-                // One cluster a day, so the band has a subject rather than a
-                // texture. The group shares a centre and scatters around it.
-                let centre = SkyMarks.jitter(daySeed &+ deck.saltBase, 31) * 20 + 2
-                hour = centre + (roll - 0.5) * 3.2
+                hour = Double(anchor) + (roll - 0.5) * 2.4
             case .arcbound:
-                // Pulled toward solar noon, so the sky thickens where the arc
-                // is highest rather than lying flat across the day.
+                // Weighted toward the eligible hours nearest solar noon, so the
+                // sky thickens where the arc is highest.
+                let sorted = eligible.sorted { abs($0 - 12) < abs($1 - 12) }
                 let pull = SkyMarks.jitter(daySeed &+ deck.saltBase, salt &+ 17)
-                hour = 12 + (roll - 0.5) * 24 * (0.35 + pull * 0.5)
+                let bias = roll * roll * (0.4 + pull * 0.6)
+                let pick = sorted[min(Int(bias * Double(sorted.count)), sorted.count - 1)]
+                hour = Double(pick) + SkyMarks.jitter(daySeed &+ deck.saltBase, salt &+ 7)
             }
 
             guard hour >= 0, hour < 24, let entry = byHour[Int(hour)] else { continue }
@@ -200,7 +218,7 @@ struct ClearSky: View, Equatable {
     /// against the scrub, and the off window is short, so passing sky winks
     /// rather than strobes.
     private func star(_ mark: Mark, in context: inout GraphicsContext) {
-        let period = 7 + Int(SkyMarks.jitter(daySeed, mark.salt &+ 601) * 12)
+        let period = 3 + Int(SkyMarks.jitter(daySeed, mark.salt &+ 601) * 5)
         let offset = Int(SkyMarks.jitter(daySeed, mark.salt &+ 809) * Double(period))
         guard (blinkStep &+ offset) % period != 0 else { return }
 

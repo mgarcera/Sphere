@@ -56,7 +56,7 @@ struct ArcWindow: View {
                                     daySeed: index,
                                     deck: deck,
                                     variant: clearSky,
-                                    blinkStep: Int(model.focusHour * 3)
+                                    blinkStep: Int(model.focusHour * 8)
                                 )
                                 .equatable()
 
