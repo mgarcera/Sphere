@@ -11,6 +11,7 @@ struct ContentView: View {
     @State private var isMenuOpen = false
     @State private var titleScale: CGFloat = 1
     @State private var captionScale: CGFloat = 1
+    @State private var allDayScale: CGFloat = 1
     @AppStorage("appearance") private var appearance: Appearance = .system
     @State private var eventsHidden = false
     @State private var isAllDayOpen = false
@@ -186,12 +187,14 @@ struct ContentView: View {
                 }
             }
             .frame(height: 16, alignment: .leading)
+            .scaleEffect(allDayScale, anchor: .leading)
             .padding(.top, 7)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)
         .onChange(of: titleKey) { _, _ in popTitle() }
         .onChange(of: captionKey) { _, _ in popCaption() }
+        .onChange(of: allDayKey) { _, _ in popAllDay() }
     }
 
     /// What counts as each line CHANGING.
@@ -207,6 +210,12 @@ struct ContentView: View {
 
     private var captionKey: String {
         "\(titleKey)|\(Self.dayLine(model.focusDate))"
+    }
+
+    /// The all-day row changes with the DAY, not with the event under the dot,
+    /// so moving between two timed events leaves it still.
+    private var allDayKey: String {
+        "\(Self.dayLine(model.focusDate))|\(model.allDayEvents.count)"
     }
 
     /// Drop to 94% and spring back. No fade: the text cuts to its new value
@@ -225,6 +234,12 @@ struct ContentView: View {
     private func popCaption() {
         captionScale = 0.94
         withAnimation(Self.popSpring.delay(0.04)) { captionScale = 1 }
+    }
+
+    /// Third in the cascade, another 40ms behind the caption.
+    private func popAllDay() {
+        allDayScale = 0.94
+        withAnimation(Self.popSpring.delay(0.08)) { allDayScale = 1 }
     }
 
     /// How much wash is present, for twilight to yield to.
