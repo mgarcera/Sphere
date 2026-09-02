@@ -337,3 +337,21 @@ an event you created has no organizer, an invitation names someone who is not
 you. Both signals were confirmed on device — your own all-day event reported no
 organizer and no attendees, the Gmail-created one reported an organizer that is
 not you and one attendee.
+
+## Haptics, behind one setting (2026-09-01)
+
+The wheel has no travel and no sound, so turning it read only as the numbers
+above it changing. A detent every quarter hour gives it the click the drawing
+implies: sixteen to a rotation at four hours per turn, close to the hardware it
+borrows from and far enough apart to stay a texture.
+
+Clicks are counted against the focus hour, not against rotation, so turning
+slowly and turning fast click at the same places on the day, and a turn crossing
+several at once still clicks once — a burst per frame reads as a buzz.
+
+The chevrons' dead end gets a heavier, blunter tap. When nothing exists within
+forty-five days the dot cannot move, and that was previously silent and
+indistinguishable from a missed tap.
+
+One switch in the menu, on by default: the wheel is the app's main control and
+shipping it mute would hide the feature from anyone who never opens settings.

@@ -13,6 +13,8 @@ import SwiftUI
 struct ClickWheel: View {
     /// Signed rotations, positive clockwise. One whole turn is one unit.
     let onRotate: (Double) -> Void
+    /// Fires once when a turn starts, before any time moves.
+    var onRotateBegan: () -> Void = {}
     let onMenu: () -> Void
     let onDate: () -> Void
     let onCentre: () -> Void
@@ -64,7 +66,10 @@ struct ClickWheel: View {
                             defer { lastAngle = angle }
                             // The first sample only sets the reference, so
                             // clearing the threshold never jumps time.
-                            guard let previous = lastAngle else { return }
+                            guard let previous = lastAngle else {
+                                onRotateBegan()
+                                return
+                            }
 
                             var delta = angle - previous
                             // Unwrap across the ±π seam so one crossing isn't

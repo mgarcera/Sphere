@@ -11,6 +11,9 @@ struct ContentView: View {
     @State private var isMenuOpen = false
     @State private var titleScale: CGFloat = 1
     @State private var captionScale: CGFloat = 1
+    /// Which quarter-hour the wheel last clicked at, so a click fires on
+    /// crossing rather than on every frame of the drag.
+    @State private var lastDetent: Double = 0
     @State private var allDayScale: CGFloat = 1
     /// Mirrors model.allDayEvents.count. The branch below reads THIS, not the
     /// model, so the row's appearance and disappearance always happen inside
@@ -150,7 +153,14 @@ struct ContentView: View {
             Spacer(minLength: 16)
 
             ClickWheel(
-                onRotate: { model.scrub(byRotations: $0) },
+                onRotate: { rotations in
+                    model.scrub(byRotations: rotations)
+                    clickPastDetents()
+                },
+                onRotateBegan: {
+                    Haptics.warm()
+                    lastDetent = (model.focusHour / Haptics.detentHours).rounded(.towardZero)
+                },
                 onMenu: { isMenuOpen = true },
                 onDate: {
                     pickedDay = model.focusDate
@@ -420,8 +430,26 @@ struct ContentView: View {
             travel { model.focusHour = near.startHour }
             return
         }
-        guard let far = calendar.nearestTimedEvent(direction, from: model.focusDate) else { return }
+        guard let far = calendar.nearestTimedEvent(direction, from: model.focusDate) else {
+            // Forty-five days out and still nothing. The dot cannot move, so
+            // the only thing left to report is that there was nowhere to go.
+            Haptics.nothingThere()
+            return
+        }
         travel { model.focusHour = far.startDate.timeIntervalSince(model.anchor) / 3600 }
+    }
+
+    /// One click per quarter hour of scrubbed time, counted against where the
+    /// last click fired rather than against the rotation. Turning slowly and
+    /// turning fast then click at the same places on the day, and a turn that
+    /// crosses several at once still clicks once — a burst per frame would read
+    /// as a buzz.
+    private func clickPastDetents() {
+        let step = Haptics.detentHours
+        let crossed = (model.focusHour / step).rounded(.towardZero)
+        guard crossed != lastDetent else { return }
+        lastDetent = crossed
+        Haptics.detentPassed()
     }
 
     /// Every way of moving the dot a long way at once goes through here.

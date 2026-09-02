@@ -10,6 +10,7 @@ struct DayMenu: View {
     let location: LocationService
     let weather: WeatherService
     @Binding var appearance: Appearance
+    @AppStorage(Haptics.key) private var hapticsEnabled = true
     let onDismiss: () -> Void
 
     @State private var placeQuery = ""
@@ -30,6 +31,17 @@ struct DayMenu: View {
                     }
                     .pickerStyle(.segmented)
                     .padding(.vertical, 4)
+                }
+
+                divider
+                section("Haptics") {
+                    Toggle(isOn: $hapticsEnabled) {
+                        Text("Wheel and jumps")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.ink)
+                    }
+                    .tint(Theme.controlAccent)
+                    .padding(.vertical, 3)
                 }
 
                 if !calendar.sources.isEmpty {
