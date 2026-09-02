@@ -37,6 +37,8 @@ struct ContentView: View {
     /// Fetched when the sheet opens, not on every keystroke.
     @State private var searchable: [EKEvent] = []
     @State private var pickedDay: Date = .now
+    // TEMPORARY — presentation study.
+    @AppStorage("eventChoiceStyle") private var choiceStyle: EventChoiceStyle = .sheet
 
     var body: some View {
         ZStack {
@@ -64,6 +66,31 @@ struct ContentView: View {
                 .transition(.opacity)
             } else {
                 day
+            }
+
+            if isEventChoiceOpen, choiceStyle == .floating {
+                // Invisible, and only there to catch the tap that closes.
+                Color.black.opacity(0.0001)
+                    .ignoresSafeArea()
+                    .onTapGesture { withAnimation(Self.cardSpring) { isEventChoiceOpen = false } }
+
+                EventChoiceCards(height: 250) { choice in
+                    withAnimation(Self.cardSpring) { isEventChoiceOpen = false }
+                    switch choice {
+                    case .open:
+                        if let active = model.activeEvent,
+                           let event = calendar.occurrence(for: active.id) {
+                            editorTarget = .existing(event)
+                        }
+                    case .create:
+                        editorTarget = .new(model.focusDate)
+                    }
+                }
+                .padding(.horizontal, 28)
+                // Grown from the middle rather than slid up from the edge: a
+                // sheet's whole vocabulary is a plane arriving from below, and
+                // these are meant to be sitting above the day.
+                .transition(.scale(scale: 0.9).combined(with: .opacity))
             }
 
             // Invisible, and behind everything: it only exists to present the
@@ -97,7 +124,8 @@ struct ContentView: View {
                 travel { model.focus(onStartOf: day) }
             }
         }
-        .sheet(isPresented: $isEventChoiceOpen, onDismiss: {
+        .sheet(isPresented: Binding(get: { isEventChoiceOpen && choiceStyle == .sheet },
+                                    set: { isEventChoiceOpen = $0 }), onDismiss: {
             guard let choice = pendingChoice else { return }
             pendingChoice = nil
             switch choice {
@@ -116,6 +144,8 @@ struct ContentView: View {
             }
             .presentationDetents([.height(EventChoiceSheet.height)])
             .presentationDragIndicator(.hidden)
+            // The cards draw their own ground, so the sheet does not need one.
+            .presentationBackground(.clear)
         }
         .sheet(isPresented: $isSearchOpen) {
             EventSearch(events: searchable, timeZone: model.timeZone) { event in
@@ -394,6 +424,8 @@ struct ContentView: View {
     /// while the caption is pinned is what let them meet at dusk.
     private static let titleContrast: Double = 9.0
     private static let captionContrast: Double = 3.5
+    /// Lands rather than settles, like every other move in the app.
+    private static let cardSpring = Animation.spring(response: 0.32, dampingFraction: 0.86)
 
     private var hourOfDay: Double {
         model.focusHour - Double(model.dayIndex) * 24
@@ -439,7 +471,7 @@ struct ContentView: View {
     /// nests, and opening the outer event was the only thing on offer.
     private func openEditor() {
         if model.activeEvent.flatMap({ calendar.occurrence(for: $0.id) }) != nil {
-            isEventChoiceOpen = true
+            withAnimation(Self.cardSpring) { isEventChoiceOpen = true }
         } else {
             editorTarget = .new(model.focusDate)
         }

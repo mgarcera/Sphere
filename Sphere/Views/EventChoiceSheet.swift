@@ -14,28 +14,35 @@ enum EventChoice {
 /// Two buttons and nothing else. A heading and a caption under each were tried
 /// and cut: the fork has exactly two answers, both are one word, and anything
 /// more made a choice that should take no thought look like a form.
-struct EventChoiceSheet: View {
-    let onChoose: (EventChoice) -> Void
+// TEMPORARY — presentation study. Strip the loser and the switcher.
+enum EventChoiceStyle: String, CaseIterable, Identifiable {
+    case sheet, floating
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .sheet: "A · Sheet"
+        case .floating: "B · Floating"
+        }
+    }
+}
 
-    /// Tall enough that the two read as cards rather than as a pair of tiles.
-    static let height: CGFloat = 320
+/// The two cards themselves, with no opinion about how they got on screen.
+struct EventChoiceCards: View {
+    var height: CGFloat = 260
+    let onChoose: (EventChoice) -> Void
 
     var body: some View {
         HStack(spacing: 14) {
-            button(.openEvent, title: "Open") { onChoose(.open) }
-            button(.newEvent, title: "New") { onChoose(.create) }
+            card(.openEvent, title: "Open") { onChoose(.open) }
+            card(.newEvent, title: "New") { onChoose(.create) }
         }
-        .padding(.horizontal, 24)
-        .padding(.top, 18)
-        .padding(.bottom, 30)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(Theme.background)
+        .frame(height: height)
     }
 
     /// Drawn in the wheel's line and weight, since it is the wheel's own button
     /// that opened this. Presses dim rather than scale, for the same reason
     /// they do there.
-    private func button(_ mark: Mark, title: String, action: @escaping () -> Void) -> some View {
+    private func card(_ mark: Mark, title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 18) {
                 ActionMark(mark: mark, size: 96, color: Theme.ink, stroke: 2.0)
@@ -48,11 +55,31 @@ struct EventChoiceSheet: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background {
                 RoundedRectangle(cornerRadius: 22)
-                    .strokeBorder(Theme.mutedLighter, lineWidth: 1.5)
+                    .fill(Theme.background)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 22)
+                            .strokeBorder(Theme.mutedLighter, lineWidth: 1.5)
+                    }
             }
             .contentShape(.rect)
         }
         .buttonStyle(DimOnPress())
+    }
+}
+
+/// A · the cards inside a sheet whose own background is cleared, so only they
+/// draw. The sheet keeps its drag gesture and whatever it does to the view
+/// behind it.
+struct EventChoiceSheet: View {
+    let onChoose: (EventChoice) -> Void
+
+    static let height: CGFloat = 320
+
+    var body: some View {
+        EventChoiceCards(height: 260, onChoose: onChoose)
+            .padding(.horizontal, 24)
+            .padding(.top, 18)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 }
 

@@ -11,6 +11,8 @@ struct DayMenu: View {
     let weather: WeatherService
     @Binding var appearance: Appearance
     @AppStorage(WheelMapping.bottomKey) private var bottomPrimary: WheelAction = .now
+    // TEMPORARY — presentation study.
+    @AppStorage("eventChoiceStyle") private var choiceStyle: EventChoiceStyle = .sheet
     let onDismiss: () -> Void
 
     @State private var placeQuery = ""
@@ -54,6 +56,17 @@ struct DayMenu: View {
                             .padding(.vertical, 3)
                         }
                     }
+                }
+
+                divider
+                section("Event fork") {
+                    Picker("Event fork", selection: $choiceStyle) {
+                        ForEach(EventChoiceStyle.allCases) { style in
+                            Text(style.title).tag(style)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.vertical, 4)
                 }
 
                 divider
