@@ -2,14 +2,19 @@ import EventKit
 import EventKitUI
 import SwiftUI
 
-/// What opening an event shows: Apple's own detail view for one that already
-/// exists, and the editor for one being created.
+/// What opening an event shows: the editor for anything you can change, and
+/// Apple's read-only detail view for anything you cannot.
 ///
-/// The detail view is what Calendar.app shows, and it decides for itself
-/// whether Edit is offered — an event on a subscribed or read-only calendar, or
-/// one you were invited to rather than created, has no Edit button. Going
-/// straight to the editor claimed every event could be changed, and an
-/// invitation from someone else silently refused to save.
+/// Going straight to the editor for everything claimed every event could be
+/// changed. An event someone else created and invited you to refuses the write,
+/// so Save did nothing and the sheet sat there — Calendar.app refuses it too,
+/// so the app was the only thing implying otherwise.
+///
+/// Routing everything through the detail view instead cost a tap on your own
+/// events and nested `EKEventEditViewController`, which is itself a
+/// `UINavigationController`, inside another one: Edit pushed rather than
+/// presented, and the two screens drew a Delete Event row each into the same
+/// one. Branching keeps both flows Apple's own and unnested.
 enum EventTarget: Identifiable, Equatable {
     case new(Date)
     case existing(EKEvent)
@@ -99,38 +104,55 @@ struct EventKitHost: UIViewControllerRepresentable {
             waitDeadline = nil
             let controller: UIViewController = switch target {
             case .new(let start): editor(startingAt: start)
-            case .existing(let event): viewer(for: event)
+            case .existing(let event): Self.isEditable(event) ? editor(for: event) : viewer(for: event)
             }
             presented = controller
             host.present(controller, animated: true)
         }
 
+        /// Whether EventKit will accept a write to this event.
+        ///
+        /// An editable calendar is not enough on its own: an invitation sits on
+        /// your own writable calendar and still cannot be changed, which is why
+        /// Save appeared to do nothing. An event you created has no organizer
+        /// at all; one you were invited to names someone who is not you.
+        static func isEditable(_ event: EKEvent) -> Bool {
+            guard event.calendar?.allowsContentModifications == true else { return false }
+            guard let organizer = event.organizer else { return true }
+            return organizer.isCurrentUser
+        }
+
         /// A new event has nothing to view, so it opens straight in the editor.
         private func editor(startingAt start: Date) -> UIViewController {
-            let controller = EKEventEditViewController()
-            controller.eventStore = parent.store
-            controller.editViewDelegate = self
-
             let event = EKEvent(eventStore: parent.store)
             event.startDate = start
             event.endDate = start.addingTimeInterval(parent.defaultDuration)
             event.calendar = parent.store.defaultCalendarForNewEvents
+            return editor(for: event)
+        }
+
+        private func editor(for event: EKEvent) -> UIViewController {
+            let controller = EKEventEditViewController()
+            controller.eventStore = parent.store
+            controller.editViewDelegate = self
             controller.event = event
             return controller
         }
 
-        /// `EKEventViewController` needs a navigation controller: it puts its
-        /// own Edit button in the bar, and removes itself from the stack if the
-        /// event is deleted underneath it. Presented modally it offers no way
-        /// out, so Done goes on the left, where Edit cannot land on top of it.
+        /// The read-only half: an event you cannot change, shown the way
+        /// Calendar.app shows it, with the RSVP controls that are the only
+        /// thing you can actually do with an invitation.
+        ///
+        /// `EKEventViewController` needs a navigation controller for its bar,
+        /// and presented modally it offers no way out, so Done goes there.
+        /// Editing stays off — this path is only reached when EventKit would
+        /// refuse the write anyway, and leaving it on nested the editor's own
+        /// navigation controller inside this one.
         private func viewer(for event: EKEvent) -> UIViewController {
             let controller = EKEventViewController()
             controller.event = event
             controller.delegate = self
-            // Allowing it is not the same as showing it: an event on a
-            // read-only calendar, or one someone else invited you to, gets no
-            // Edit button no matter what this says.
-            controller.allowsEditing = true
+            controller.allowsEditing = false
             controller.allowsCalendarPreview = true
             controller.navigationItem.leftBarButtonItem = UIBarButtonItem(
                 barButtonSystemItem: .done, target: self, action: #selector(finish)

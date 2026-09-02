@@ -319,3 +319,21 @@ something you can act on rather than a dead end.
 The cost is one extra tap to edit an event you own, including from the centre
 button. Taken knowingly: the alternative was reproducing Apple's rule ourselves
 and being wrong at the edges.
+
+### Amended the same day: branch instead of routing everything through it
+
+Routing every existing event through `EKEventViewController` drew two Delete
+Event rows on one screen. `EKEventEditViewController` is itself a
+`UINavigationController`, so inside the navigation controller the detail view
+needs, Edit pushed rather than presented and both screens rendered into one.
+
+So the split is by editability after all: your own events open the editor
+directly, and only an event EventKit would refuse goes to the read-only detail
+view, with `allowsEditing` off so nothing can nest. The extra tap on your own
+events goes away with it.
+
+`isEditable` is the calendar's `allowsContentModifications` plus the organizer:
+an event you created has no organizer, an invitation names someone who is not
+you. Both signals were confirmed on device — your own all-day event reported no
+organizer and no attendees, the Gmail-created one reported an organizer that is
+not you and one attendee.
