@@ -4,9 +4,6 @@ import SwiftUI
 /// of the screen and never moves; three days of arc slide underneath it, so
 /// crossing midnight needs no separate control and no seam.
 struct ArcWindow: View {
-    // TEMPORARY — clear-sky direction study.
-    @AppStorage("birdDensity") private var clearSky: BirdDensity = .steady
-
     let model: DayModel
     /// Every capsule is held back while a jump is in flight, not just the
     /// destination: the others sweep across the screen too, and that is most
@@ -55,7 +52,6 @@ struct ArcWindow: View {
                                     hours: model.sky(forDayIndex: index),
                                     daySeed: index,
                                     deck: deck,
-                                    variant: clearSky,
                                     blinkStep: Int(model.focusHour * 8)
                                 )
                                 .equatable()

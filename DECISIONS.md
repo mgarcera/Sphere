@@ -531,3 +531,45 @@ a position whose default later changes follows the new one instead of staying
 pinned to whatever shipped the day it was reset. It is behind a confirmation
 and disabled while nothing has been moved: it undoes every position at once and
 nothing on screen reads back what was there before.
+
+## A clear sky draws stars and birds (2026-09-02)
+
+An empty band was indistinguishable from weather that never loaded, which is
+what the clear-sky gap actually was. Stars are the honest half: they are
+visible precisely when it is clear. Birds are the whimsical half and are not
+pretending to be data.
+
+Stars belong to the high deck and birds to the low one, and the middle deck
+draws neither. A bird at star altitude is the one thing that reads as wrong
+rather than as stylised.
+
+**Density is a rate per clear hour, not a budget per day.** A budget put the
+same few birds into a two-hour clearing and a fourteen-hour one, so how dense
+they looked on screen depended on what fraction of that day happened to be
+clear. The window is three hours wide and that is the only unit anyone
+experiences. Grouping and a dawn/dusk weighting were both built and tried
+against even spacing; even spacing won, because a clearing you scroll into
+should have birds in it rather than a chance of birds.
+
+**Nothing animates on a clock.** The twinkle is driven by the scrub position,
+quantised to seven and a half minutes of scrolled time, so an idle screen is
+perfectly still and the cost is bounded by how fast a thumb can turn.
+Everything else in the app moves because the wheel moved. Stars dim to half
+rather than vanishing: a star that disappears takes a piece of the field's
+arrangement with it. Birds never twinkle, so their decks build no clock and
+never redraw while the wheel turns.
+
+Marks are cached per day, deck and forecast. Their positions never depend on
+the scrub, so the hashing and trigonometry happen once per day rather than on
+every redraw; without that, winking on the scroll would have cost exactly what
+winking on a clock did.
+
+Each bird is caught at a different point in a wingbeat. Tip drop and wing bow
+move opposite each other, so none comes out as a flat tick.
+
+Three bugs found on the way, all of them mine, all worth remembering:
+a cache key that left out the weather froze an empty sky from the first render;
+a density roll salted from a counter that only advanced on a placement gave
+every hour the same answer once one came up empty; and a frame with a height
+but no alignment centred 322pt of sky in a 190pt box, pushing every deck 66pt
+up into the window's clip and taking the tops off the storms.

@@ -1,18 +1,5 @@
 import SwiftUI
 
-// TEMPORARY — bird density study. Strip the losers and the switcher.
-enum BirdDensity: String, CaseIterable, Identifiable {
-    case steady, clustered, solar
-    var id: String { rawValue }
-    var title: String {
-        switch self {
-        case .steady: "A · Steady"
-        case .clustered: "B · Groups"
-        case .solar: "C · Dawn/dusk"
-        }
-    }
-}
-
 /// What a clear sky draws.
 ///
 /// With nothing overhead the band went empty, and an empty band is
@@ -30,7 +17,6 @@ struct ClearSky: View, Equatable {
     let hours: [SkyHour]
     let daySeed: Int
     let deck: SkyContinuous.Deck
-    let variant: BirdDensity
 
     /// The scrub position, quantised. Everything else in this app moves because
     /// the wheel moved, and a clock ticking on its own was the one thing that
@@ -70,7 +56,7 @@ struct ClearSky: View, Equatable {
     /// Birds hold still, so their decks ignore the scrub entirely and never
     /// redraw while the wheel turns.
     static func == (a: ClearSky, b: ClearSky) -> Bool {
-        a.daySeed == b.daySeed && a.deck == b.deck && a.variant == b.variant
+        a.daySeed == b.daySeed && a.deck == b.deck
             && a.width == b.width && a.height == b.height && a.hours == b.hours
             && (!a.drawsStars || a.blinkStep == b.blinkStep)
     }
@@ -80,7 +66,6 @@ struct ClearSky: View, Equatable {
     private struct Key: Hashable {
         let daySeed: Int
         let deck: SkyContinuous.Deck
-        let variant: BirdDensity
         let width: CGFloat
         let height: CGFloat
         /// The weather itself, folded down. Without it the first render — which
@@ -111,7 +96,7 @@ struct ClearSky: View, Equatable {
         // Nothing to place yet, and nothing worth remembering about it.
         guard !view.hours.isEmpty else { return [] }
 
-        let key = Key(daySeed: view.daySeed, deck: view.deck, variant: view.variant,
+        let key = Key(daySeed: view.daySeed, deck: view.deck,
                       width: view.width, height: view.height, sky: view.skySignature)
         if let hit = cache[key] { return hit }
         // Scrubbing far enough would otherwise grow this without bound; only a
@@ -168,10 +153,7 @@ struct ClearSky: View, Equatable {
             for index in 0..<count {
                 let salt = entry.hour &* 5_701 &+ index &* 131
                 let within = SkyMarks.jitter(daySeed &+ deck.saltBase, salt)
-                // Groups sit tighter than an hour, so a cluster reads as one
-                // thing rather than as marks that happen to share an hour.
-                let span = variant == .clustered && !drawsStars ? 0.55 : 1.0
-                let placed = hour + 0.5 + (within - 0.5) * span
+                let placed = hour + 0.5 + (within - 0.5)
                                 + Double(index) * (drawsStars ? 0 : 0.18)
 
                 guard placed >= 0, placed < 24 else { continue }
@@ -198,31 +180,17 @@ struct ClearSky: View, Equatable {
         return roll < 0.55 ? 2 : 1
     }
 
-    /// The three mechanisms. Each spends roughly the same number of birds over
-    /// a clear day and arranges them differently, so what is being judged is
-    /// the arrangement rather than the amount.
+    /// One bird every two or three clear hours, evenly. A rate per hour rather
+    /// than a budget per day: a budget put the same few birds into a two-hour
+    /// clearing and a fourteen-hour one, so how dense they looked on screen
+    /// depended on what fraction of the day happened to be clear. The window is
+    /// three hours wide and that is the only unit anyone experiences.
+    ///
+    /// Grouping them and weighting them toward dawn and dusk were both tried
+    /// against this. Even spacing won: a clearing you scroll into should have
+    /// birds in it, not a chance of birds.
     private func birdCount(at entry: SkyHour) -> Int {
-        let roll = SkyMarks.jitter(daySeed &+ deck.saltBase, entry.hour &* 977 &+ 211)
-
-        switch variant {
-        case .steady:
-            // One every two or three clear hours, evenly. A long clearing is
-            // punctuated at regular intervals.
-            return roll < 0.42 ? 1 : 0
-
-        case .clustered:
-            // Nothing for a while, then a group. Scrolling arrives at something
-            // rather than passing a steady drizzle.
-            guard roll < 0.18 else { return 0 }
-            return 2 + Int(SkyMarks.jitter(daySeed &+ deck.saltBase, entry.hour &* 977 &+ 307) * 2.6)
-
-        case .solar:
-            // Busy at both ends of the day and quiet through the middle, which
-            // is when birds actually fly and also gives a long clear stretch a
-            // shape instead of a uniform fill.
-            let edge = 1 - day.normalizedElevation(atHour: Double(entry.hour) + 0.5)
-            return roll < 0.06 + edge * edge * 0.85 ? 1 : 0
-        }
+        SkyMarks.jitter(daySeed &+ deck.saltBase, entry.hour &* 977 &+ 211) < 0.42 ? 1 : 0
     }
 
     /// Night and day are one crossfade, not a switch: the arc pans through dusk
