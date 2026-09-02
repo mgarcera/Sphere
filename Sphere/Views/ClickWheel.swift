@@ -43,10 +43,11 @@ struct ClickWheel: View {
     /// about the wheel.
     private static let scrubThreshold: CGFloat = 10
 
-    /// Short enough that a hold does not feel like waiting, long enough that a
-    /// deliberate tap never trips it. Below about a fifth of a second the two
-    /// gestures start trading places.
-    static let holdDuration: Double = 0.25
+    /// Short enough that a hold does not feel like waiting. This is under the
+    /// point where the two gestures start trading places, so a slow tap can
+    /// land on the secondary; every secondary here is recoverable in one press,
+    /// which is what makes that trade worth taking.
+    static let holdDuration: Double = 0.15
 
     private var outerRadius: CGFloat { Self.diameter / 2 }
     private var innerRadius: CGFloat { Self.buttonDiameter / 2 }
