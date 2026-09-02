@@ -52,6 +52,14 @@ struct EventEditorSheet: UIViewControllerRepresentable {
 
         func eventEditViewController(_ controller: EKEventEditViewController,
                                      didCompleteWith action: EKEventEditViewAction) {
+            let name: String
+            switch action {
+            case .canceled: name = "canceled"
+            case .saved: name = "saved"
+            case .deleted: name = "deleted"
+            @unknown default: name = "unknown"
+            }
+            Trace.log("editor completed: \(name)")
             onFinish()
         }
     }

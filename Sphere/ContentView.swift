@@ -55,7 +55,11 @@ struct ContentView: View {
         .sheet(item: $editorTarget) { target in
             EventEditorSheet(store: calendar.store, target: target) {
                 editorTarget = nil
-                Task { @MainActor in reload() }
+                Task { @MainActor in
+                    let before = model.timedEvents.count
+                    reload()
+                    Trace.log("reload: timed \(before) -> \(model.timedEvents.count)")
+                }
             }
             .ignoresSafeArea()
         }
@@ -98,6 +102,7 @@ struct ContentView: View {
                 .presentationDragIndicator(.hidden)
         }
         .task {
+            Trace.dump()
             allDayCount = model.allDayEvents.count
             // Ask independently of priming. Anyone who granted calendar before
             // location existed never sees that screen again, and was silently
@@ -156,8 +161,8 @@ struct ContentView: View {
                     isDayPickerOpen = true
                 },
                 onCentre: openEditor,
-                onPrevious: { jump(to: model.previousEvent) },
-                onNext: { jump(to: model.nextEvent) }
+                onPrevious: { step(.back) },
+                onNext: { step(.forward) }
             )
             .padding(.top, 16)
             .padding(.bottom, 24)
@@ -388,8 +393,10 @@ struct ContentView: View {
     private func openEditor() {
         if let active = model.activeEvent,
            let event = calendar.occurrence(for: active.id) {
+            Trace.log("editing existing '\(event.title ?? "?")' id=\(event.eventIdentifier ?? "nil") calendar=\(event.calendar?.title ?? "nil")")
             editorTarget = .existing(event)
         } else {
+            Trace.log("NEW editor: active=\(model.activeEvent?.title ?? "none") occurrence=\(model.activeEvent.flatMap { calendar.occurrence(for: $0.id) } != nil)")
             editorTarget = .new(model.focusDate)
         }
     }
@@ -399,9 +406,19 @@ struct ContentView: View {
     /// an eight-hour one 1040pt, both in 0.55s, so the far end smeared at about
     /// 3000 pt/s against a readable 800 to 1200. The capsule arriving mid-smear
     /// is what read as it being dragged along.
-    private func jump(to event: CalendarEvent?) {
-        guard let event else { return }
-        travel { model.focusHour = event.startHour }
+    /// Chevrons move the time cursor to the next or previous event's START.
+    ///
+    /// The near list only spans the drawn window, so when it comes up empty the
+    /// store is asked over a much wider range before giving up. Without that,
+    /// an event further out than a day was unreachable: the jump did nothing,
+    /// the focus stayed put, and nothing triggered a reload to widen the view.
+    private func step(_ direction: CalendarService.Direction) {
+        if let near = direction == .forward ? model.nextEvent : model.previousEvent {
+            travel { model.focusHour = near.startHour }
+            return
+        }
+        guard let far = calendar.nearestTimedEvent(direction, from: model.focusDate) else { return }
+        travel { model.focusHour = far.startDate.timeIntervalSince(model.anchor) / 3600 }
     }
 
     /// Every way of moving the dot a long way at once goes through here.

@@ -125,6 +125,31 @@ final class CalendarService {
         occurrences = found
     }
 
+    /// The nearest timed event outside the drawn window.
+    ///
+    /// The arc only loads a day either side, so the chevrons could not see an
+    /// event further out than that — and because a failed jump leaves the focus
+    /// where it is, nothing then triggered a reload either. It was a dead end
+    /// with no way back.
+    func nearestTimedEvent(_ direction: Direction, from date: Date, withinDays days: Int = 45) -> EKEvent? {
+        guard access == .granted else { return nil }
+        let span = Double(days) * 86_400
+        let window = direction == .forward
+            ? (date, date.addingTimeInterval(span))
+            : (date.addingTimeInterval(-span), date)
+
+        let predicate = store.predicateForEvents(withStart: window.0, end: window.1,
+                                                 calendars: visibleCalendars)
+        let found = store.events(matching: predicate)
+            .filter { !$0.isAllDay }
+            .filter { direction == .forward ? $0.startDate > date : $0.startDate < date }
+            .sorted { $0.startDate < $1.startDate }
+
+        return direction == .forward ? found.first : found.last
+    }
+
+    enum Direction { case forward, back }
+
     /// The exact occurrence the arc is showing, so an edit or a delete lands on
     /// the day you are looking at.
     func occurrence(for id: CalendarEvent.ID) -> EKEvent? { occurrences[id] }

@@ -45,9 +45,12 @@ struct TwilightBackground: View {
 
     private var lightColors: [Color] {
         isMorning
-            ? [Color(red: 0.62, green: 0.70, blue: 0.88),
-               Color(red: 0.90, green: 0.76, blue: 0.82),
-               Color(red: 0.99, green: 0.90, blue: 0.74),
+            // Matched stop by stop to dusk's composited luminance rather than
+            // its opacity, which was already identical: dusk simply used
+            // darker colours, so it read stronger at the same 0.85.
+            ? [Color(red: 0.526, green: 0.594, blue: 0.747),
+               Color(red: 0.753, green: 0.636, blue: 0.686),
+               Color(red: 0.926, green: 0.842, blue: 0.692),
                Theme.background]
             : [Color(red: 0.70, green: 0.55, blue: 0.66),
                Color(red: 0.95, green: 0.58, blue: 0.38),
