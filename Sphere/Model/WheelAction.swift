@@ -102,24 +102,25 @@ enum WheelPosition: String, CaseIterable, Identifiable {
     /// haptics could sit on a chevron would have five slots and no shape.
     var assignableActions: [WheelAction] {
         switch self {
-        // A chevron already steps by event; its secondary steps by day. Sending
-        // one to NOW or the calendar would have it leave the run it is walking.
-        case .previous, .next:
-            [.none, .previousDay, .nextDay]
+        // A chevron steps one way. Its secondary steps the same way by day, so
+        // there is nothing else it could sensibly be.
+        case .previous:
+            [.previousDay]
+        case .next:
+            [.nextDay]
         case .menu:
-            [.none, .appearance, .search, .openCalendarApp, .muteHaptics]
-        // The centre makes events and nothing else, so its only real choice is
-        // whether it makes the day-scale kind at all.
+            [.appearance, .search, .openCalendarApp, .muteHaptics]
         case .centre:
-            [.none, .newAllDay]
-        // Fixed: the bottom's secondary is whichever of the pair its primary is
-        // not, so offering None here would orphan the other one.
+            [.newAllDay]
+        // The bottom's secondary is whichever of the pair its primary is not.
         case .bottom:
             []
         }
     }
 
-    var holdIsAssignable: Bool { !assignableActions.isEmpty }
+    /// One choice is not a choice. A position offering a single action prints
+    /// it the way a fixed slot does rather than as a list of one.
+    var holdIsAssignable: Bool { assignableActions.count > 1 }
 
     var storageKey: String { "wheelHold.\(rawValue)" }
 }

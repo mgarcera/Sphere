@@ -161,15 +161,15 @@ struct WheelSettings: View {
                 .foregroundStyle(Theme.mutedLight)
                 .padding(.bottom, 10)
 
-            if options.isEmpty {
+            if options.count > 1 {
+                ForEach(options) { option in
+                    slot(mark: option.mark, title: option.title, color: Theme.ink)
+                        .opacity(option == current ? 1 : 0.32)
+                        .contentShape(.rect)
+                        .onTapGesture { choose(option, for: gesture) }
+                }
+            } else {
                 slot(mark: mark, title: value, color: Theme.mutedLight)
-            }
-
-            ForEach(options) { option in
-                slot(mark: option.mark, title: option.title, color: Theme.ink)
-                    .opacity(option == current ? 1 : 0.32)
-                    .contentShape(.rect)
-                    .onTapGesture { choose(option, for: gesture) }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
