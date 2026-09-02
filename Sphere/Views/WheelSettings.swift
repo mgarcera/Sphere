@@ -116,7 +116,7 @@ struct WheelSettings: View {
 
     private var holdPicker: some View {
         Menu {
-            ForEach(WheelAction.allCases) { action in
+            ForEach(selected.assignableActions) { action in
                 Button(action.title) {
                     WheelMapping.setHold(action, for: selected)
                     revision += 1

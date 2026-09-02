@@ -43,6 +43,11 @@ struct ClickWheel: View {
     /// about the wheel.
     private static let scrubThreshold: CGFloat = 10
 
+    /// Short enough that a hold does not feel like waiting, long enough that a
+    /// deliberate tap never trips it. Below about a fifth of a second the two
+    /// gestures start trading places.
+    static let holdDuration: Double = 0.25
+
     private var outerRadius: CGFloat { Self.diameter / 2 }
     private var innerRadius: CGFloat { Self.buttonDiameter / 2 }
 
@@ -143,7 +148,7 @@ private struct WheelPress: ViewModifier {
                 guard !didHold else { didHold = false; return }
                 onPress(position, .tap)
             }
-            .onLongPressGesture(minimumDuration: 0.35, maximumDistance: 14) {
+            .onLongPressGesture(minimumDuration: ClickWheel.holdDuration, maximumDistance: 14) {
                 didHold = true
                 Haptics.held()
                 onPress(position, .hold)

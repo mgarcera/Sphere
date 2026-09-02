@@ -454,3 +454,23 @@ the fetch stays fast enough to filter on every keystroke; past that it needs
 paging, which is where building more on search starts. It is currently
 reachable only by assignment, which makes it as invisible as the arc tap was,
 so it likely needs a permanent home of its own eventually.
+
+## One pool per position, not one pool (2026-09-01)
+
+The wheel is not a flat list of five slots. The time positions move the day and
+should only accept actions that move the day; MENU is app-scale and should only
+accept app-scale ones. A wheel where mute haptics could sit on a chevron has
+five slots and no shape.
+
+- Chevrons: now, calendar, previous day, next day, new all-day event, none.
+- MENU: light/dark, search, open in Calendar, mute haptics, none.
+- Centre: fixed to new all-day event. Its tap makes events and its hold makes
+  the day-scale kind, and nothing else belongs there.
+- Bottom: fixed to whichever of now/calendar its tap is not.
+
+A pool that narrows leaves old assignments behind, so a stored hold no longer
+offered for its position falls back to that position's default rather than
+staying set to something settings can no longer show.
+
+Hold threshold is 0.25s, down from 0.35s. Below about a fifth of a second taps
+and holds start trading places.

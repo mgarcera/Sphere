@@ -94,9 +94,26 @@ enum WheelPosition: String, CaseIterable, Identifiable {
         }
     }
 
-    /// The bottom holds NOW and the calendar between its two gestures, so its
-    /// hold is decided by its tap rather than chosen separately.
-    var holdIsAssignable: Bool { self != .bottom }
+    /// What this position will accept on its hold.
+    ///
+    /// Not one pool but one per position, because the wheel is not a flat list
+    /// of slots. The time positions move the day and take actions that move the
+    /// day; MENU is app-scale and takes app-scale actions. A wheel where mute
+    /// haptics could sit on a chevron would have five slots and no shape.
+    var assignableActions: [WheelAction] {
+        switch self {
+        case .previous, .next:
+            [.none, .now, .calendar, .previousDay, .nextDay, .newAllDay]
+        case .menu:
+            [.none, .appearance, .search, .openCalendarApp, .muteHaptics]
+        // Fixed: the centre makes events and nothing else, and the bottom's
+        // hold is whichever of the pair its tap is not.
+        case .centre, .bottom:
+            []
+        }
+    }
+
+    var holdIsAssignable: Bool { !assignableActions.isEmpty }
 
     var storageKey: String { "wheelHold.\(rawValue)" }
 }
@@ -120,11 +137,17 @@ enum WheelMapping {
     }
 
     static func hold(for position: WheelPosition) -> WheelAction {
-        guard position.holdIsAssignable else {
-            return bottomPrimary == .now ? .calendar : .now
+        switch position {
+        case .bottom: return bottomPrimary == .now ? .calendar : .now
+        case .centre: return .newAllDay
+        default: break
         }
         guard let raw = UserDefaults.standard.string(forKey: position.storageKey),
-              let action = WheelAction(rawValue: raw)
+              let action = WheelAction(rawValue: raw),
+              // A pool that narrows leaves old assignments behind. Anything no
+              // longer offered here falls back rather than staying set to
+              // something the settings wheel can no longer show.
+              position.assignableActions.contains(action)
         else { return position.defaultHold }
         return action
     }
