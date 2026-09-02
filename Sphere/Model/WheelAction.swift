@@ -54,7 +54,7 @@ enum WheelPosition: String, CaseIterable, Identifiable {
         case .menu: "MENU"
         case .next: "›"
         // The one position whose word depends on what it is set to.
-        case .bottom: WheelMapping.bottomPrimary == .calendar ? "DATE" : "NOW"
+        case .bottom: WheelMapping.bottomPrimary == .calendar ? "CAL" : "NOW"
         case .centre: "●"
         }
     }

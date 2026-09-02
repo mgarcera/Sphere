@@ -19,7 +19,7 @@ import SwiftUI
 enum Mark {
     case none, now, calendar, previousDay, nextDay, newAllDay
     case appearance, search, openCalendarApp, muteHaptics
-    case menu, openEvent, previousEvent, nextEvent
+    case menu, openEvent, newEvent, previousEvent, nextEvent
 }
 
 extension WheelAction {
@@ -201,6 +201,16 @@ struct ActionMark: View {
             scallop(from: 1, to: 19, lobes: 1, base: 16, peak: 4)
             line.addEllipse(in: CGRect(x: 7.4, y: 5.7, width: 9.2, height: 9.2))
             solid.addEllipse(in: CGRect(x: 10.5, y: 8.8, width: 3, height: 3))
+
+        case .newEvent:
+            // A single event rather than a whole day, so a capsule carries it
+            // where the all-day mark carries a baseline.
+            line.addRoundedRect(in: CGRect(x: 4, y: 13, width: 12, height: 4),
+                                cornerSize: CGSize(width: 2, height: 2))
+            line.move(to: CGPoint(x: 10, y: 2))
+            line.addLine(to: CGPoint(x: 10, y: 9))
+            line.move(to: CGPoint(x: 6.5, y: 5.5))
+            line.addLine(to: CGPoint(x: 13.5, y: 5.5))
 
         case .previousEvent:
             run(arrows: 1, lobes: 1, goingLeft: true)

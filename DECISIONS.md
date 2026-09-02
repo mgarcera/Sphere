@@ -601,3 +601,25 @@ different midnight and jump the dot by the difference between the zones.
 
 A fix's coordinate arrives before its timezone, since the zone comes back from
 the geocoder a moment later, so the relocation is triggered by either changing.
+
+## The centre button asks when there is something to ask (2026-09-02)
+
+Inside an event, opening it was the only thing on offer, so an hour that
+already held something could not have anything else put in it. Real days nest:
+a call inside a block, a break inside a shift.
+
+The centre button now forks only where a fork exists. In empty time it still
+creates in one tap. On an event it offers Open against New, two printed columns
+rather than one of them being a hidden gesture, with the event's name under one
+and the hour under the other so the choice carries what distinguishes it.
+
+This is the two-column sheet that was built for NOW against Calendar and
+reverted when the wheel became programmable. It belongs here instead: that fork
+was a permanent tax on a frequent move, this one appears only in the rare case
+where the button is genuinely ambiguous.
+
+The chosen action runs from the sheet's `onDismiss`, not from the binding
+flipping, since presenting the editor into a sheet still on its way out is the
+refusal that cost ten seconds once already.
+
+The bottom button reads CAL rather than DATE when it is set to the calendar.

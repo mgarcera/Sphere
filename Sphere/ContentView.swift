@@ -29,6 +29,11 @@ struct ContentView: View {
     @State private var isAllDayOpen = false
     @State private var isDayPickerOpen = false
     @State private var isSearchOpen = false
+    @State private var isEventChoiceOpen = false
+    /// Acted on after the chooser closes, never while it is closing: presenting
+    /// the editor into a sheet still dismissing is the refusal that cost ten
+    /// seconds once already.
+    @State private var pendingChoice: EventChoice?
     /// Fetched when the sheet opens, not on every keystroke.
     @State private var searchable: [EKEvent] = []
     @State private var pickedDay: Date = .now
@@ -91,6 +96,29 @@ struct ContentView: View {
                 // capsule across the screen on the way.
                 travel { model.focus(onStartOf: day) }
             }
+        }
+        .sheet(isPresented: $isEventChoiceOpen, onDismiss: {
+            guard let choice = pendingChoice else { return }
+            pendingChoice = nil
+            switch choice {
+            case .open:
+                if let active = model.activeEvent,
+                   let event = calendar.occurrence(for: active.id) {
+                    editorTarget = .existing(event)
+                }
+            case .create:
+                editorTarget = .new(model.focusDate)
+            }
+        }) {
+            EventChoiceSheet(
+                eventTitle: model.activeEvent?.title ?? "This event",
+                hour: ArcContent.clock(hourOfDay)
+            ) { choice in
+                pendingChoice = choice
+                isEventChoiceOpen = false
+            }
+            .presentationDetents([.height(EventChoiceSheet.height)])
+            .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $isSearchOpen) {
             EventSearch(events: searchable, timeZone: model.timeZone) { event in
@@ -174,7 +202,7 @@ struct ContentView: View {
                     lastDetent = (model.focusHour / Haptics.detentHours).rounded(.towardZero)
                 },
                 onPress: press,
-                bottomLabel: bottomPrimary == .calendar ? "DATE" : "NOW"
+                bottomLabel: bottomPrimary == .calendar ? "CAL" : "NOW"
             )
             .padding(.top, 16)
             .padding(.bottom, 24)
@@ -409,12 +437,12 @@ struct ContentView: View {
         model.events = calendar.events
     }
 
-    /// On an event, the centre button edits that event. Anywhere else it
-    /// starts a new one at the hour the wheel is on.
+    /// In empty time the centre button just creates. Inside an event there are
+    /// two things it could mean, so it asks rather than picking one: a day
+    /// nests, and opening the outer event was the only thing on offer.
     private func openEditor() {
-        if let active = model.activeEvent,
-           let event = calendar.occurrence(for: active.id) {
-            editorTarget = .existing(event)
+        if model.activeEvent.flatMap({ calendar.occurrence(for: $0.id) }) != nil {
+            isEventChoiceOpen = true
         } else {
             editorTarget = .new(model.focusDate)
         }
