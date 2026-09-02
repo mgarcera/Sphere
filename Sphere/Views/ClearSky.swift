@@ -234,17 +234,28 @@ struct ClearSky: View, Equatable {
             Theme.ink.opacity(SkyMarks.inkOpacity * mark.opacity * (dimmed ? 0.5 : 1))))
     }
 
-    /// Two strokes meeting, the way a bird reads at this size. Lean varies so a
-    /// pair is not two identical ticks.
+    /// Two strokes meeting, the way a bird reads at this size.
+    ///
+    /// Each is caught at a different point in a wingbeat. Two numbers make the
+    /// stage: how far the tips have dropped below the body, and how deeply the
+    /// wing bows above it. Early in the beat the tips are near level and the
+    /// bow is deep, which is the sharp indent; late in it the tips hang and the
+    /// wing is almost straight. They move opposite each other, so no bird ever
+    /// comes out as a flat tick.
     private func bird(_ mark: Mark, in context: inout GraphicsContext) {
-        let lean = (SkyMarks.jitter(daySeed, mark.salt &+ 907) - 0.5) * 0.7
-        let wing: CGFloat = 5
+        let stage = CGFloat(SkyMarks.jitter(daySeed, mark.salt &+ 1_301))
+        let lean = CGFloat(SkyMarks.jitter(daySeed, mark.salt &+ 907) - 0.5) * 0.7
+        let wing = 4.4 + CGFloat(SkyMarks.jitter(daySeed, mark.salt &+ 1_607)) * 1.8
+        let drop = wing * (0.05 + stage * 0.8)
+        let bow = wing * (0.62 - stage * 0.5)
+
+        let centre = mark.point
         var path = Path()
-        path.move(to: CGPoint(x: mark.point.x - wing, y: mark.point.y + wing * 0.45 - wing * lean))
-        path.addQuadCurve(to: mark.point,
-                          control: CGPoint(x: mark.point.x - wing * 0.5, y: mark.point.y - wing * 0.35))
-        path.addQuadCurve(to: CGPoint(x: mark.point.x + wing, y: mark.point.y + wing * 0.45 + wing * lean),
-                          control: CGPoint(x: mark.point.x + wing * 0.5, y: mark.point.y - wing * 0.35))
+        path.move(to: CGPoint(x: centre.x - wing, y: centre.y + drop - wing * lean))
+        path.addQuadCurve(to: centre,
+                          control: CGPoint(x: centre.x - wing * 0.5, y: centre.y - bow))
+        path.addQuadCurve(to: CGPoint(x: centre.x + wing, y: centre.y + drop + wing * lean),
+                          control: CGPoint(x: centre.x + wing * 0.5, y: centre.y - bow))
         context.stroke(path, with: .color(Theme.ink.opacity(SkyMarks.inkOpacity * mark.opacity)),
                        style: StrokeStyle(lineWidth: 1.0, lineCap: .round, lineJoin: .round))
     }
