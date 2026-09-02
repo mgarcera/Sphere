@@ -16,7 +16,7 @@ enum EventChoice {
 /// more made a choice that should take no thought look like a form.
 /// The two cards themselves, with no opinion about how they got on screen.
 struct EventChoiceCards: View {
-    var height: CGFloat = 260
+    var height: CGFloat = 210
     let onChoose: (EventChoice) -> Void
 
     var body: some View {
@@ -43,17 +43,8 @@ struct EventChoiceCards: View {
                     .foregroundStyle(Theme.ink)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background {
-                RoundedRectangle(cornerRadius: 22)
-                    .fill(Theme.background)
-                    .overlay {
-                        // The wheel's own grey and weight. It is the wheel's
-                        // button that opens this, so the frame it arrives in
-                        // belongs to the same control.
-                        RoundedRectangle(cornerRadius: 22)
-                            .strokeBorder(Theme.mutedLighter, lineWidth: 1.5)
-                    }
-            }
+            // No frame at all. The mark and its word are the button; a border
+            // around them was drawing the container rather than the choice.
             .contentShape(.rect)
         }
         .buttonStyle(DimOnPress())
@@ -66,10 +57,10 @@ struct EventChoiceCards: View {
 struct EventChoiceSheet: View {
     let onChoose: (EventChoice) -> Void
 
-    static let height: CGFloat = 320
+    static let height: CGFloat = 272
 
     var body: some View {
-        EventChoiceCards(height: 260, onChoose: onChoose)
+        EventChoiceCards(height: 210, onChoose: onChoose)
             .padding(.horizontal, 24)
             .padding(.top, 18)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
