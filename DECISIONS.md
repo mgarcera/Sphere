@@ -683,3 +683,20 @@ synchronized folder is copied as a resource as well as being the target's
 Still to do: the App Groups capability. `xcodebuild` cannot add it, so the
 entitlements files exist but are not referenced and the widget currently reads
 nothing.
+
+## The home screen, and a palette both targets can reach (2026-09-02)
+
+The lock screen accessory needed no colours: its rendering mode flattens
+everything to vibrancy. A home widget does, so the ten colorsets moved to
+`Shared/Palette.xcassets` and `Theme.swift` with them. The app icon and the
+accent colour stayed behind in `Sphere/Assets.xcassets`, since an extension
+carrying an app icon is a submission warning waiting to happen.
+
+Same arc, same capsules, same stem, in ink rather than white. What changes with
+size is the context around it: small carries the next event, medium adds where
+you are and when the sun comes and goes. Sunrise and sunset sit under the curve
+they belong to, so the arc is labelled rather than annotated.
+
+The sky is not there. Weather is not in the snapshot, and putting it there is a
+second payload with its own staleness; the drawn clouds are the obvious thing
+to add to a large widget once that exists.
