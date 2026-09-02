@@ -99,7 +99,7 @@ struct ActionMark: View {
     /// steps where it meets the arc outside. That step is the thing that says
     /// glass.
     private func lens(_ context: inout GraphicsContext, scale: CGFloat) {
-        let style = StrokeStyle(lineWidth: stroke / scale, lineCap: .round, lineJoin: .round)
+        let line = StrokeStyle(lineWidth: stroke / scale, lineCap: .round, lineJoin: .round)
         let centre = CGPoint(x: 10, y: 9)
         let radius: CGFloat = 5.6
         // 2.0 rather than glass's 1.5: the icon is 20 points wide and the bend
@@ -113,56 +113,67 @@ struct ActionMark: View {
             CGPoint(x: 1 + 18 * t, y: 16 - 28 * t + 28 * t * t)
         }
 
-        var arc = Path()
-        arc.move(to: day(0))
-        arc.addQuadCurve(to: day(1), control: CGPoint(x: 10, y: 2))
-        context.stroke(arc, with: .color(color), style: style)
+        /// An event is a thick round-capped stroke ALONG the curve, which is
+        /// how the arc itself draws one. A rounded rectangle beside it was a
+        /// bar lying across the day rather than an event sitting on it.
+        func run(from: CGFloat, to: CGFloat, map: (CGPoint) -> CGPoint?) -> Path {
+            var path = Path()
+            var drawing = false
+            let steps = 120
+            for step in 0...steps {
+                let t = from + (to - from) * CGFloat(step) / CGFloat(steps)
+                guard let point = map(day(t)) else { drawing = false; continue }
+                if drawing { path.addLine(to: point) } else { path.move(to: point); drawing = true }
+            }
+            return path
+        }
 
-        // The event runs out past the glass on both sides, so the thin part
-        // outside sits next to the fat part inside. Without that there is
-        // nothing to compare the magnified size against, and a bigger capsule
-        // just looks like a bigger capsule.
-        let thin: CGFloat = 1.4
-        let outside = CGRect(x: 0.6, y: centre.y - thin / 2, width: 18.8, height: thin)
-        context.fill(Path(roundedRect: outside, cornerRadius: thin / 2), with: .color(color))
-
-        // Clear the glass before drawing through it, or the unrefracted arc
-        // shows behind its own magnified copy.
-        let bounds = CGRect(x: centre.x - radius, y: centre.y - radius,
-                            width: radius * 2, height: radius * 2)
-        context.fill(Path(ellipseIn: bounds), with: .color(Theme.background))
-
-        var refracted = Path()
-        var drawing = false
-        for step in 0...260 {
-            let point = day(CGFloat(step) / 260)
+        /// Where a source point appears through a ball lens. Nil outside the
+        /// disc the glass can actually show.
+        func refract(_ point: CGPoint) -> CGPoint? {
             let dx = point.x - centre.x
             let dy = point.y - centre.y
             let distance = hypot(dx, dy)
-            guard distance <= visible else { drawing = false; continue }
-
-            let mapped = distance == 0 ? 0 : radius * sin(index * asin(distance / radius))
-            let factor = distance == 0 ? 0 : mapped / distance
-            let seen = CGPoint(x: centre.x + dx * factor, y: centre.y + dy * factor)
-            if drawing { refracted.addLine(to: seen) } else { refracted.move(to: seen); drawing = true }
+            guard distance <= visible else { return nil }
+            guard distance > 0 else { return point }
+            let mapped = radius * sin(index * asin(distance / radius))
+            let factor = mapped / distance
+            return CGPoint(x: centre.x + dx * factor, y: centre.y + dy * factor)
         }
-        context.stroke(refracted, with: .color(color), style: style)
 
-        // The same event again, seen through the glass. Scaled about the centre
-        // by the index rather than refracted point by point: that is exactly
-        // right at the centre and close enough near it, and a filled shape
-        // warped edge by edge only muddies at this scale. It runs past the rim
-        // and the clip cuts it there, which is what a real lens shows of
+        let bounds = CGRect(x: centre.x - radius, y: centre.y - radius,
+                            width: radius * 2, height: radius * 2)
+        // Widths as multiples of the drawn line, so the family holds at any size.
+        let thin = stroke * 2.4 / scale
+
+        var arc = Path()
+        arc.move(to: day(0))
+        arc.addQuadCurve(to: day(1), control: CGPoint(x: 10, y: 2))
+        context.stroke(arc, with: .color(color), style: line)
+
+        // The event runs out past the glass on both sides, so the thin part
+        // outside sits next to the fat part inside. Without that there is
+        // nothing to compare the magnified size against.
+        context.stroke(run(from: 0.13, to: 0.87) { $0 }, with: .color(color),
+                       style: StrokeStyle(lineWidth: thin, lineCap: .round))
+
+        // Clear the glass before drawing through it, or the unrefracted day
+        // shows behind its own magnified copy.
+        context.fill(Path(ellipseIn: bounds), with: .color(Theme.background))
+
+        context.stroke(run(from: 0, to: 1, map: refract), with: .color(color), style: line)
+
+        // The same event, refracted point by point rather than scaled, so it
+        // follows the bend instead of sitting straight across it. It reaches
+        // the rim and the clip cuts it there, which is what a lens shows of
         // something longer than its field.
         context.drawLayer { glass in
             glass.clip(to: Path(ellipseIn: bounds))
-            let fat = thin * index
-            let magnified = CGRect(x: centre.x - 18.8 * index / 2, y: centre.y - fat / 2,
-                                   width: 18.8 * index, height: fat)
-            glass.fill(Path(roundedRect: magnified, cornerRadius: fat / 2), with: .color(color))
+            glass.stroke(run(from: 0.13, to: 0.87, map: refract), with: .color(color),
+                         style: StrokeStyle(lineWidth: thin * index, lineCap: .round))
         }
 
-        context.stroke(Path(ellipseIn: bounds), with: .color(color), style: style)
+        context.stroke(Path(ellipseIn: bounds), with: .color(color), style: line)
     }
 
     /// Everything is drawn in a 20-point box and scaled by the frame.
