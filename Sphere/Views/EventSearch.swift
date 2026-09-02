@@ -9,6 +9,8 @@ import SwiftUI
 /// asking the store on every keystroke.
 struct EventSearch: View {
     let events: [EKEvent]
+    /// The place's clock, so a result's date matches where it lands on the arc.
+    let timeZone: TimeZone
     let onChoose: (EKEvent) -> Void
 
     @State private var query = ""
@@ -70,7 +72,7 @@ struct EventSearch: View {
                 .foregroundStyle(Theme.ink)
                 .lineLimit(1)
             Spacer(minLength: 12)
-            Text(Self.when.string(from: event.startDate))
+            Text(dated(event.startDate))
                 .font(.footnote)
                 .foregroundStyle(Theme.mutedLight)
         }
@@ -78,9 +80,10 @@ struct EventSearch: View {
         .padding(.vertical, 14)
     }
 
-    private static let when: DateFormatter = {
+    private func dated(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d, yyyy"
-        return formatter
-    }()
+        formatter.timeZone = timeZone
+        return formatter.string(from: date)
+    }
 }

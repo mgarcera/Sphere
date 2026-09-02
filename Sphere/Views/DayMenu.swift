@@ -187,7 +187,8 @@ struct DayMenu: View {
     private func choose(_ suggestion: PlaceSearch.Suggestion) {
         Task {
             guard let resolved = await search.resolve(suggestion) else { return }
-            location.adopt(coordinate: resolved.coordinate, name: resolved.name)
+            location.adopt(coordinate: resolved.coordinate, name: resolved.name,
+                           timeZone: resolved.timeZone)
             placeQuery = ""
             placeFocused = false
             search.clear()

@@ -19,13 +19,21 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
 
     private(set) var fix: Coordinate?
     private(set) var fixName: String?
+    private(set) var fixZone: TimeZone?
     private(set) var manual: Coordinate?
     private(set) var manualName: String?
+    private(set) var manualZone: TimeZone?
     private(set) var isSearching = false
 
     private static let manualKey = "manualLocation"
 
     var coordinate: Coordinate { manual ?? fix ?? .chicago }
+
+    /// A place's own clock, which the sun and the arc are drawn on. Falls back
+    /// to the device's, which is the right answer whenever the place IS here.
+    var timeZone: TimeZone {
+        (manual != nil ? manualZone : fixZone) ?? .autoupdatingCurrent
+    }
 
     var placeName: String {
         manualName ?? fixName ?? "Chicago, IL"
@@ -68,7 +76,9 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
         guard let last = locations.last else { return }
         fix = Coordinate(latitude: last.coordinate.latitude, longitude: last.coordinate.longitude)
         CLGeocoder().reverseGeocodeLocation(last) { [weak self] marks, _ in
-            self?.fixName = marks?.first.map { Self.displayName(for: $0) }
+            guard let mark = marks?.first else { return }
+            self?.fixName = Self.displayName(for: mark)
+            self?.fixZone = mark.timeZone
         }
     }
 
@@ -93,20 +103,23 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
 
         manual = Coordinate(latitude: where_.coordinate.latitude, longitude: where_.coordinate.longitude)
         manualName = Self.displayName(for: mark, fallback: trimmed)
+        manualZone = mark.timeZone
         persistManual()
         return true
     }
 
     /// Adopt a place chosen from the suggestion list.
-    func adopt(coordinate: Coordinate, name: String) {
+    func adopt(coordinate: Coordinate, name: String, timeZone: TimeZone?) {
         manual = coordinate
         manualName = name
+        manualZone = timeZone
         persistManual()
     }
 
     func clearManual() {
         manual = nil
         manualName = nil
+        manualZone = nil
         UserDefaults.standard.removeObject(forKey: Self.manualKey)
         request()
     }
@@ -122,10 +135,12 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
 
     private func persistManual() {
         guard let manual, let manualName else { return }
-        UserDefaults.standard.set(
-            ["lat": manual.latitude, "lon": manual.longitude, "name": manualName],
-            forKey: Self.manualKey
-        )
+        var stored: [String: Any] = ["lat": manual.latitude, "lon": manual.longitude,
+                                     "name": manualName]
+        // Kept with the place, since a coordinate without its clock is what put
+        // a Californian sunrise on Central time.
+        if let manualZone { stored["zone"] = manualZone.identifier }
+        UserDefaults.standard.set(stored, forKey: Self.manualKey)
     }
 
     private func restoreManual() {
@@ -135,5 +150,6 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
               let name = stored["name"] as? String else { return }
         manual = Coordinate(latitude: lat, longitude: lon)
         manualName = name
+        manualZone = (stored["zone"] as? String).flatMap(TimeZone.init(identifier:))
     }
 }

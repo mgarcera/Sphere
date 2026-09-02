@@ -573,3 +573,31 @@ a density roll salted from a counter that only advanced on a placement gave
 every hour the same answer once one came up empty; and a frame with a height
 but no alignment centred 322pt of sky in a 190pt box, pushing every deck 66pt
 up into the window's clip and taking the tops off the storms.
+
+## A place carries its clock (2026-09-02)
+
+Picking Bakersfield while sitting in Chicago put sunrise, midday and sunset two
+hours late. Not a formatting slip: `utcOffsetHours` is used inside the elevation
+function as well as in the sunrise and sunset formulas, so the whole arc was
+being drawn on the device's clock. At longitude −119 that puts solar noon at
+14.9h rather than 12.9h, which is exactly the two hours observed.
+
+The old behaviour was self-consistent and answered a real question, "when does
+the Bakersfield sun do things, on my clock." It just is not the question anyone
+asks. The app now travels: the picked location's timezone drives the sun, the
+arc's day boundaries and every date shown against it.
+
+This is also right in the case the picker was built for. When it is correcting
+your own location, that timezone is already the device's, so nothing changes.
+
+A timezone now rides with every location — from `MKMapItem.timeZone` for a
+searched place, `CLPlacemark.timeZone` for a typed one or a device fix — and is
+persisted with the coordinate. A coordinate without its clock is what caused
+this.
+
+`relocate` preserves the instant being looked at rather than the clock hour.
+Rebuilding the anchor without that would leave `focusHour` counting from a
+different midnight and jump the dot by the difference between the zones.
+
+A fix's coordinate arrives before its timezone, since the zone comes back from
+the geocoder a moment later, so the relocation is triggered by either changing.

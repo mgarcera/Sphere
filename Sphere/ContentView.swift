@@ -93,7 +93,7 @@ struct ContentView: View {
             }
         }
         .sheet(isPresented: $isSearchOpen) {
-            EventSearch(events: searchable) { event in
+            EventSearch(events: searchable, timeZone: model.timeZone) { event in
                 isSearchOpen = false
                 travel { model.focusHour = event.startDate.timeIntervalSince(model.anchor) / 3600 }
             }
@@ -144,8 +144,9 @@ struct ContentView: View {
         }
         // A fix moves the whole arc, since the curve is the sun's elevation
         // where you actually are.
+        .onChange(of: location.timeZone) { _, _ in relocate() }
         .onChange(of: location.coordinate) { _, coordinate in
-            model.relocate(to: coordinate)
+            model.relocate(to: coordinate, timeZone: location.timeZone)
             Task {
                 await weather.load(coordinate: coordinate)
                 model.applySky(from: weather)
@@ -287,13 +288,13 @@ struct ContentView: View {
     private var titleKey: String { model.activeEvent?.id ?? "-" }
 
     private var captionKey: String {
-        "\(titleKey)|\(Self.dayLine(model.focusDate))"
+        "\(titleKey)|\(Self.dayLine(model.focusDate, in: model.timeZone))"
     }
 
     /// The all-day row changes with the DAY, not with the event under the dot,
     /// so moving between two timed events leaves it still.
     private var allDayKey: String {
-        "\(Self.dayLine(model.focusDate))|\(model.allDayEvents.count)"
+        "\(Self.dayLine(model.focusDate, in: model.timeZone))|\(model.allDayEvents.count)"
     }
 
     /// Drop to 94% and spring back. No fade: the text cuts to its new value
@@ -382,12 +383,12 @@ struct ContentView: View {
             let start = ArcContent.clock(active.startHour - offset)
             // A zero-length event would otherwise read "1:24 PM – 1:24 PM".
             guard active.durationHours > 1.0 / 60 else {
-                return "\(Self.dayLine(model.focusDate)) · \(start)"
+                return "\(Self.dayLine(model.focusDate, in: model.timeZone)) · \(start)"
             }
             let end = ArcContent.clock(active.endHour - offset)
-            return "\(Self.dayLine(model.focusDate)) · \(start) – \(end)"
+            return "\(Self.dayLine(model.focusDate, in: model.timeZone)) · \(start) – \(end)"
         }
-        return Self.dayLine(model.focusDate)
+        return Self.dayLine(model.focusDate, in: model.timeZone)
     }
 
     // MARK: - Actions
@@ -545,9 +546,23 @@ struct ContentView: View {
         if model.focusHour != origin { Haptics.moved() }
     }
 
-    private static func dayLine(_ date: Date) -> String {
+    /// Reload the sun and the sky for a place whose clock has arrived, which
+    /// can happen after the coordinate does: a fix lands first and its timezone
+    /// comes back from the geocoder a moment later.
+    private func relocate() {
+        model.relocate(to: location.coordinate, timeZone: location.timeZone)
+        Task {
+            await weather.load(coordinate: location.coordinate)
+            model.applySky(from: weather)
+        }
+    }
+
+    /// Formatted on the PLACE's clock, not the device's, so the date under the
+    /// dot names the day the arc is drawing.
+    private static func dayLine(_ date: Date, in zone: TimeZone) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE, MMMM d"
+        formatter.timeZone = zone
         return formatter.string(from: date)
     }
 }

@@ -12,9 +12,9 @@ import Observation
 /// each day's `SolarDay` is built from a real `Date`.
 @Observable
 final class DayModel {
-    let anchor: Date
+    private(set) var anchor: Date
     private(set) var coordinate: Coordinate
-    let timeZone: TimeZone
+    private(set) var timeZone: TimeZone
 
     /// Hours from `anchor`, unbounded in both directions.
     var focusHour: Double
@@ -55,9 +55,28 @@ final class DayModel {
 
     /// A new fix invalidates every cached day, since sunrise, sunset and the
     /// curve's whole shape belong to a place.
-    func relocate(to coordinate: Coordinate) {
-        guard coordinate != self.coordinate else { return }
+    ///
+    /// The clock moves with the place. `utcOffsetHours` is used to draw the
+    /// curve, not just to label it, so a Californian coordinate on a Central
+    /// offset put solar noon two hours late and the whole arc with it. The app
+    /// is answering "when does the sun do this THERE", and that is the only
+    /// reading of a picked city anyone means.
+    func relocate(to coordinate: Coordinate, timeZone: TimeZone) {
+        guard coordinate != self.coordinate || timeZone != self.timeZone else { return }
         self.coordinate = coordinate
+
+        if timeZone != self.timeZone {
+            // The moment being looked at survives the move; only the clock it
+            // is read on changes. Rebuilding the anchor without this would
+            // leave `focusHour` counting from a different midnight and jump the
+            // dot by the difference between the zones.
+            let instant = focusDate
+            self.timeZone = timeZone
+            calendar.timeZone = timeZone
+            anchor = calendar.startOfDay(for: realNow)
+            focusHour = instant.timeIntervalSince(anchor) / 3600
+        }
+
         solarDays.removeAll()
         skyByDay.removeAll()
     }

@@ -47,7 +47,7 @@ final class PlaceSearch: NSObject, MKLocalSearchCompleterDelegate {
     }
 
     /// Resolve a chosen suggestion to real coordinates and a display name.
-    func resolve(_ suggestion: Suggestion) async -> (coordinate: Coordinate, name: String)? {
+    func resolve(_ suggestion: Suggestion) async -> (coordinate: Coordinate, name: String, timeZone: TimeZone?)? {
         let request = MKLocalSearch.Request(completion: suggestion.completion)
         guard let item = try? await MKLocalSearch(request: request).start().mapItems.first else {
             return nil
@@ -55,7 +55,8 @@ final class PlaceSearch: NSObject, MKLocalSearchCompleterDelegate {
         let where_ = item.placemark.coordinate
         return (
             Coordinate(latitude: where_.latitude, longitude: where_.longitude),
-            LocationService.displayName(for: item.placemark, fallback: suggestion.title)
+            LocationService.displayName(for: item.placemark, fallback: suggestion.title),
+            item.timeZone
         )
     }
 
