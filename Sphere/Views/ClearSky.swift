@@ -214,13 +214,14 @@ struct ClearSky: View, Equatable {
 
     // MARK: - Drawing
 
-    /// On or off, never in between. Each star keeps its own period and phase
-    /// against the scrub, and the off window is short, so passing sky winks
-    /// rather than strobes.
+    /// Full or half, never in between. Each star keeps its own period and phase
+    /// against the scrub, so passing sky winks rather than strobes. Dimming
+    /// rather than disappearing keeps the field's shape while it does it: a
+    /// star that vanishes takes a piece of the sky's arrangement with it.
     private func star(_ mark: Mark, in context: inout GraphicsContext) {
         let period = 3 + Int(SkyMarks.jitter(daySeed, mark.salt &+ 601) * 5)
         let offset = Int(SkyMarks.jitter(daySeed, mark.salt &+ 809) * Double(period))
-        guard (blinkStep &+ offset) % period != 0 else { return }
+        let dimmed = (blinkStep &+ offset) % period == 0
 
         let radius: CGFloat = 2.4
         var path = Path()
@@ -229,7 +230,8 @@ struct ClearSky: View, Equatable {
         path.addQuadCurve(to: CGPoint(x: mark.point.x + radius, y: mark.point.y), control: mark.point)
         path.addQuadCurve(to: CGPoint(x: mark.point.x, y: mark.point.y + radius), control: mark.point)
         path.addQuadCurve(to: CGPoint(x: mark.point.x - radius, y: mark.point.y), control: mark.point)
-        context.fill(path, with: .color(Theme.ink.opacity(SkyMarks.inkOpacity * mark.opacity)))
+        context.fill(path, with: .color(
+            Theme.ink.opacity(SkyMarks.inkOpacity * mark.opacity * (dimmed ? 0.5 : 1))))
     }
 
     /// Two strokes meeting, the way a bird reads at this size. Lean varies so a
