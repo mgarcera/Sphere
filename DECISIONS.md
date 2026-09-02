@@ -237,9 +237,16 @@ The clock's hands carry the hour the wheel is on and sweep as it turns, the same
 idea as the time dot. Two hands in a plain circle: at caption size a tick face
 reads as a grey ring rather than as ticks.
 
-The menu's date, place and sun material is one BLOCK, not a linear list: the
-place in display type, the date under it, the search below that, then a rule and
-the sun's three times three-up. A two-card grid and a tightened list were built,
+The menu opens at full height only, one detent. Its date, place and sun material
+is one BLOCK, not a linear list: the place in display type with the date picker
+opposite it on the same line, the search and the location action under that, then
+a rule and the sun's three moments, each a drawn mark with its label and time
+left-aligned beside it. The place carries its state or region, so Chicago reads
+as "Chicago, IL".
+
+Switches and pickers tint with `ControlAccent`, not `Ink`. In dark mode ink is
+nearly white, and a near-white track under a white knob makes a toggle read as
+one solid white pill with no visible state. A two-card grid and a tightened list were built,
 compared on device and removed.
 - **Monetization**, which decides whether Open-Meteo's non-commercial free tier
   is enough or WeatherKit is needed. Deferred to a 6pm block, 2026-09-01.

@@ -71,7 +71,7 @@ struct ContentView: View {
         }
         .sheet(isPresented: $isMenuOpen) {
             DayMenu(model: model, calendar: calendar, location: location, appearance: $appearance) { isMenuOpen = false }
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
         .task {

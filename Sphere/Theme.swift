@@ -12,6 +12,11 @@ enum Theme {
     static let hairlineSoft = Color("HairlineSoft")
     static let taskActive   = Color("TaskActive")
     static let taskInactive = Color("TaskInactive")
+
+    /// Tint for switches and pickers. NOT `ink`: in dark mode ink is nearly
+    /// white, and a near-white track under a white knob makes a toggle read as
+    /// one solid white pill with no visible state.
+    static let controlAccent = Color("ControlAccent")
 }
 
 extension Font {

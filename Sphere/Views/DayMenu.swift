@@ -18,18 +18,6 @@ struct DayMenu: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
-                HStack {
-                    Text("Date")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.ink)
-                    Spacer()
-                    DatePicker("", selection: $pickedDate, displayedComponents: .date)
-                        .labelsHidden()
-                        .tint(Theme.ink)
-                }
-                .padding(.vertical, 13)
-
-                divider
                 dayBlock
 
                 divider
@@ -60,7 +48,7 @@ struct DayMenu: View {
                                         .foregroundStyle(Theme.ink)
                                 }
                             }
-                            .tint(Theme.ink)
+                            .tint(Theme.controlAccent)
                             .padding(.vertical, 3)
                         }
                     }
@@ -86,23 +74,24 @@ struct DayMenu: View {
                 Text(location.placeName)
                     .font(.display(24))
                     .foregroundStyle(Theme.ink)
+                    .lineLimit(1)
                 if location.isUsingFallback {
                     Text("default")
                         .font(.caption2)
                         .foregroundStyle(Theme.mutedLight)
                 }
-                Spacer()
-                placeAction
+                Spacer(minLength: 8)
+                DatePicker("", selection: $pickedDate, displayedComponents: .date)
+                    .labelsHidden()
+                    .tint(Theme.controlAccent)
+                    .fixedSize()
             }
 
             HStack {
-                DatePicker("", selection: $pickedDate, displayedComponents: .date)
-                    .labelsHidden()
-                    .tint(Theme.ink)
-                Spacer()
+                placeSearch
+                Spacer(minLength: 8)
+                placeAction
             }
-
-            placeSearch
 
             Rectangle().fill(Theme.hairline).frame(height: 1).padding(.top, 4)
             sunRow
@@ -156,27 +145,33 @@ struct DayMenu: View {
         }
     }
 
-    /// Three times across the width rather than three stacked rows.
+    /// Three moments across the width, each one a mark with its label and time
+    /// left-aligned beside it rather than centred under it.
     private var sunRow: some View {
         let day = model.focusSolarDay
-        return HStack(spacing: 0) {
-            sunCell("Sunrise", day.sunrise)
-            sunCell("Midday", day.solarNoon)
-            sunCell("Sunset", day.sunset)
+        return HStack(alignment: .center, spacing: 8) {
+            sunCell(.rise, "Sunrise", day.sunrise)
+            sunCell(.noon, "Midday", day.solarNoon)
+            sunCell(.set, "Sunset", day.sunset)
         }
     }
 
-    private func sunCell(_ title: String, _ hour: Double?) -> some View {
-        VStack(spacing: 3) {
-            Text(title)
-                .font(.caption2)
-                .foregroundStyle(Theme.mutedLight)
-            Text(hour.map(ArcContent.clock) ?? "—")
-                .font(.subheadline)
-                .foregroundStyle(Theme.ink)
-                .monospacedDigit()
+    private func sunCell(_ moment: SunMark.Moment, _ title: String, _ hour: Double?) -> some View {
+        HStack(spacing: 7) {
+            SunMark(moment: moment)
+                .stroke(Theme.muted, style: StrokeStyle(lineWidth: 1.1, lineCap: .round, lineJoin: .round))
+                .frame(width: 17, height: 17)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.caption2)
+                    .foregroundStyle(Theme.mutedLight)
+                Text(hour.map(ArcContent.clock) ?? "—")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.ink)
+                    .monospacedDigit()
+            }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var moonRow: some View {

@@ -28,7 +28,7 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
     var coordinate: Coordinate { manual ?? fix ?? .chicago }
 
     var placeName: String {
-        manualName ?? fixName ?? "Chicago"
+        manualName ?? fixName ?? "Chicago, IL"
     }
 
     var isUsingFallback: Bool { manual == nil && fix == nil }
@@ -68,7 +68,7 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
         guard let last = locations.last else { return }
         fix = Coordinate(latitude: last.coordinate.latitude, longitude: last.coordinate.longitude)
         CLGeocoder().reverseGeocodeLocation(last) { [weak self] marks, _ in
-            self?.fixName = marks?.first?.locality
+            self?.fixName = marks?.first.map { Self.name(for: $0) }
         }
     }
 
@@ -92,7 +92,7 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
               let where_ = mark.location else { return false }
 
         manual = Coordinate(latitude: where_.coordinate.latitude, longitude: where_.coordinate.longitude)
-        manualName = mark.locality ?? mark.name ?? trimmed
+        manualName = Self.name(for: mark, fallback: trimmed)
         persistManual()
         return true
     }
@@ -102,6 +102,13 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
         manualName = nil
         UserDefaults.standard.removeObject(forKey: Self.manualKey)
         request()
+    }
+
+    /// City plus its state or region, so "Chicago" reads as "Chicago, IL".
+    private static func name(for mark: CLPlacemark, fallback: String? = nil) -> String {
+        let city = mark.locality ?? mark.name ?? fallback ?? ""
+        guard let region = mark.administrativeArea, !region.isEmpty else { return city }
+        return city.isEmpty ? region : "\(city), \(region)"
     }
 
     private func persistManual() {
