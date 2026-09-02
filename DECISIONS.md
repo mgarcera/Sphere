@@ -225,12 +225,22 @@ until a fix arrives and permanently if permission is refused.
 
 **All-day events live under the header, not in the menu.** They have no hour and
 cannot sit on the arc, so they get their own button below the date caption,
-showing the single title when there is one and a count when there are more. It
-opens a sheet with ONE detent, so it cannot be dragged open: it is a glance, not
-a list view. Each row opens the same Apple editor a timed event uses.
+showing the single title when there is one and a count when there are more. The button is a clock and the phrase "X all day", always counted even at one,
+at the caption's own size. Its row is RESERVED whether or not the day has any:
+letting it appear and vanish shifted the whole arc down and back while scrubbing
+across a day with a birthday on it, and squeezed the title.
 
-The menu's date, place and sun material no longer runs as a linear list. Three
-arrangements are under comparison behind a switch: grid, block and list.
+It opens a sheet with ONE detent, so it cannot be dragged open: it is a glance,
+not a list view. Each row opens the same Apple editor a timed event uses.
+
+The clock's hands carry the hour the wheel is on and sweep as it turns, the same
+idea as the time dot. Two hands in a plain circle: at caption size a tick face
+reads as a grey ring rather than as ticks.
+
+The menu's date, place and sun material is one BLOCK, not a linear list: the
+place in display type, the date under it, the search below that, then a rule and
+the sun's three times three-up. A two-card grid and a tightened list were built,
+compared on device and removed.
 - **Monetization**, which decides whether Open-Meteo's non-commercial free tier
   is enough or WeatherKit is needed. Deferred to a 6pm block, 2026-09-01.
 - **The tilt of the sky band is gentle**, about 8° at most, because a day is

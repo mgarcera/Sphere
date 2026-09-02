@@ -9,7 +9,6 @@ struct DayMenu: View {
     let calendar: CalendarService
     let location: LocationService
     @Binding var appearance: Appearance
-    @Binding var layout: MenuLayout
     let onDismiss: () -> Void
 
     @State private var pickedDate: Date = .now
@@ -31,22 +30,7 @@ struct DayMenu: View {
                 .padding(.vertical, 13)
 
                 divider
-                switch layout {
-                case .grid: gridLayout
-                case .block: blockLayout
-                case .list: listLayout
-                }
-
-                divider
-                section("Layout") {
-                    Picker("Layout", selection: $layout) {
-                        ForEach(MenuLayout.allCases) { option in
-                            Text(option.title).tag(option)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.vertical, 4)
-                }
+                dayBlock
 
                 divider
                 section("Appearance") {
@@ -95,30 +79,8 @@ struct DayMenu: View {
 
     // MARK: - Layouts
 
-    /// Place and date share a row as two cards, and the sun's three times sit
-    /// three-up. Uses the width the linear version was leaving empty.
-    private var gridLayout: some View {
-        VStack(spacing: 14) {
-            HStack(alignment: .top, spacing: 12) {
-                card("Place") {
-                    placeName
-                    placeSearch
-                }
-                card("Date") {
-                    DatePicker("", selection: $pickedDate, displayedComponents: .date)
-                        .labelsHidden()
-                        .tint(Theme.ink)
-                        .padding(.top, 2)
-                }
-            }
-            sunRow
-            moonRow
-        }
-        .padding(.vertical, 12)
-    }
-
     /// The day itself as one block, with the sun as a strip under it.
-    private var blockLayout: some View {
+    private var dayBlock: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
                 Text(location.placeName)
@@ -149,46 +111,7 @@ struct DayMenu: View {
         .padding(.vertical, 12)
     }
 
-    /// The vertical list, kept, with the three sun readings collapsed onto one
-    /// row instead of three.
-    private var listLayout: some View {
-        VStack(spacing: 0) {
-            section("Place") {
-                placeName
-                placeSearch
-            }
-            divider
-            HStack {
-                Text("Date").font(.subheadline).foregroundStyle(Theme.ink)
-                Spacer()
-                DatePicker("", selection: $pickedDate, displayedComponents: .date)
-                    .labelsHidden()
-                    .tint(Theme.ink)
-            }
-            .padding(.vertical, 13)
-            divider
-            section("Sun") {
-                sunRow
-                moonRow
-            }
-        }
-    }
-
     // MARK: - Shared pieces
-
-    private func card<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.system(size: 11, weight: .medium))
-                .tracking(1.1)
-                .textCase(.uppercase)
-                .foregroundStyle(Theme.mutedLight)
-            content()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.hairline, lineWidth: 1))
-    }
 
     private var placeName: some View {
         HStack {

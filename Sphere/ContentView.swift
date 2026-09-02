@@ -12,8 +12,6 @@ struct ContentView: View {
     @State private var titleScale: CGFloat = 1
     @State private var captionScale: CGFloat = 1
     @AppStorage("appearance") private var appearance: Appearance = .system
-    /// Temporary: three menu arrangements under comparison.
-    @AppStorage("menuLayout") private var menuLayout: MenuLayout = .grid
     @State private var eventsHidden = false
     @State private var isAllDayOpen = false
 
@@ -67,7 +65,7 @@ struct ContentView: View {
             .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $isMenuOpen) {
-            DayMenu(model: model, calendar: calendar, location: location, appearance: $appearance, layout: $menuLayout) { isMenuOpen = false }
+            DayMenu(model: model, calendar: calendar, location: location, appearance: $appearance) { isMenuOpen = false }
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
@@ -165,24 +163,30 @@ struct ContentView: View {
                 .monospacedDigit()
                 .scaleEffect(captionScale, anchor: .leading)
 
-            if !model.allDayEvents.isEmpty {
-                Button { isAllDayOpen = true } label: {
-                    HStack(spacing: 7) {
-                        Circle()
-                            .fill(model.allDayEvents[0].color)
-                            .frame(width: 7, height: 7)
-                        Text(allDayLabel)
-                            .font(.footnote)
-                            .foregroundStyle(captionColor)
+            // The row is always reserved, present or not. Letting it appear
+            // and vanish shifted the whole arc down and back as you scrubbed
+            // across a day with a birthday on it, and squeezed the title.
+            Group {
+                if model.allDayEvents.isEmpty {
+                    Color.clear
+                } else {
+                    Button { isAllDayOpen = true } label: {
+                        HStack(spacing: 6) {
+                            ClockFace(hour: hourOfDay)
+                                .stroke(captionColor, style: StrokeStyle(lineWidth: 1.1, lineCap: .round))
+                                .frame(width: 14, height: 14)
+                            Text("\(model.allDayEvents.count) all day")
+                                .contentTransition(.identity)
+                                .font(.footnote)
+                                .foregroundStyle(captionColor)
+                        }
+                        .contentShape(.rect)
                     }
-                    .padding(.vertical, 5)
-                    .padding(.horizontal, 10)
-                    .overlay(Capsule().stroke(Theme.hairlineSoft, lineWidth: 1))
-                    .contentShape(.capsule)
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
-                .padding(.top, 8)
             }
+            .frame(height: 16, alignment: .leading)
+            .padding(.top, 7)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)
@@ -271,11 +275,6 @@ struct ContentView: View {
     /// while the caption is pinned is what let them meet at dusk.
     private static let titleContrast: Double = 9.0
     private static let captionContrast: Double = 3.5
-
-    private var allDayLabel: String {
-        let events = model.allDayEvents
-        return events.count == 1 ? events[0].title : "\(events.count) all day"
-    }
 
     private var hourOfDay: Double {
         model.focusHour - Double(model.dayIndex) * 24

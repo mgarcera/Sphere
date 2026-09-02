@@ -10,6 +10,9 @@ struct AllDaySheet: View {
     let events: [CalendarEvent]
     let onOpen: (CalendarEvent) -> Void
 
+    /// Always counted, even at one.
+    private var title: String { "\(events.count) all day" }
+
     /// Enough for four rows before it scrolls, which covers a normal day of
     /// birthdays and holidays without becoming a list view.
     static func height(for count: Int) -> CGFloat {
@@ -18,7 +21,7 @@ struct AllDaySheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("All day")
+            Text(title)
                 .font(.system(size: 11, weight: .medium))
                 .tracking(1.1)
                 .textCase(.uppercase)
@@ -37,7 +40,7 @@ struct AllDaySheet: View {
                                     .fill(event.color)
                                     .frame(width: 9, height: 9)
                                 Text(event.title)
-                                    .font(.subheadline)
+                                    .font(.footnote)
                                     .foregroundStyle(Theme.ink)
                                     .lineLimit(1)
                                 Spacer()

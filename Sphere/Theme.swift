@@ -108,25 +108,3 @@ enum ContrastHold {
         return Color(red: result.r, green: result.g, blue: result.b)
     }
 }
-
-/// Temporary. Three arrangements of the menu's date, place and sun material,
-/// switchable so they can be compared on device. The losers and this enum come
-/// out together.
-enum MenuLayout: String, CaseIterable, Identifiable {
-    /// Place and date side by side, sun as a three-up row.
-    case grid
-    /// Date and place as one block, sun as a strip beneath it.
-    case block
-    /// A vertical list, with the sun's three readings on one row.
-    case list
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .grid: "Grid"
-        case .block: "Block"
-        case .list: "List"
-        }
-    }
-}
