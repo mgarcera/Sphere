@@ -11,7 +11,6 @@ struct DayMenu: View {
     @Binding var appearance: Appearance
     let onDismiss: () -> Void
 
-    @State private var pickedDate: Date = .now
     @State private var placeQuery = ""
     @State private var search = PlaceSearch()
     @FocusState private var placeFocused: Bool
@@ -60,10 +59,6 @@ struct DayMenu: View {
             .padding(.bottom, 32)
         }
         .background(Theme.background)
-        .onAppear { pickedDate = model.focusDate }
-        .onChange(of: pickedDate) { _, newValue in
-            model.focus(onDayOf: newValue)
-        }
     }
 
     // MARK: - Layouts
@@ -82,10 +77,6 @@ struct DayMenu: View {
                         .foregroundStyle(Theme.mutedLight)
                 }
                 Spacer(minLength: 8)
-                DatePicker("", selection: $pickedDate, displayedComponents: .date)
-                    .labelsHidden()
-                    .tint(Theme.controlAccent)
-                    .fixedSize()
             }
 
             VStack(alignment: .leading, spacing: 0) {

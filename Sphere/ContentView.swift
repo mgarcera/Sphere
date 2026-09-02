@@ -19,6 +19,8 @@ struct ContentView: View {
     @AppStorage("appearance") private var appearance: Appearance = .system
     @State private var eventsHidden = false
     @State private var isAllDayOpen = false
+    @State private var isDayPickerOpen = false
+    @State private var pickedDay: Date = .now
 
     var body: some View {
         ZStack {
@@ -56,6 +58,27 @@ struct ContentView: View {
                 Task { @MainActor in reload() }
             }
             .ignoresSafeArea()
+        }
+        .sheet(isPresented: $isDayPickerOpen) {
+            VStack(spacing: 0) {
+                DatePicker("", selection: $pickedDay, displayedComponents: .date)
+                    .datePickerStyle(.graphical)
+                    .labelsHidden()
+                    .tint(Theme.controlAccent)
+                    .padding(.horizontal, 12)
+                Spacer(minLength: 0)
+            }
+            .padding(.top, 12)
+            .frame(maxWidth: .infinity, alignment: .top)
+            .background(Theme.background)
+            .presentationDetents([.height(420)])
+            .presentationDragIndicator(.visible)
+            .onChange(of: pickedDay) { _, day in
+                isDayPickerOpen = false
+                // Through travel, so a move of days does not sweep every
+                // capsule across the screen on the way.
+                travel { model.focus(onDayOf: day) }
+            }
         }
         .sheet(isPresented: $isAllDayOpen) {
             AllDaySheet(events: model.allDayEvents) { entry in
@@ -124,6 +147,10 @@ struct ContentView: View {
                 onRotate: { model.scrub(byRotations: $0) },
                 onMenu: { isMenuOpen = true },
                 onNow: { travel { model.returnToNow() } },
+                onNowHeld: {
+                    pickedDay = model.focusDate
+                    isDayPickerOpen = true
+                },
                 onCentre: openEditor,
                 onPrevious: { jump(to: model.previousEvent) },
                 onNext: { jump(to: model.nextEvent) }
