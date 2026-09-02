@@ -157,20 +157,22 @@ struct ContentView: View {
             .buttonStyle(.plain)
             .disabled(model.activeEvent == nil)
 
-            Text(subtitle)
-                .contentTransition(.identity)
-                .font(.footnote)
-                .foregroundStyle(captionColor)
-                .monospacedDigit()
-                .scaleEffect(captionScale, anchor: .leading)
+            // The all-day button rides the caption's row rather than taking a
+            // third one. That also retires the reserved-row problem: the
+            // caption is always there, so the row's height no longer depends
+            // on whether the day has all-day events, and nothing shifts when
+            // it appears.
+            HStack(spacing: 10) {
+                Text(subtitle)
+                    .contentTransition(.identity)
+                    .font(.footnote)
+                    .foregroundStyle(captionColor)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .layoutPriority(1)
+                    .scaleEffect(captionScale, anchor: .leading)
 
-            // The row is always reserved, present or not. Letting it appear
-            // and vanish shifted the whole arc down and back as you scrubbed
-            // across a day with a birthday on it, and squeezed the title.
-            Group {
-                if model.allDayEvents.isEmpty {
-                    Color.clear.transition(.identity)
-                } else {
+                if !model.allDayEvents.isEmpty {
                     Button { isAllDayOpen = true } label: {
                         HStack(spacing: 6) {
                             ClockFace(hour: hourOfDay)
@@ -180,6 +182,7 @@ struct ContentView: View {
                                 .contentTransition(.identity)
                                 .font(.footnote)
                                 .foregroundStyle(captionColor)
+                                .fixedSize()
                         }
                         .contentShape(.rect)
                     }
@@ -187,15 +190,15 @@ struct ContentView: View {
                     // Pattern 5 in reverse: the branch gets a transition
                     // whether or not we ask, so REPLACE the default rather
                     // than remove it. Scale alone, to nothing and back, so it
-                    // pops in and out instead of fading. A scale that stops
+                    // pops in and out instead of fading. A scale that stopped
                     // short of zero would still cut at that size.
                     .transition(.scale(scale: 0.01, anchor: .leading))
+                    .scaleEffect(allDayScale, anchor: .leading)
                 }
+
+                Spacer(minLength: 0)
             }
-            .frame(height: 16, alignment: .leading)
             .animation(Self.popSpring.delay(0.08), value: model.allDayEvents.isEmpty)
-            .scaleEffect(allDayScale, anchor: .leading)
-            .padding(.top, 7)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)

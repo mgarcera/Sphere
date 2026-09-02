@@ -226,9 +226,12 @@ until a fix arrives and permanently if permission is refused.
 **All-day events live under the header, not in the menu.** They have no hour and
 cannot sit on the arc, so they get their own button below the date caption,
 showing the single title when there is one and a count when there are more. The button is a clock and the phrase "X all day", always counted even at one,
-at the caption's own size. Its row is RESERVED whether or not the day has any:
-letting it appear and vanish shifted the whole arc down and back while scrubbing
-across a day with a birthday on it, and squeezed the title.
+at the caption's own size, riding the caption's row rather than taking a third
+one. A third row squeezed the title, which carried minimumScaleFactor and so
+silently drew at up to 30% smaller instead of overflowing; that modifier is gone
+and a long title truncates now. Inlining also retires the reserved-row problem,
+since the caption is always present and the row's height no longer depends on
+whether the day has all-day events.
 
 It opens a sheet with ONE detent, so it cannot be dragged open: it is a glance,
 not a list view. Each row opens the same Apple editor a timed event uses.
