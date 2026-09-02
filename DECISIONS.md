@@ -432,3 +432,25 @@ Start and end land on the same date, which is what Calendar.app writes for a
 single all-day event and what the editor reads back as one day rather than two.
 
 MENU's hold stays empty pending a decision on what belongs there.
+
+## MENU holds light/dark; the pool grows to nine (2026-09-01)
+
+MENU is the one position the day-scale rule does not reach, since its tap is
+app-scale rather than time-scale. Its hold is app-scale too: tap opens the
+app's settings, hold flips its most-used one. Empty was a placeholder held only
+while there was nothing worth putting there.
+
+Light/dark lands on an explicit setting rather than cycling back through
+system. Reaching for a manual toggle is already a statement that you do not
+want it decided for you, and the menu is where system is chosen again.
+
+Four actions joined the pool: light/dark, search, open in Calendar, mute
+haptics. None of them are duplicates of a tap, which stays the test for
+admission.
+
+Search is the first route to an event the arc cannot reach. The chevrons see
+forty-five days and the arc draws three. A year either side is the window where
+the fetch stays fast enough to filter on every keystroke; past that it needs
+paging, which is where building more on search starts. It is currently
+reachable only by assignment, which makes it as invisible as the arc tap was,
+so it likely needs a permanent home of its own eventually.

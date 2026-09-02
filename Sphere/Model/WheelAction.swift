@@ -87,7 +87,10 @@ enum WheelPosition: String, CaseIterable, Identifiable {
         // all-day event at all — the header row appears once one exists, so
         // there was no affordance for the first.
         case .centre: .newAllDay
-        case .menu: .none
+        // The one position the day-scale rule does not reach: its tap is
+        // app-scale, so its hold is too. Empty was a placeholder held while
+        // there was nothing worth putting there.
+        case .menu: .appearance
         }
     }
 
