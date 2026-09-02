@@ -21,6 +21,7 @@ enum Haptics {
     static let detentHours = 0.25
 
     private static let detent = UIImpactFeedbackGenerator(style: .light)
+    private static let arrival = UIImpactFeedbackGenerator(style: .medium)
     private static let refusal = UIImpactFeedbackGenerator(style: .rigid)
 
     /// Generators go cold in about a second, and a cold one fires late enough
@@ -37,8 +38,16 @@ enum Haptics {
         detent.prepare()
     }
 
-    /// Nothing in that direction. Heavier and blunter than a detent, so it
-    /// reads as a wall rather than as one more click.
+    /// The dot jumped somewhere: a chevron, the arc tapped to return to now, a
+    /// day picked. Weightier than a detent, since a jump crosses in one press
+    /// what the wheel would take several turns to cover.
+    static func moved() {
+        guard isEnabled else { return }
+        arrival.impactOccurred(intensity: 0.7)
+    }
+
+    /// Nothing in that direction. Blunter than an arrival and sharper than a
+    /// detent, so it reads as a wall rather than as either.
     static func nothingThere() {
         guard isEnabled else { return }
         refusal.impactOccurred(intensity: 0.8)

@@ -464,14 +464,21 @@ struct ContentView: View {
     /// stale the moment the spring is retuned.
     ///
     /// One function, because NOW and the chevrons do the same thing and the
-    /// suppression was written at one call site and not the other.
+    /// suppression was written at one call site and not the other. The arrival
+    /// haptic lives here for the same reason: four call sites jump, and any of
+    /// them written separately is the one that ends up silent.
     private func travel(_ change: () -> Void) {
+        let origin = model.focusHour
         eventsHidden = true
         withAnimation(.spring(response: 0.5, dampingFraction: 1), completionCriteria: .removed) {
             change()
         } completion: {
             withAnimation(.easeOut(duration: 0.22)) { eventsHidden = false }
         }
+        // Only when it actually went somewhere. Pressing NOW while already on
+        // now is a no-op, not an arrival, and reporting one would make the
+        // wheel's vocabulary mean less everywhere else.
+        if model.focusHour != origin { Haptics.moved() }
     }
 
     private static func dayLine(_ date: Date) -> String {

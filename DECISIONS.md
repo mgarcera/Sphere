@@ -349,9 +349,18 @@ Clicks are counted against the focus hour, not against rotation, so turning
 slowly and turning fast click at the same places on the day, and a turn crossing
 several at once still clicks once — a burst per frame reads as a buzz.
 
-The chevrons' dead end gets a heavier, blunter tap. When nothing exists within
-forty-five days the dot cannot move, and that was previously silent and
+Jumps get a weightier tap on arrival: a chevron, the arc tapped to return to
+now, a day picked. It sits in `travel` rather than at the four call sites, for
+the same reason the capsule suppression does — written separately, one of them
+ends up silent. It fires only when the focus actually moved, so pressing NOW
+while already on now stays quiet: that is a no-op, not an arrival.
+
+The chevrons' dead end gets a blunter, sharper tap again. When nothing exists
+within forty-five days the dot cannot move, and that was previously silent and
 indistinguishable from a missed tap.
+
+Three weights, so the wheel has a vocabulary rather than one buzz: light for a
+detent, medium for an arrival, rigid for a wall.
 
 One switch in the menu, on by default: the wheel is the app's main control and
 shipping it mute would hide the feature from anyone who never opens settings.
