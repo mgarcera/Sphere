@@ -151,14 +151,18 @@ struct ClearSky: View, Equatable {
         guard !eligible.isEmpty else { return [] }
 
         var result: [Mark] = []
-        var salt = 0
 
         for entry in eligible {
             let hour = Double(entry.hour)
-            let count = drawsStars ? starCount(at: entry, salt: salt) : birdCount(at: entry, salt: salt)
+            // Salted from the HOUR, never from a running counter. A counter
+            // that only advanced when a mark was placed handed every hour the
+            // same roll once one came up empty, so a day that opened with no
+            // birds could never draw one. Stars hid it by always placing at
+            // least one.
+            let count = drawsStars ? starCount(at: entry) : birdCount(at: entry)
 
             for index in 0..<count {
-                salt &+= 5_701
+                let salt = entry.hour &* 5_701 &+ index &* 131
                 let within = SkyMarks.jitter(daySeed &+ deck.saltBase, salt)
                 // Groups sit tighter than an hour, so a cluster reads as one
                 // thing rather than as marks that happen to share an hour.
@@ -185,16 +189,16 @@ struct ClearSky: View, Equatable {
     }
 
     /// Held constant across the study, so only the birds are being compared.
-    private func starCount(at entry: SkyHour, salt: Int) -> Int {
-        let roll = SkyMarks.jitter(daySeed &+ deck.saltBase, salt &+ 211)
+    private func starCount(at entry: SkyHour) -> Int {
+        let roll = SkyMarks.jitter(daySeed &+ deck.saltBase, entry.hour &* 977 &+ 211)
         return roll < 0.55 ? 2 : 1
     }
 
     /// The three mechanisms. Each spends roughly the same number of birds over
     /// a clear day and arranges them differently, so what is being judged is
     /// the arrangement rather than the amount.
-    private func birdCount(at entry: SkyHour, salt: Int) -> Int {
-        let roll = SkyMarks.jitter(daySeed &+ deck.saltBase, salt &+ 211)
+    private func birdCount(at entry: SkyHour) -> Int {
+        let roll = SkyMarks.jitter(daySeed &+ deck.saltBase, entry.hour &* 977 &+ 211)
 
         switch variant {
         case .steady:
@@ -206,7 +210,7 @@ struct ClearSky: View, Equatable {
             // Nothing for a while, then a group. Scrolling arrives at something
             // rather than passing a steady drizzle.
             guard roll < 0.18 else { return 0 }
-            return 2 + Int(SkyMarks.jitter(daySeed &+ deck.saltBase, salt &+ 307) * 2.6)
+            return 2 + Int(SkyMarks.jitter(daySeed &+ deck.saltBase, entry.hour &* 977 &+ 307) * 2.6)
 
         case .solar:
             // Busy at both ends of the day and quiet through the middle, which
