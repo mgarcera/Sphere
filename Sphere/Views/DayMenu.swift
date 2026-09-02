@@ -124,7 +124,7 @@ struct DayMenu: View {
     @ViewBuilder
     private var placeAction: some View {
         if location.manual != nil {
-            Button("Use mine") { location.clearManual() }
+            Button("Use location") { location.clearManual() }
                 .font(.footnote)
                 .foregroundStyle(Theme.taskActive)
         } else if location.access != .granted {
@@ -136,7 +136,7 @@ struct DayMenu: View {
 
     private var placeSearch: some View {
         HStack(spacing: 8) {
-            TextField("City, postcode or address", text: $placeQuery)
+            TextField("City, zip or address", text: $placeQuery)
                 .font(.subheadline)
                 .foregroundStyle(Theme.ink)
                 .focused($placeFocused)
