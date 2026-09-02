@@ -217,8 +217,14 @@ struct ContentView: View {
         // @Observable did not cover it: the insertion and removal were never
         // attributed to that value. Mirroring the count into @State and
         // mutating it inside withAnimation makes every path identical.
-        .onChange(of: model.allDayEvents.count) { _, count in
-            withAnimation(Self.popSpring.delay(0.08)) { allDayCount = count }
+        .onChange(of: model.allDayEvents.count) { previous, count in
+            // The 80ms delay is the cascade's third beat, and it belongs only
+            // to arriving. On the way out there is nothing to be third behind,
+            // so the same delay just reads as lag.
+            let arriving = previous == 0 && count > 0
+            withAnimation(arriving ? Self.popSpring.delay(0.08) : Self.popSpring) {
+                allDayCount = count
+            }
         }
     }
 
