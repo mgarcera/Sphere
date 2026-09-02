@@ -51,8 +51,8 @@ struct ContentView: View {
             }
 
             // Invisible, and behind everything: it only exists to present the
-            // event editor from a real view controller.
-            EventEditorHost(target: $editorTarget, store: calendar.store) {
+            // EventKit controllers from a real view controller.
+            EventKitHost(target: $editorTarget, store: calendar.store) {
                 reloadAfterEdit()
             }
             .frame(width: 0, height: 0)

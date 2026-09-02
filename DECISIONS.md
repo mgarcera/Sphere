@@ -303,3 +303,19 @@ discriminator is the organizer: an event you own has none
 (`organizer == nil`), one you were invited to has `organizer.isCurrentUser ==
 false`. Sphere's actual fault is opening a working-looking editor on an event
 that can never save. Treatment still to decide.
+
+## Existing events open in Apple's detail view (2026-09-01)
+
+`EKEventViewController`, the view Calendar.app shows, replaces going straight to
+the editor for any event that already exists. New events still open in
+`EKEventEditViewController`, since there is nothing to view yet.
+
+The reason is that editability is not ours to determine. With `allowsEditing`
+set, iOS decides whether an Edit button appears, and withholds it on read-only
+and subscribed calendars and on events someone else invited you to — cases the
+organizer check alone would miss. It also carries RSVP, so an invitation is
+something you can act on rather than a dead end.
+
+The cost is one extra tap to edit an event you own, including from the centre
+button. Taken knowingly: the alternative was reproducing Apple's rule ourselves
+and being wrong at the edges.
