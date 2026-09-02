@@ -83,6 +83,22 @@ struct ClearSky: View, Equatable {
         let variant: ClearSkyVariant
         let width: CGFloat
         let height: CGFloat
+        /// The weather itself, folded down. Without it the first render — which
+        /// happens before the forecast arrives, with no hours at all — cached
+        /// an empty sky for every day and deck and never rebuilt it.
+        let sky: Int
+    }
+
+    private var skySignature: Int {
+        var hash = Hasher()
+        for entry in hours {
+            hash.combine(entry.hour)
+            hash.combine(Int(entry.cloudLow * 100))
+            hash.combine(Int(entry.cloudMid * 100))
+            hash.combine(Int(entry.cloudHigh * 100))
+            hash.combine(entry.precipitation > 0)
+        }
+        return hash.finalize()
     }
 
     /// Where a mark sits never depends on the scrub, only on the day, so the
@@ -92,8 +108,11 @@ struct ClearSky: View, Equatable {
     private static var cache: [Key: [Mark]] = [:]
 
     private static func marks(for view: ClearSky) -> [Mark] {
+        // Nothing to place yet, and nothing worth remembering about it.
+        guard !view.hours.isEmpty else { return [] }
+
         let key = Key(daySeed: view.daySeed, deck: view.deck, variant: view.variant,
-                      width: view.width, height: view.height)
+                      width: view.width, height: view.height, sky: view.skySignature)
         if let hit = cache[key] { return hit }
         // Scrubbing far enough would otherwise grow this without bound; only a
         // few days are ever mounted, so throwing the lot away costs one rebuild.
