@@ -159,6 +159,21 @@ final class CalendarService {
 
     enum Direction { case forward, back }
 
+    /// Everything within a year, fetched once so typing filters in memory
+    /// rather than hitting the store on every keystroke.
+    ///
+    /// A year is not the whole calendar. It is the window the arc can reach
+    /// without the search itself becoming the slow part, and it is already far
+    /// past the forty-five days the chevrons see.
+    func eventsForSearch(around date: Date, withinDays days: Int = 365) -> [EKEvent] {
+        guard access == .granted else { return [] }
+        let span = Double(days) * 86_400
+        let predicate = store.predicateForEvents(withStart: date.addingTimeInterval(-span),
+                                                 end: date.addingTimeInterval(span),
+                                                 calendars: visibleCalendars)
+        return store.events(matching: predicate).sorted { $0.startDate < $1.startDate }
+    }
+
     /// The exact occurrence the arc is showing, so an edit or a delete lands on
     /// the day you are looking at.
     func occurrence(for id: CalendarEvent.ID) -> EKEvent? { occurrences[id] }

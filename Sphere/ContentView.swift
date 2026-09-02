@@ -24,9 +24,13 @@ struct ContentView: View {
     /// with it, and a label that does not follow its setting is worse than no
     /// setting at all.
     @AppStorage(WheelMapping.bottomKey) private var bottomPrimary: WheelAction = .now
+    @AppStorage(Haptics.key) private var hapticsEnabled = true
     @State private var eventsHidden = false
     @State private var isAllDayOpen = false
     @State private var isDayPickerOpen = false
+    @State private var isSearchOpen = false
+    /// Fetched when the sheet opens, not on every keystroke.
+    @State private var searchable: [EKEvent] = []
     @State private var pickedDay: Date = .now
 
     var body: some View {
@@ -87,6 +91,14 @@ struct ContentView: View {
                 // capsule across the screen on the way.
                 travel { model.focus(onStartOf: day) }
             }
+        }
+        .sheet(isPresented: $isSearchOpen) {
+            EventSearch(events: searchable) { event in
+                isSearchOpen = false
+                travel { model.focusHour = event.startDate.timeIntervalSince(model.anchor) / 3600 }
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $isAllDayOpen) {
             AllDaySheet(events: model.allDayEvents) { entry in
@@ -462,7 +474,33 @@ struct ContentView: View {
         case .previousDay: travel { model.focusHour -= 24 }
         case .nextDay: travel { model.focusHour += 24 }
         case .newAllDay: editorTarget = .newAllDay(model.focusDate)
+        case .appearance: flipAppearance()
+        case .search:
+            searchable = calendar.eventsForSearch(around: model.focusDate)
+            isSearchOpen = true
+        case .openCalendarApp: openCalendarApp()
+        case .muteHaptics: hapticsEnabled.toggle()
         }
+    }
+
+    /// Always to an explicit setting, never back to system.
+    ///
+    /// Reaching for the toggle is already a statement that you do not want it
+    /// decided for you, so it lands on the opposite of what is on screen. The
+    /// menu is where system is chosen again.
+    private func flipAppearance() {
+        let showingDark = appearance == .dark || (appearance == .system && systemScheme == .dark)
+        withAnimation(.easeInOut(duration: 0.25)) {
+            appearance = showingDark ? .light : .dark
+        }
+    }
+
+    /// `calshow:` takes seconds since the 2001 reference date, so Calendar
+    /// opens on the day being looked at rather than on today.
+    private func openCalendarApp() {
+        let seconds = model.focusDate.timeIntervalSinceReferenceDate
+        guard let url = URL(string: "calshow:\(seconds)") else { return }
+        UIApplication.shared.open(url)
     }
 
     /// One click per quarter hour of scrubbed time, counted against where the

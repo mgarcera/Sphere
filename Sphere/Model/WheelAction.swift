@@ -12,6 +12,10 @@ enum WheelAction: String, CaseIterable, Identifiable {
     case previousDay
     case nextDay
     case newAllDay
+    case appearance
+    case search
+    case openCalendarApp
+    case muteHaptics
 
     var id: String { rawValue }
 
@@ -23,6 +27,10 @@ enum WheelAction: String, CaseIterable, Identifiable {
         case .previousDay: "Previous day"
         case .nextDay: "Next day"
         case .newAllDay: "New all-day event"
+        case .appearance: "Light / dark"
+        case .search: "Search"
+        case .openCalendarApp: "Open in Calendar"
+        case .muteHaptics: "Mute haptics"
         }
     }
 }
