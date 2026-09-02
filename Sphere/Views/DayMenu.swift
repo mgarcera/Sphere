@@ -12,7 +12,7 @@ struct DayMenu: View {
     @Binding var appearance: Appearance
     @AppStorage(WheelMapping.bottomKey) private var bottomPrimary: WheelAction = .now
     // TEMPORARY — clear-sky direction study.
-    @AppStorage("clearSkyVariant") private var clearSky: ClearSkyVariant = .field
+    @AppStorage("birdDensity") private var clearSky: BirdDensity = .steady
     let onDismiss: () -> Void
 
     @State private var placeQuery = ""
@@ -59,9 +59,9 @@ struct DayMenu: View {
                 }
 
                 divider
-                section("Clear sky") {
-                    Picker("Clear sky", selection: $clearSky) {
-                        ForEach(ClearSkyVariant.allCases) { variant in
+                section("Birds") {
+                    Picker("Birds", selection: $clearSky) {
+                        ForEach(BirdDensity.allCases) { variant in
                             Text(variant.title).tag(variant)
                         }
                     }

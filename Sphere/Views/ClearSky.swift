@@ -1,14 +1,14 @@
 import SwiftUI
 
-// TEMPORARY — clear-sky direction study. Strip the losers and the switcher.
-enum ClearSkyVariant: String, CaseIterable, Identifiable {
-    case field, flock, arcbound
+// TEMPORARY — bird density study. Strip the losers and the switcher.
+enum BirdDensity: String, CaseIterable, Identifiable {
+    case steady, clustered, solar
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .field: "A · Field"
-        case .flock: "B · Flock"
-        case .arcbound: "C · Along the arc"
+        case .steady: "A · Steady"
+        case .clustered: "B · Groups"
+        case .solar: "C · Dawn/dusk"
         }
     }
 }
@@ -30,7 +30,7 @@ struct ClearSky: View, Equatable {
     let hours: [SkyHour]
     let daySeed: Int
     let deck: SkyContinuous.Deck
-    let variant: ClearSkyVariant
+    let variant: BirdDensity
 
     /// The scrub position, quantised. Everything else in this app moves because
     /// the wheel moved, and a clock ticking on its own was the one thing that
@@ -39,18 +39,14 @@ struct ClearSky: View, Equatable {
     /// still and the cost is bounded by how fast a thumb can turn.
     let blinkStep: Int
 
-    /// Stars are a field and birds are an accident of a nice day, so their
-    /// counts are not on the same scale. The middle deck draws neither: it is
-    /// the one that would put them at the same altitude.
-    private var budget: Int {
-        switch deck {
-        case .high: variant == .flock ? 7 : 18
-        case .mid: 0
-        case .low: variant == .flock ? 2 : 3
-        }
-    }
-
     private var drawsStars: Bool { deck == .high }
+
+    /// Marks per eligible hour, not per day. A budget spread over a whole day
+    /// put the same three birds into a two-hour clearing and a fourteen-hour
+    /// one, so density on screen depended on how much of that day happened to
+    /// be clear. The window is three hours wide and that is the only unit
+    /// anyone experiences, so the rate is set against it.
+    private var perDayCap: Int { drawsStars ? 26 : 12 }
 
     var body: some View {
         let marks = Self.marks(for: self)
@@ -80,7 +76,7 @@ struct ClearSky: View, Equatable {
     private struct Key: Hashable {
         let daySeed: Int
         let deck: SkyContinuous.Deck
-        let variant: ClearSkyVariant
+        let variant: BirdDensity
         let width: CGFloat
         let height: CGFloat
         /// The weather itself, folded down. Without it the first render — which
@@ -141,75 +137,90 @@ struct ClearSky: View, Equatable {
     }
 
     private func buildMarks() -> [Mark] {
-        guard budget > 0, !hours.isEmpty else { return [] }
-        let byHour = Dictionary(uniqueKeysWithValues: hours.map { ($0.hour, $0) })
-        var result: [Mark] = []
+        guard !hours.isEmpty else { return [] }
 
-        // Which hours could carry a mark at all, worked out BEFORE any are
-        // placed. Sampling the whole day and then rejecting is what made birds
-        // vanish: with three candidates spread over twenty-four hours and only
-        // a handful of them clear, most days drew none at all.
+        // Which hours could carry a mark at all, worked out before any are
+        // placed. Sampling the whole day and rejecting afterwards is what made
+        // birds vanish on days with only a few clear hours.
         let eligible = hours.filter { entry in
-            let elevation = day.normalizedElevation(atHour: Double(entry.hour) + 0.5)
-            let night = (1 - elevation * 6).clamped(to: 0...1)
+            let night = nightness(at: Double(entry.hour) + 0.5)
             return drawsStars
-                ? night > 0.25
+                ? night > 0.25 && deck.coverage(entry) < SkyHour.layerThreshold * 1.6
                 : night < 0.75 && isClear(entry)
-        }.map(\.hour)
+        }
         guard !eligible.isEmpty else { return [] }
 
-        // A flock shares one hour, so it reads as a group rather than a spread.
-        let anchor = eligible[Int(SkyMarks.jitter(daySeed &+ deck.saltBase, 31)
-                                  * Double(eligible.count)) % eligible.count]
+        var result: [Mark] = []
+        var salt = 0
 
-        for index in 0..<budget {
-            let salt = index &* 5_701
-            let roll = SkyMarks.jitter(daySeed &+ deck.saltBase, salt)
-            let hour: Double
+        for entry in eligible {
+            let hour = Double(entry.hour)
+            let count = drawsStars ? starCount(at: entry, salt: salt) : birdCount(at: entry, salt: salt)
 
-            switch variant {
-            case .field:
-                let pick = eligible[Int(roll * Double(eligible.count)) % eligible.count]
-                hour = Double(pick) + SkyMarks.jitter(daySeed &+ deck.saltBase, salt &+ 7)
-            case .flock:
-                hour = Double(anchor) + (roll - 0.5) * 2.4
-            case .arcbound:
-                // Weighted toward the eligible hours nearest solar noon, so the
-                // sky thickens where the arc is highest.
-                let sorted = eligible.sorted { abs($0 - 12) < abs($1 - 12) }
-                let pull = SkyMarks.jitter(daySeed &+ deck.saltBase, salt &+ 17)
-                let bias = roll * roll * (0.4 + pull * 0.6)
-                let pick = sorted[min(Int(bias * Double(sorted.count)), sorted.count - 1)]
-                hour = Double(pick) + SkyMarks.jitter(daySeed &+ deck.saltBase, salt &+ 7)
+            for index in 0..<count {
+                salt &+= 5_701
+                let within = SkyMarks.jitter(daySeed &+ deck.saltBase, salt)
+                // Groups sit tighter than an hour, so a cluster reads as one
+                // thing rather than as marks that happen to share an hour.
+                let span = variant == .clustered && !drawsStars ? 0.55 : 1.0
+                let placed = hour + 0.5 + (within - 0.5) * span
+                                + Double(index) * (drawsStars ? 0 : 0.18)
+
+                guard placed >= 0, placed < 24 else { continue }
+
+                let night = nightness(at: placed)
+                let presence = drawsStars ? night : 1 - night
+                guard presence > 0.25 else { continue }
+
+                let spread = SkyMarks.jitter(daySeed &+ deck.saltBase, salt &+ 41)
+                let out = deck.offset + CGFloat(spread - 0.5) * (drawsStars ? 30 : 16)
+
+                result.append(Mark(point: point(hour: placed, out: out),
+                                   opacity: presence,
+                                   salt: salt))
+                if result.count >= perDayCap { return result }
             }
-
-            guard hour >= 0, hour < 24, let entry = byHour[Int(hour)] else { continue }
-
-            // Night and day are one crossfade, not a switch: the arc pans
-            // through dusk under the thumb, so this has to be continuous.
-            let elevation = day.normalizedElevation(atHour: hour)
-            let night = (1 - elevation * 6).clamped(to: 0...1)
-
-            let presence: Double
-            if drawsStars {
-                let free = (1 - deck.coverage(entry) / SkyHour.layerThreshold * 0.6).clamped(to: 0...1)
-                presence = night * free
-            } else {
-                guard isClear(entry) else { continue }
-                presence = 1 - night
-            }
-            guard presence > 0.25 else { continue }
-
-            // Out along the normal, jittered within the deck's own band so the
-            // marks occupy a stratum rather than sitting on one line.
-            let spread = SkyMarks.jitter(daySeed &+ deck.saltBase, salt &+ 41)
-            let out = deck.offset + CGFloat(spread - 0.5) * (drawsStars ? 30 : 16)
-
-            result.append(Mark(point: point(hour: hour, out: out),
-                               opacity: presence,
-                               salt: salt))
         }
         return result
+    }
+
+    /// Held constant across the study, so only the birds are being compared.
+    private func starCount(at entry: SkyHour, salt: Int) -> Int {
+        let roll = SkyMarks.jitter(daySeed &+ deck.saltBase, salt &+ 211)
+        return roll < 0.55 ? 2 : 1
+    }
+
+    /// The three mechanisms. Each spends roughly the same number of birds over
+    /// a clear day and arranges them differently, so what is being judged is
+    /// the arrangement rather than the amount.
+    private func birdCount(at entry: SkyHour, salt: Int) -> Int {
+        let roll = SkyMarks.jitter(daySeed &+ deck.saltBase, salt &+ 211)
+
+        switch variant {
+        case .steady:
+            // One every two or three clear hours, evenly. A long clearing is
+            // punctuated at regular intervals.
+            return roll < 0.42 ? 1 : 0
+
+        case .clustered:
+            // Nothing for a while, then a group. Scrolling arrives at something
+            // rather than passing a steady drizzle.
+            guard roll < 0.18 else { return 0 }
+            return 2 + Int(SkyMarks.jitter(daySeed &+ deck.saltBase, salt &+ 307) * 2.6)
+
+        case .solar:
+            // Busy at both ends of the day and quiet through the middle, which
+            // is when birds actually fly and also gives a long clear stretch a
+            // shape instead of a uniform fill.
+            let edge = 1 - day.normalizedElevation(atHour: Double(entry.hour) + 0.5)
+            return roll < 0.06 + edge * edge * 0.85 ? 1 : 0
+        }
+    }
+
+    /// Night and day are one crossfade, not a switch: the arc pans through dusk
+    /// under the thumb, so this has to be continuous.
+    private func nightness(at hour: Double) -> Double {
+        (1 - day.normalizedElevation(atHour: hour) * 6).clamped(to: 0...1)
     }
 
     // MARK: - Drawing

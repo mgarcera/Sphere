@@ -5,7 +5,7 @@ import SwiftUI
 /// crossing midnight needs no separate control and no seam.
 struct ArcWindow: View {
     // TEMPORARY — clear-sky direction study.
-    @AppStorage("clearSkyVariant") private var clearSky: ClearSkyVariant = .field
+    @AppStorage("birdDensity") private var clearSky: BirdDensity = .steady
 
     let model: DayModel
     /// Every capsule is held back while a jump is in flight, not just the
