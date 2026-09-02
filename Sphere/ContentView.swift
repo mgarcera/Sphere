@@ -116,8 +116,6 @@ struct ContentView: View {
             }
             .presentationDetents([.height(EventChoiceSheet.height)])
             .presentationDragIndicator(.hidden)
-            // The cards draw their own ground, so the sheet does not need one.
-            .presentationBackground(.clear)
         }
         .sheet(isPresented: $isSearchOpen) {
             EventSearch(events: searchable, timeZone: model.timeZone) { event in

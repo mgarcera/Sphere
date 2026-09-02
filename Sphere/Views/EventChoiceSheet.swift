@@ -23,7 +23,7 @@ struct EventChoiceCards: View {
         // New leads. Creating is the thing you could not do before, and the
         // event you are already inside is the one you can always get back to.
         HStack(spacing: 14) {
-            card(.newEvent, title: "New") { onChoose(.create) }
+            card(.newEvent, title: "New event") { onChoose(.create) }
             card(.openEvent, title: "Open") { onChoose(.open) }
         }
         .frame(height: height)
