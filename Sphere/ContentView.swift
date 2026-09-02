@@ -169,7 +169,7 @@ struct ContentView: View {
             // across a day with a birthday on it, and squeezed the title.
             Group {
                 if model.allDayEvents.isEmpty {
-                    Color.clear
+                    Color.clear.transition(.identity)
                 } else {
                     Button { isAllDayOpen = true } label: {
                         HStack(spacing: 6) {
@@ -184,9 +184,16 @@ struct ContentView: View {
                         .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
+                    // Pattern 5 in reverse: the branch gets a transition
+                    // whether or not we ask, so REPLACE the default rather
+                    // than remove it. Scale alone, to nothing and back, so it
+                    // pops in and out instead of fading. A scale that stops
+                    // short of zero would still cut at that size.
+                    .transition(.scale(scale: 0.01, anchor: .leading))
                 }
             }
             .frame(height: 16, alignment: .leading)
+            .animation(Self.popSpring.delay(0.08), value: model.allDayEvents.isEmpty)
             .scaleEffect(allDayScale, anchor: .leading)
             .padding(.top, 7)
         }
