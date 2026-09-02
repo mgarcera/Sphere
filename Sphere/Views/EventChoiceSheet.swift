@@ -47,8 +47,11 @@ struct EventChoiceCards: View {
                 RoundedRectangle(cornerRadius: 22)
                     .fill(Theme.background)
                     .overlay {
+                        // Ink, not the wheel's grey. The wheel's line is light
+                        // to take weight off it; a card has nothing to take
+                        // weight off and reads as unfinished at that value.
                         RoundedRectangle(cornerRadius: 22)
-                            .strokeBorder(Theme.mutedLighter, lineWidth: 1.5)
+                            .strokeBorder(Theme.ink, lineWidth: 1.5)
                     }
             }
             .contentShape(.rect)
