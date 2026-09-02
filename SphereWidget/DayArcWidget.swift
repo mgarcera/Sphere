@@ -130,7 +130,9 @@ struct LockArc: View {
                 let h = Double(step) / 4
                 path.addLine(to: CGPoint(x: x(h), y: y(h)))
             }
-            context.stroke(path, with: .color(.white.opacity(0.55)),
+            // Under the capsules rather than level with them, so an event
+            // reads as an object on the day instead of a thickening of it.
+            context.stroke(path, with: .color(.white.opacity(0.4)),
                            style: StrokeStyle(lineWidth: 1.4, lineCap: .round, lineJoin: .round))
 
             var ground = Path()
