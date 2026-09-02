@@ -19,9 +19,7 @@ import SwiftUI
 enum Mark {
     case none, now, calendar, previousDay, nextDay, newAllDay
     case appearance, search, openCalendarApp, muteHaptics
-    case menu, openEvent, previousEvent, nextEvent
-    // TEMPORARY — three directions for "new event". Strip the losers.
-    case newEvent, newEventNested, newEventOnDay
+    case menu, openEvent, newEvent, previousEvent, nextEvent
 }
 
 extension WheelAction {
@@ -72,6 +70,10 @@ struct ActionMark: View {
             // button rather than filling it.
             let scale = size / Self.box
             context.scaleBy(x: scale, y: scale)
+            guard mark != .openEvent else {
+                lens(&context, scale: scale)
+                return
+            }
             let (strokes, fills) = Self.paths(for: mark)
             // Divided by the scale, so the line reads the same weight at any
             // size instead of thickening with the drawing.
@@ -81,6 +83,68 @@ struct ActionMark: View {
             context.fill(fills, with: .color(color))
         }
         .frame(width: size, height: size)
+    }
+
+    /// A magnifier over the day, refracted rather than merely circled.
+    ///
+    /// A ring drawn over an unchanged arc reads as a circle, because glass is
+    /// recognised by what it does to what is behind it. So the arc inside is
+    /// the arc redrawn through a ball lens.
+    ///
+    /// The mapping is the standard thin ball-lens one. A source point `d` from
+    /// the centre appears at `r = R sin(n asin(d/R))` for refractive index `n`;
+    /// glass is about 1.5. Only the disc within `R sin(π/2n)` — about 0.87R —
+    /// is visible through it, and that disc is spread across the whole lens,
+    /// which is the magnification. Curvature grows toward the rim, so the arc
+    /// bends as it approaches the edge and steps where it meets the arc
+    /// outside. That step is the thing that says glass.
+    private func lens(_ context: inout GraphicsContext, scale: CGFloat) {
+        let style = StrokeStyle(lineWidth: stroke / scale, lineCap: .round, lineJoin: .round)
+        let centre = CGPoint(x: 10, y: 9)
+        let radius: CGFloat = 5.6
+        let index: CGFloat = 1.5
+        let visible = radius * sin(.pi / (2 * index))
+
+        /// The day, as a quad from (1,16) to (19,16) through (10,2), solved
+        /// rather than sampled from a Path so the refraction has real points.
+        func day(_ t: CGFloat) -> CGPoint {
+            CGPoint(x: 1 + 18 * t, y: 16 - 28 * t + 28 * t * t)
+        }
+
+        var arc = Path()
+        arc.move(to: day(0))
+        arc.addQuadCurve(to: day(1), control: CGPoint(x: 10, y: 2))
+        context.stroke(arc, with: .color(color), style: style)
+
+        // Clear the glass before drawing through it, or the unrefracted arc
+        // shows behind its own magnified copy.
+        let bounds = CGRect(x: centre.x - radius, y: centre.y - radius,
+                            width: radius * 2, height: radius * 2)
+        context.fill(Path(ellipseIn: bounds), with: .color(Theme.background))
+
+        var refracted = Path()
+        var drawing = false
+        for step in 0...260 {
+            let point = day(CGFloat(step) / 260)
+            let dx = point.x - centre.x
+            let dy = point.y - centre.y
+            let distance = hypot(dx, dy)
+            guard distance <= visible else { drawing = false; continue }
+
+            let mapped = distance == 0 ? 0 : radius * sin(index * asin(distance / radius))
+            let factor = distance == 0 ? 0 : mapped / distance
+            let seen = CGPoint(x: centre.x + dx * factor, y: centre.y + dy * factor)
+            if drawing { refracted.addLine(to: seen) } else { refracted.move(to: seen); drawing = true }
+        }
+        context.stroke(refracted, with: .color(color), style: style)
+
+        // The moment being looked at, magnified along with everything else.
+        let dot: CGFloat = 1.15 * index
+        context.fill(Path(ellipseIn: CGRect(x: centre.x - dot, y: centre.y - dot,
+                                            width: dot * 2, height: dot * 2)),
+                     with: .color(color))
+
+        context.stroke(Path(ellipseIn: bounds), with: .color(color), style: style)
     }
 
     /// Everything is drawn in a 20-point box and scaled by the frame.
@@ -210,41 +274,15 @@ struct ActionMark: View {
             }
 
         case .openEvent:
-            // The day, a moment on it, and a lens over that moment. The dot
-            // sits on the curve rather than near it: its position is solved on
-            // the quad, not eyeballed.
-            scallop(from: 1, to: 19, lobes: 1, base: 16, peak: 4)
-            line.addEllipse(in: CGRect(x: 7.4, y: 5.7, width: 9.2, height: 9.2))
-            solid.addEllipse(in: CGRect(x: 10.5, y: 8.8, width: 3, height: 3))
+            break   // drawn by `lens`, which needs ordered layers
 
-        // A · the event as an object, the plus as the operation.
         case .newEvent:
-            line.addRoundedRect(in: CGRect(x: 3, y: 12.5, width: 14, height: 4),
-                                cornerSize: CGSize(width: 2, height: 2))
-            line.move(to: CGPoint(x: 10, y: 1.5))
-            line.addLine(to: CGPoint(x: 10, y: 9.5))
-            line.move(to: CGPoint(x: 6, y: 5.5))
-            line.addLine(to: CGPoint(x: 14, y: 5.5))
-
-        // B · one event inside another, which is what this button now does.
-        case .newEventNested:
-            line.addRoundedRect(in: CGRect(x: 1, y: 11, width: 18, height: 6),
-                                cornerSize: CGSize(width: 3, height: 3))
-            line.addRoundedRect(in: CGRect(x: 7, y: 12.6, width: 6, height: 2.8),
-                                cornerSize: CGSize(width: 1.4, height: 1.4))
-            line.move(to: CGPoint(x: 10, y: 1.5))
-            line.addLine(to: CGPoint(x: 10, y: 8))
-            line.move(to: CGPoint(x: 6.75, y: 4.75))
-            line.addLine(to: CGPoint(x: 13.25, y: 4.75))
-
-        // C · no plus at all. A capsule appearing on the day, drawn open
-        // because it does not exist yet, in the app's own vocabulary.
-        case .newEventOnDay:
-            scallop(from: 1, to: 19, lobes: 1, base: 17, peak: 3)
-            line.move(to: CGPoint(x: 6.6, y: 9.6))
-            line.addQuadCurve(to: CGPoint(x: 9, y: 8.6), control: CGPoint(x: 7.7, y: 9.0))
-            line.move(to: CGPoint(x: 11, y: 8.6))
-            line.addQuadCurve(to: CGPoint(x: 13.4, y: 9.6), control: CGPoint(x: 12.3, y: 9.0))
+            // Just a plus. It sits beside the lens, which already says event,
+            // so restating that in the second mark only made the pair rhyme.
+            line.move(to: CGPoint(x: 10, y: 3))
+            line.addLine(to: CGPoint(x: 10, y: 17))
+            line.move(to: CGPoint(x: 3, y: 10))
+            line.addLine(to: CGPoint(x: 17, y: 10))
 
         case .previousEvent:
             run(arrows: 1, lobes: 1, goingLeft: true)

@@ -5,26 +5,6 @@ enum EventChoice {
     case create
 }
 
-// TEMPORARY — new-event icon study. Strip with the losing marks.
-enum NewEventMark: String, CaseIterable, Identifiable {
-    case plus, nested, onDay
-    var id: String { rawValue }
-    var title: String {
-        switch self {
-        case .plus: "A · Plus"
-        case .nested: "B · Nested"
-        case .onDay: "C · On the day"
-        }
-    }
-    var mark: Mark {
-        switch self {
-        case .plus: .newEvent
-        case .nested: .newEventNested
-        case .onDay: .newEventOnDay
-        }
-    }
-}
-
 /// What the centre button does when the dot is already inside an event.
 ///
 /// Opening it was the only thing on offer, so an hour that already held
@@ -36,8 +16,6 @@ enum NewEventMark: String, CaseIterable, Identifiable {
 /// more made a choice that should take no thought look like a form.
 struct EventChoiceSheet: View {
     let onChoose: (EventChoice) -> Void
-    // TEMPORARY — new-event icon study.
-    @AppStorage("newEventMark") private var newMark: NewEventMark = .plus
 
     /// Tall enough that the two read as cards rather than as a pair of tiles.
     static let height: CGFloat = 320
@@ -45,7 +23,7 @@ struct EventChoiceSheet: View {
     var body: some View {
         HStack(spacing: 14) {
             button(.openEvent, title: "Open") { onChoose(.open) }
-            button(newMark.mark, title: "New") { onChoose(.create) }
+            button(.newEvent, title: "New") { onChoose(.create) }
         }
         .padding(.horizontal, 24)
         .padding(.top, 18)

@@ -623,3 +623,29 @@ flipping, since presenting the editor into a sheet still on its way out is the
 refusal that cost ten seconds once already.
 
 The bottom button reads CAL rather than DATE when it is set to the calendar.
+
+## The lens actually refracts (2026-09-02)
+
+A ring over an unchanged arc reads as a circle, not as glass. Glass is
+recognised by what it does to what is behind it, so the arc inside the lens is
+the arc redrawn through one.
+
+The mapping is the standard thin ball-lens one: a source point `d` from the
+centre appears at `r = R sin(n asin(d/R))`, with `n` about 1.5 for glass. Only
+the disc within `R sin(π/2n)`, about 0.87R, is visible through it, and that
+disc is spread across the whole lens — which is the magnification, 1.5x at the
+centre. Curvature grows toward the rim, so the arc bends as it nears the edge
+and steps where it meets the arc outside. That step is the thing that says
+glass.
+
+The interior is cleared to the background before the refracted copy is drawn,
+or the unrefracted arc shows through its own magnification.
+
+Native options were checked and are the wrong tool. `distortionEffect` and
+`layerEffect` warp a rendered view through a Metal shader, which means a
+`.metal` file and a rasterised result for what is otherwise a crisp vector at
+any size. `glassEffect` refracts what sits *behind* a view, not a drawing
+inside it. Warping the path is simpler, sharper and has no dependencies.
+
+New is a plain plus. The lens beside it already says event, so restating that
+in the second mark only made the pair rhyme.
