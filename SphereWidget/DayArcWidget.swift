@@ -150,8 +150,10 @@ struct LockArc: View {
                     let point = CGPoint(x: x(h), y: y(h))
                     if step == 0 { capsule.move(to: point) } else { capsule.addLine(to: point) }
                 }
-                context.stroke(capsule, with: .color(.white.opacity(0.9)),
-                               style: StrokeStyle(lineWidth: 3.4, lineCap: .round))
+                // Thinner and dimmer than the dot, so the sun is the only
+                // fully bright thing on the line.
+                context.stroke(capsule, with: .color(.white.opacity(0.55)),
+                               style: StrokeStyle(lineWidth: 2.4, lineCap: .round))
             }
 
             let dot = CGPoint(x: x(hour), y: y(hour))
