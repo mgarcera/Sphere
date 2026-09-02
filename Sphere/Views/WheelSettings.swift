@@ -12,6 +12,10 @@ struct WheelSettings: View {
     /// Bumped on every write, so the printed mappings re-read UserDefaults.
     @State private var revision = 0
     @State private var selected: WheelPosition = .bottom
+    /// Which row is expanded. A system menu renders text and images only, so
+    /// the marks could never appear in one; choosing happens inline instead.
+    @State private var choosing: WheelGesture?
+    @AppStorage(WheelMapping.iconsKey) private var wheelShowsIcons = false
 
     private static let diameter: CGFloat = 168
     private static let buttonRatio: CGFloat = 0.383
@@ -25,6 +29,13 @@ struct WheelSettings: View {
         VStack(spacing: 16) {
             wheel
             assignment
+            Toggle(isOn: $wheelShowsIcons) {
+                Text("Icons on the wheel")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.ink)
+            }
+            .tint(Theme.controlAccent)
+            legend
         }
         .padding(.vertical, 4)
     }
@@ -65,73 +76,108 @@ struct WheelSettings: View {
             .animation(.easeOut(duration: 0.16), value: isSelected)
     }
 
+    // TEMPORARY — the whole mark set at once, for judging it as a set rather
+    // than one mark at a time. Strip once the drawing is settled.
+    private var legend: some View {
+        VStack(spacing: 0) {
+            ForEach(WheelAction.allCases) { action in
+                HStack(spacing: 12) {
+                    ActionMark(mark: action.mark)
+                    Text(action.title)
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.ink)
+                    Spacer()
+                    // Also at row size and in the muted grey the rows use, so
+                    // a mark that only works large shows itself.
+                    ActionMark(mark: action.mark, size: 16, color: Theme.mutedLight)
+                }
+                .padding(.vertical, 9)
+
+                if action != WheelAction.allCases.last {
+                    Rectangle().fill(Theme.hairline).frame(height: 1)
+                }
+            }
+        }
+        .padding(.top, 8)
+    }
+
     /// What the selected position does, both ways round.
     @ViewBuilder
     private var assignment: some View {
         let _ = revision
         VStack(spacing: 0) {
-            row("Tap", value: selected.tapTitle,
-                action: selected == .bottom ? bottomPrimary : .none,
-                picker: selected == .bottom ? bottomPicker : nil)
+            row(.tap,
+                mark: selected.tapMark,
+                value: selected.tapTitle,
+                options: selected == .bottom ? [.now, .calendar] : [])
             Rectangle().fill(Theme.hairline).frame(height: 1)
-            row("Hold",
+            row(.hold,
+                mark: WheelMapping.hold(for: selected).mark,
                 value: WheelMapping.hold(for: selected).title,
-                action: WheelMapping.hold(for: selected),
-                picker: selected.holdIsAssignable ? holdPicker : nil)
+                options: selected.assignableActions)
         }
+        .animation(.easeOut(duration: 0.18), value: choosing)
+        .onChange(of: selected) { _, _ in choosing = nil }
     }
 
-    /// Only the assignable half carries a control. Where a gesture is fixed the
-    /// row still prints what it does, since knowing is the point.
+    /// A fixed gesture still prints what it does, since knowing is the point.
+    /// An assignable one opens its choices underneath rather than over the top,
+    /// so the mark you are picking sits next to the one you have.
     @ViewBuilder
-    private func row<Picker: View>(_ gesture: String, value: String, action: WheelAction, picker: Picker?) -> some View {
-        HStack {
-            Text(gesture)
-                .font(.system(size: 11, weight: .medium))
-                .tracking(1.1)
-                .textCase(.uppercase)
-                .foregroundStyle(Theme.mutedLight)
-            Spacer()
-            if let picker {
-                picker
-            } else {
-                HStack(spacing: 8) {
-                    ActionMark(action: action, color: Theme.mutedLight)
-                    Text(value)
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.mutedLight)
+    private func row(_ gesture: WheelGesture, mark: Mark, value: String, options: [WheelAction]) -> some View {
+        let isOpen = choosing == gesture
+
+        VStack(spacing: 0) {
+            HStack {
+                Text(gesture == .tap ? "Tap" : "Hold")
+                    .font(.system(size: 11, weight: .medium))
+                    .tracking(1.1)
+                    .textCase(.uppercase)
+                    .foregroundStyle(Theme.mutedLight)
+                Spacer()
+                ActionMark(mark: mark, size: 18,
+                           color: options.isEmpty ? Theme.mutedLight : Theme.controlAccent)
+                Text(value)
+                    .font(.subheadline)
+                    .foregroundStyle(options.isEmpty ? Theme.mutedLight : Theme.controlAccent)
+            }
+            .contentShape(.rect)
+            .padding(.vertical, 12)
+            .onTapGesture {
+                guard !options.isEmpty else { return }
+                choosing = isOpen ? nil : gesture
+            }
+
+            if isOpen {
+                VStack(spacing: 0) {
+                    ForEach(options) { option in
+                        HStack(spacing: 10) {
+                            ActionMark(mark: option.mark, size: 18, color: Theme.ink)
+                            Text(option.title)
+                                .font(.subheadline)
+                                .foregroundStyle(Theme.ink)
+                            Spacer()
+                        }
+                        .contentShape(.rect)
+                        .padding(.vertical, 10)
+                        .onTapGesture { choose(option, for: gesture) }
+                    }
                 }
+                .padding(.leading, 8)
+                .padding(.bottom, 6)
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .padding(.vertical, 12)
     }
 
-    /// The bottom's two gestures share one pair, so setting the tap sets the
-    /// hold to the other. Neither can be lost.
-    private var bottomPicker: some View {
-        Menu {
-            ForEach([WheelAction.now, .calendar]) { action in
-                Button(action.title) { bottomPrimary = action; revision += 1 }
-            }
-        } label: {
-            Text(bottomPrimary.title)
-                .font(.subheadline)
-                .foregroundStyle(Theme.controlAccent)
+    private func choose(_ action: WheelAction, for gesture: WheelGesture) {
+        if gesture == .tap {
+            bottomPrimary = action
+        } else {
+            WheelMapping.setHold(action, for: selected)
         }
+        revision += 1
+        choosing = nil
     }
 
-    private var holdPicker: some View {
-        Menu {
-            ForEach(selected.assignableActions) { action in
-                Button(action.title) {
-                    WheelMapping.setHold(action, for: selected)
-                    revision += 1
-                }
-            }
-        } label: {
-            Text(WheelMapping.hold(for: selected).title)
-                .font(.subheadline)
-                .foregroundStyle(Theme.controlAccent)
-        }
-    }
 }

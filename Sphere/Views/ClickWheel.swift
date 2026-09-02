@@ -24,6 +24,10 @@ struct ClickWheel: View {
     /// changes with the setting.
     let bottomLabel: String
 
+    /// Marks instead of words. The words are the iPod reference the whole
+    /// control is built on, so this stays a choice rather than a replacement.
+    var showsIcons: Bool = false
+
     static let diameter: CGFloat = 280
 
     // Everything inside the wheel is a fraction of its diameter, so resizing it
@@ -113,14 +117,21 @@ struct ClickWheel: View {
         .frame(width: Self.diameter, height: Self.diameter)
     }
 
+    @ViewBuilder
     private func printedButton(_ text: String, position: WheelPosition, size: CGFloat = 11) -> some View {
-        Text(text)
-            .font(.system(size: size, weight: size > 14 ? .medium : .semibold))
-            .tracking(size > 14 ? 0 : 1.2)
-            .foregroundStyle(line)
-            .frame(width: Self.hitTarget, height: Self.hitTarget)
-            .contentShape(.rect)
-            .modifier(WheelPress(position: position, onPress: onPress))
+        Group {
+            if showsIcons {
+                ActionMark(mark: position.tapMark, size: 22, color: line)
+            } else {
+                Text(text)
+                    .font(.system(size: size, weight: size > 14 ? .medium : .semibold))
+                    .tracking(size > 14 ? 0 : 1.2)
+                    .foregroundStyle(line)
+            }
+        }
+        .frame(width: Self.hitTarget, height: Self.hitTarget)
+        .contentShape(.rect)
+        .modifier(WheelPress(position: position, onPress: onPress))
     }
 }
 

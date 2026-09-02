@@ -122,6 +122,7 @@ enum WheelPosition: String, CaseIterable, Identifiable {
 @MainActor
 enum WheelMapping {
     static let bottomKey = "wheelBottomPrimary"
+    static let iconsKey = "wheelShowsIcons"
 
     /// Tapping the bottom. The other of the pair falls to its hold, so both are
     /// always one gesture away and neither is ever orphaned.
