@@ -504,3 +504,23 @@ which survives the sixteen-point row where a difference in lobe counts did not.
 Icons on the wheel are a setting rather than a replacement: the printed words
 are the reference the control is built on. That switch and the haptics switch
 both live in the Wheel section, since both belong to the wheel.
+
+## The picker has no open state (2026-09-01)
+
+Every choice for the selected position is listed, always. Nothing to open, and
+the option in force reads at full strength while the rest sit back at a third.
+The brightness is the state, so there is no tick or radio to add and no
+duplicate readout in the row above: a row with choices shows only its gesture
+label, and a fixed one prints what it does.
+
+They are ranged right, under the value they replace, so the mark being chosen
+lands in the same column as the mark already set.
+
+Icons instead of words drives the settings diagram as well as the wheel. A
+setting whose preview does not obey it is worse than no preview.
+
+Reset clears the stored keys rather than writing the current defaults back, so
+a position whose default later changes follows the new one instead of staying
+pinned to whatever shipped the day it was reset. It is behind a confirmation
+and disabled while nothing has been moved: it undoes every position at once and
+nothing on screen reads back what was there before.

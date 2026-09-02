@@ -12,11 +12,9 @@ struct WheelSettings: View {
     /// Bumped on every write, so the printed mappings re-read UserDefaults.
     @State private var revision = 0
     @State private var selected: WheelPosition = .bottom
-    /// Which row is expanded. A system menu renders text and images only, so
-    /// the marks could never appear in one; choosing happens inline instead.
-    @State private var choosing: WheelGesture?
     @AppStorage(WheelMapping.iconsKey) private var wheelShowsIcons = false
     @AppStorage(Haptics.key) private var hapticsEnabled = true
+    @State private var isConfirmingReset = false
 
     private static let diameter: CGFloat = 168
     private static let buttonRatio: CGFloat = 0.383
@@ -55,10 +53,17 @@ struct WheelSettings: View {
     private func mark(_ position: WheelPosition, x: CGFloat, y: CGFloat) -> some View {
         let isSelected = position == selected
         let size: CGFloat = position == .previous || position == .next ? 17 : 10
-        return Text(position.label)
-            .font(.system(size: size, weight: size > 14 ? .medium : .semibold))
-            .tracking(size > 14 ? 0 : 1.1)
-            .foregroundStyle(isSelected ? Theme.ink : line)
+        return Group {
+            if wheelShowsIcons {
+                ActionMark(mark: position.tapMark, size: 18,
+                           color: isSelected ? Theme.ink : line)
+            } else {
+                Text(position.label)
+                    .font(.system(size: size, weight: size > 14 ? .medium : .semibold))
+                    .tracking(size > 14 ? 0 : 1.1)
+                    .foregroundStyle(isSelected ? Theme.ink : line)
+            }
+        }
             .frame(width: 44, height: 44)
             .background {
                 if isSelected {
@@ -92,8 +97,37 @@ struct WheelSettings: View {
             }
             .tint(Theme.controlAccent)
             .padding(.vertical, 8)
+
+            Rectangle().fill(Theme.hairline).frame(height: 1)
+
+            Button { isConfirmingReset = true } label: {
+                HStack {
+                    Text("Reset to default")
+                        .font(.subheadline)
+                        .foregroundStyle(WheelMapping.isDefault ? Theme.mutedLight : Theme.controlAccent)
+                    Spacer()
+                }
+                .contentShape(.rect)
+                .padding(.vertical, 12)
+            }
+            .buttonStyle(.plain)
+            .disabled(WheelMapping.isDefault)
         }
         .padding(.top, 4)
+        // A confirmation, because a reset undoes every position at once and
+        // there is nothing on screen to read back what was there before.
+        .confirmationDialog("Reset the wheel?",
+                            isPresented: $isConfirmingReset,
+                            titleVisibility: .visible) {
+            Button("Reset to default", role: .destructive) {
+                WheelMapping.resetAll()
+                bottomPrimary = WheelMapping.bottomPrimary
+                revision += 1
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Every tap and hold goes back to how it shipped.")
+        }
     }
 
     /// What the selected position does, both ways round.
@@ -104,24 +138,24 @@ struct WheelSettings: View {
             row(.tap,
                 mark: selected.tapMark,
                 value: selected.tapTitle,
+                current: selected == .bottom ? bottomPrimary : nil,
                 options: selected == .bottom ? [.now, .calendar] : [])
             Rectangle().fill(Theme.hairline).frame(height: 1)
             row(.hold,
                 mark: WheelMapping.hold(for: selected).mark,
                 value: WheelMapping.hold(for: selected).title,
+                current: WheelMapping.hold(for: selected),
                 options: selected.assignableActions)
         }
-        .animation(.easeOut(duration: 0.18), value: choosing)
-        .onChange(of: selected) { _, _ in choosing = nil }
     }
 
-    /// A fixed gesture still prints what it does, since knowing is the point.
-    /// An assignable one opens its choices underneath rather than over the top,
-    /// so the mark you are picking sits next to the one you have.
+    /// A fixed gesture prints what it does. An assignable one lists its
+    /// choices instead: nothing to open, and the one in force reads at full
+    /// strength while the rest sit back. The brightness is the state, so there
+    /// is no tick or radio to add.
     @ViewBuilder
-    private func row(_ gesture: WheelGesture, mark: Mark, value: String, options: [WheelAction]) -> some View {
-        let isOpen = choosing == gesture
-
+    private func row(_ gesture: WheelGesture, mark: Mark, value: String,
+                     current: WheelAction?, options: [WheelAction]) -> some View {
         VStack(spacing: 0) {
             HStack {
                 Text(gesture == .tap ? "Tap" : "Hold")
@@ -130,39 +164,31 @@ struct WheelSettings: View {
                     .textCase(.uppercase)
                     .foregroundStyle(Theme.mutedLight)
                 Spacer()
-                ActionMark(mark: mark, size: 18,
-                           color: options.isEmpty ? Theme.mutedLight : Theme.controlAccent)
-                Text(value)
-                    .font(.subheadline)
-                    .foregroundStyle(options.isEmpty ? Theme.mutedLight : Theme.controlAccent)
-            }
-            .contentShape(.rect)
-            .padding(.vertical, 12)
-            .onTapGesture {
-                guard !options.isEmpty else { return }
-                choosing = isOpen ? nil : gesture
-            }
-
-            if isOpen {
-                VStack(spacing: 0) {
-                    ForEach(options) { option in
-                        HStack(spacing: 10) {
-                            ActionMark(mark: option.mark, size: 18, color: Theme.ink)
-                            Text(option.title)
-                                .font(.subheadline)
-                                .foregroundStyle(Theme.ink)
-                            Spacer()
-                        }
-                        .contentShape(.rect)
-                        .padding(.vertical, 10)
-                        .onTapGesture { choose(option, for: gesture) }
-                    }
+                if options.isEmpty {
+                    ActionMark(mark: mark, size: 18, color: Theme.mutedLight)
+                    Text(value)
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.mutedLight)
                 }
-                .padding(.leading, 8)
-                .padding(.bottom, 6)
-                .transition(.opacity.combined(with: .move(edge: .top)))
             }
+            .padding(.vertical, 12)
+
+            ForEach(options) { option in
+                HStack(spacing: 10) {
+                    Spacer()
+                    ActionMark(mark: option.mark, size: 18, color: Theme.ink)
+                    Text(option.title)
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.ink)
+                }
+                .opacity(option == current ? 1 : 0.32)
+                .contentShape(.rect)
+                .padding(.vertical, 9)
+                .onTapGesture { choose(option, for: gesture) }
+            }
+            .padding(.bottom, options.isEmpty ? 0 : 6)
         }
+        .animation(.easeOut(duration: 0.16), value: current)
     }
 
     private func choose(_ action: WheelAction, for gesture: WheelGesture) {
@@ -172,7 +198,6 @@ struct WheelSettings: View {
             WheelMapping.setHold(action, for: selected)
         }
         revision += 1
-        choosing = nil
     }
 
 }
