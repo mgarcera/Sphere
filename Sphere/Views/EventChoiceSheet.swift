@@ -73,6 +73,10 @@ struct EventChoiceSheet: View {
             .padding(.horizontal, 24)
             .padding(.top, 18)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            // A sheet's own ground is a translucent material, so every sheet
+            // here paints its own. Lost when the cards were pulled out of this
+            // one to be shown floating as well.
+            .background(Theme.background)
     }
 }
 
