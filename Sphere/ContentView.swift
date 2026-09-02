@@ -12,6 +12,10 @@ struct ContentView: View {
     @State private var titleScale: CGFloat = 1
     @State private var captionScale: CGFloat = 1
     @State private var allDayScale: CGFloat = 1
+    /// Mirrors model.allDayEvents.count. The branch below reads THIS, not the
+    /// model, so the row's appearance and disappearance always happen inside
+    /// a transaction we control.
+    @State private var allDayCount = 0
     @AppStorage("appearance") private var appearance: Appearance = .system
     @State private var eventsHidden = false
     @State private var isAllDayOpen = false
@@ -71,6 +75,7 @@ struct ContentView: View {
                 .presentationDragIndicator(.visible)
         }
         .task {
+            allDayCount = model.allDayEvents.count
             // Ask independently of priming. Anyone who granted calendar before
             // location existed never sees that screen again, and was silently
             // getting Chicago's sky.
@@ -168,7 +173,7 @@ struct ContentView: View {
             // and vanish shifted the whole arc down and back as you scrubbed
             // across a day with a birthday on it, and squeezed the title.
             Group {
-                if model.allDayEvents.isEmpty {
+                if allDayCount == 0 {
                     Color.clear.transition(.identity)
                 } else {
                     Button { isAllDayOpen = true } label: {
@@ -176,7 +181,7 @@ struct ContentView: View {
                             ClockFace(hour: hourOfDay)
                                 .stroke(captionColor, style: StrokeStyle(lineWidth: 1.1, lineCap: .round))
                                 .frame(width: 14, height: 14)
-                            Text("\(model.allDayEvents.count) all day")
+                            Text("\(allDayCount) all day")
                                 .contentTransition(.identity)
                                 .font(.footnote)
                                 .foregroundStyle(captionColor)
@@ -193,7 +198,6 @@ struct ContentView: View {
                 }
             }
             .frame(height: 16, alignment: .leading)
-            .animation(Self.popSpring.delay(0.08), value: model.allDayEvents.isEmpty)
             .scaleEffect(allDayScale, anchor: .leading)
             .padding(.top, 7)
         }
@@ -202,6 +206,20 @@ struct ContentView: View {
         .onChange(of: titleKey) { _, _ in popTitle() }
         .onChange(of: captionKey) { _, _ in popCaption() }
         .onChange(of: allDayKey) { _, _ in popAllDay() }
+        // The row appears and disappears from HERE, never from the model
+        // directly.
+        //
+        // A transition needs an animated transaction at the moment the
+        // hierarchy changes. Jumping supplied one, because `travel` wraps the
+        // change in withAnimation, so the pop worked there. Scrubbing does not
+        // — the wheel moves focusHour with no transaction — and an
+        // `.animation(_:value:)` reading a computed property off the
+        // @Observable did not cover it: the insertion and removal were never
+        // attributed to that value. Mirroring the count into @State and
+        // mutating it inside withAnimation makes every path identical.
+        .onChange(of: model.allDayEvents.count) { _, count in
+            withAnimation(Self.popSpring.delay(0.08)) { allDayCount = count }
+        }
     }
 
     /// What counts as each line CHANGING.
