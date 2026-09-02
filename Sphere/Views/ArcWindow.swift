@@ -70,7 +70,13 @@ struct ArcWindow: View {
                                 )
                                 .equatable()
                             }
-                            .frame(width: dayWidth, height: arcHeight)
+                            // Top-aligned and at the FULL height. Without the
+                            // alignment this centred 322pt of sky in a 190pt
+                            // box and pushed every deck 66pt up into the
+                            // window's clip, which cut the tallest storms off.
+                            .frame(width: dayWidth,
+                                   height: ArcGeometry.totalHeight(arcHeight),
+                                   alignment: .topLeading)
                         }
                     }
                     .frame(width: dayWidth * 3, alignment: .topLeading)

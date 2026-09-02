@@ -59,7 +59,11 @@ struct ClearSky: View, Equatable {
                 }
             }
         }
-        .frame(width: width, height: height)
+        // The SAME box the decks use. A canvas sized to the arc alone cut off
+        // everything the gutter is there to hold, and since these marks are
+        // placed in the arc's coordinate space that meant the low ones simply
+        // vanished.
+        .frame(width: width, height: ArcGeometry.totalHeight(height), alignment: .topLeading)
         .allowsHitTesting(false)
     }
 
