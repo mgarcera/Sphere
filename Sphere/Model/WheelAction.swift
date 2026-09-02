@@ -11,6 +11,7 @@ enum WheelAction: String, CaseIterable, Identifiable {
     case calendar
     case previousDay
     case nextDay
+    case newAllDay
 
     var id: String { rawValue }
 
@@ -21,6 +22,7 @@ enum WheelAction: String, CaseIterable, Identifiable {
         case .calendar: "Calendar"
         case .previousDay: "Previous day"
         case .nextDay: "Next day"
+        case .newAllDay: "New all-day event"
         }
     }
 }
@@ -72,7 +74,12 @@ enum WheelPosition: String, CaseIterable, Identifiable {
         case .previous: .previousDay
         case .next: .nextDay
         case .bottom: .calendar
-        case .menu, .centre: .none
+        // The same rule the chevrons follow: tap is the fine-grained thing,
+        // hold is its day-scale twin. It was also the only way to make an
+        // all-day event at all — the header row appears once one exists, so
+        // there was no affordance for the first.
+        case .centre: .newAllDay
+        case .menu: .none
         }
     }
 

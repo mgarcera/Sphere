@@ -461,6 +461,7 @@ struct ContentView: View {
         // on where you already were.
         case .previousDay: travel { model.focusHour -= 24 }
         case .nextDay: travel { model.focusHour += 24 }
+        case .newAllDay: editorTarget = .newAllDay(model.focusDate)
         }
     }
 

@@ -17,11 +17,13 @@ import SwiftUI
 /// one. Branching keeps both flows Apple's own and unnested.
 enum EventTarget: Identifiable, Equatable {
     case new(Date)
+    case newAllDay(Date)
     case existing(EKEvent)
 
     var id: String {
         switch self {
         case .new(let date): "new-\(date.timeIntervalSince1970)"
+        case .newAllDay(let date): "newAllDay-\(date.timeIntervalSince1970)"
         case .existing(let event): "edit-\(event.eventIdentifier ?? "")-\(event.startDate.timeIntervalSince1970)"
         }
     }
@@ -104,6 +106,7 @@ struct EventKitHost: UIViewControllerRepresentable {
             waitDeadline = nil
             let controller: UIViewController = switch target {
             case .new(let start): editor(startingAt: start)
+            case .newAllDay(let day): allDayEditor(on: day)
             case .existing(let event): Self.isEditable(event) ? editor(for: event) : viewer(for: event)
             }
             presented = controller
@@ -127,6 +130,19 @@ struct EventKitHost: UIViewControllerRepresentable {
             let event = EKEvent(eventStore: parent.store)
             event.startDate = start
             event.endDate = start.addingTimeInterval(parent.defaultDuration)
+            event.calendar = parent.store.defaultCalendarForNewEvents
+            return editor(for: event)
+        }
+
+        /// One whole day, so start and end land on the same date: that is what
+        /// Calendar.app writes for a single all-day event, and what the editor
+        /// reads back as one day rather than two.
+        private func allDayEditor(on day: Date) -> UIViewController {
+            let event = EKEvent(eventStore: parent.store)
+            let start = Calendar.current.startOfDay(for: day)
+            event.isAllDay = true
+            event.startDate = start
+            event.endDate = start
             event.calendar = parent.store.defaultCalendarForNewEvents
             return editor(for: event)
         }

@@ -417,3 +417,18 @@ then the action on release. Built from `onTapGesture` and `onLongPressGesture`
 directly, SwiftUI resolves them. The hold pays out the moment it registers
 rather than on release, with its own light haptic, since a hold that only landed
 when the thumb lifted felt like a slow tap.
+
+## The centre holds to make an all-day event (2026-09-01)
+
+Tap makes a thirty-minute event at the wheel's hour, hold makes an all-day one
+on the focused day. It is the same rule the chevrons follow: tap is the
+fine-grained thing, hold is its day-scale twin.
+
+It also closes a gap. There was no way to create an all-day event anywhere in
+Sphere, and the header row only appears once one exists, so nothing offered to
+make the first.
+
+Start and end land on the same date, which is what Calendar.app writes for a
+single all-day event and what the editor reads back as one day rather than two.
+
+MENU's hold stays empty pending a decision on what belongs there.
