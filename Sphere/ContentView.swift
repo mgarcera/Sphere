@@ -148,7 +148,7 @@ struct ContentView: View {
                     .foregroundStyle(titleColor)
                     .monospacedDigit()
                     .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                    .truncationMode(.tail)
                     // Anchored left, not centre: the pair share a left edge and
                     // scaling about the middle would slide them off it.
                     .scaleEffect(titleScale, anchor: .leading)
