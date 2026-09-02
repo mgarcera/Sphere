@@ -37,8 +37,6 @@ struct ContentView: View {
     /// Fetched when the sheet opens, not on every keystroke.
     @State private var searchable: [EKEvent] = []
     @State private var pickedDay: Date = .now
-    // TEMPORARY — presentation study.
-    @AppStorage("eventChoiceStyle") private var choiceStyle: EventChoiceStyle = .sheet
 
     var body: some View {
         ZStack {
@@ -66,35 +64,6 @@ struct ContentView: View {
                 .transition(.opacity)
             } else {
                 day
-            }
-
-            if isEventChoiceOpen, choiceStyle == .floating {
-                // `clear`, not a near-transparent black: a full-screen layer
-                // with any opacity blends over the whole interface on every
-                // frame, and this one only has to catch a tap.
-                Color.clear
-                    .contentShape(.rect)
-                    .ignoresSafeArea()
-                    .onTapGesture { isEventChoiceOpen = false }
-                    .transition(.identity)
-
-                EventChoiceCards(height: 250, pops: true) { choice in
-                    isEventChoiceOpen = false
-                    switch choice {
-                    case .open:
-                        if let active = model.activeEvent,
-                           let event = calendar.occurrence(for: active.id) {
-                            editorTarget = .existing(event)
-                        }
-                    case .create:
-                        editorTarget = .new(model.focusDate)
-                    }
-                }
-                .padding(.horizontal, 28)
-                // No transition at all. The cards arrive at once and pop
-                // themselves, which is what the header does; a transition
-                // would animate the insertion, and an insertion is layout.
-                .transition(.identity)
             }
 
             // Invisible, and behind everything: it only exists to present the
@@ -128,8 +97,7 @@ struct ContentView: View {
                 travel { model.focus(onStartOf: day) }
             }
         }
-        .sheet(isPresented: Binding(get: { isEventChoiceOpen && choiceStyle == .sheet },
-                                    set: { isEventChoiceOpen = $0 }), onDismiss: {
+        .sheet(isPresented: $isEventChoiceOpen, onDismiss: {
             guard let choice = pendingChoice else { return }
             pendingChoice = nil
             switch choice {
@@ -473,9 +441,6 @@ struct ContentView: View {
     /// nests, and opening the outer event was the only thing on offer.
     private func openEditor() {
         if model.activeEvent.flatMap({ calendar.occurrence(for: $0.id) }) != nil {
-            // Deliberately outside a transaction: everything in the body
-            // inherits one, and a branch flipping inside it picks up a free
-            // opacity transition nobody asked for.
             isEventChoiceOpen = true
         } else {
             editorTarget = .new(model.focusDate)

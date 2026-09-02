@@ -14,50 +14,19 @@ enum EventChoice {
 /// Two buttons and nothing else. A heading and a caption under each were tried
 /// and cut: the fork has exactly two answers, both are one word, and anything
 /// more made a choice that should take no thought look like a form.
-// TEMPORARY — presentation study. Strip the loser and the switcher.
-enum EventChoiceStyle: String, CaseIterable, Identifiable {
-    case sheet, floating
-    var id: String { rawValue }
-    var title: String {
-        switch self {
-        case .sheet: "A · Sheet"
-        case .floating: "B · Floating"
-        }
-    }
-}
-
 /// The two cards themselves, with no opinion about how they got on screen.
 struct EventChoiceCards: View {
     var height: CGFloat = 260
-    /// Pop on arrival, the way the header's lines do. Off for the sheet, which
-    /// has its own way in.
-    var pops = false
     let onChoose: (EventChoice) -> Void
 
-    /// The header's own spring and cascade. Scales rather than a transition:
-    /// a transition animates the view being inserted, which is layout; a scale
-    /// is a leaf modifier Core Animation tweens on the render server.
-    private static let pop = Animation.spring(response: 0.26, dampingFraction: 0.62)
-    @State private var openScale: CGFloat = 1
-    @State private var newScale: CGFloat = 1
-
     var body: some View {
+        // New leads. Creating is the thing you could not do before, and the
+        // event you are already inside is the one you can always get back to.
         HStack(spacing: 14) {
-            card(.openEvent, title: "Open") { onChoose(.open) }
-                .scaleEffect(openScale)
             card(.newEvent, title: "New") { onChoose(.create) }
-                .scaleEffect(newScale)
+            card(.openEvent, title: "Open") { onChoose(.open) }
         }
         .frame(height: height)
-        .onAppear {
-            guard pops else { return }
-            openScale = 0.94
-            newScale = 0.94
-            // 40ms apart, the same gap that makes the title and caption read as
-            // one system with the left one leading.
-            withAnimation(Self.pop) { openScale = 1 }
-            withAnimation(Self.pop.delay(0.04)) { newScale = 1 }
-        }
     }
 
     /// Drawn in the wheel's line and weight, since it is the wheel's own button
