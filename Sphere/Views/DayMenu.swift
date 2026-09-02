@@ -11,6 +11,8 @@ struct DayMenu: View {
     let weather: WeatherService
     @Binding var appearance: Appearance
     @AppStorage(WheelMapping.bottomKey) private var bottomPrimary: WheelAction = .now
+    // TEMPORARY — clear-sky direction study.
+    @AppStorage("clearSkyVariant") private var clearSky: ClearSkyVariant = .field
     let onDismiss: () -> Void
 
     @State private var placeQuery = ""
@@ -54,6 +56,17 @@ struct DayMenu: View {
                             .padding(.vertical, 3)
                         }
                     }
+                }
+
+                divider
+                section("Clear sky") {
+                    Picker("Clear sky", selection: $clearSky) {
+                        ForEach(ClearSkyVariant.allCases) { variant in
+                            Text(variant.title).tag(variant)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.vertical, 4)
                 }
 
                 divider

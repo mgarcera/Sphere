@@ -4,6 +4,9 @@ import SwiftUI
 /// of the screen and never moves; three days of arc slide underneath it, so
 /// crossing midnight needs no separate control and no seam.
 struct ArcWindow: View {
+    // TEMPORARY — clear-sky direction study.
+    @AppStorage("clearSkyVariant") private var clearSky: ClearSkyVariant = .field
+
     let model: DayModel
     /// Every capsule is held back while a jump is in flight, not just the
     /// destination: the others sweep across the screen too, and that is most
@@ -41,15 +44,32 @@ struct ArcWindow: View {
                 ForEach(SkyContinuous.Deck.allCases) { deck in
                     HStack(alignment: .top, spacing: 0) {
                         ForEach(firstDay...(firstDay + 2), id: \.self) { index in
-                            SkyContinuous(
-                                day: model.solarDay(index),
-                                width: dayWidth,
-                                height: arcHeight,
-                                hours: model.sky(forDayIndex: index),
-                                daySeed: index,
-                                deck: deck
-                            )
-                            .equatable()
+                            ZStack(alignment: .topLeading) {
+                                // Behind the deck's own drawing, so a cloud
+                                // filling with the background covers what is
+                                // meant to be behind it.
+                                ClearSky(
+                                    day: model.solarDay(index),
+                                    width: dayWidth,
+                                    height: arcHeight,
+                                    hours: model.sky(forDayIndex: index),
+                                    daySeed: index,
+                                    deck: deck,
+                                    variant: clearSky
+                                )
+                                .equatable()
+
+                                SkyContinuous(
+                                    day: model.solarDay(index),
+                                    width: dayWidth,
+                                    height: arcHeight,
+                                    hours: model.sky(forDayIndex: index),
+                                    daySeed: index,
+                                    deck: deck
+                                )
+                                .equatable()
+                            }
+                            .frame(width: dayWidth, height: arcHeight)
                         }
                     }
                     .frame(width: dayWidth * 3, alignment: .topLeading)
