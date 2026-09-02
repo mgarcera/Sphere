@@ -69,13 +69,17 @@ struct ContentView: View {
             }
 
             if isEventChoiceOpen, choiceStyle == .floating {
-                // Invisible, and only there to catch the tap that closes.
-                Color.black.opacity(0.0001)
+                // `clear`, not a near-transparent black: a full-screen layer
+                // with any opacity blends over the whole interface on every
+                // frame, and this one only has to catch a tap.
+                Color.clear
+                    .contentShape(.rect)
                     .ignoresSafeArea()
-                    .onTapGesture { withAnimation(Self.cardSpring) { isEventChoiceOpen = false } }
+                    .onTapGesture { isEventChoiceOpen = false }
+                    .transition(.identity)
 
-                EventChoiceCards(height: 250) { choice in
-                    withAnimation(Self.cardSpring) { isEventChoiceOpen = false }
+                EventChoiceCards(height: 250, pops: true) { choice in
+                    isEventChoiceOpen = false
                     switch choice {
                     case .open:
                         if let active = model.activeEvent,
@@ -87,10 +91,10 @@ struct ContentView: View {
                     }
                 }
                 .padding(.horizontal, 28)
-                // Grown from the middle rather than slid up from the edge: a
-                // sheet's whole vocabulary is a plane arriving from below, and
-                // these are meant to be sitting above the day.
-                .transition(.scale(scale: 0.9).combined(with: .opacity))
+                // No transition at all. The cards arrive at once and pop
+                // themselves, which is what the header does; a transition
+                // would animate the insertion, and an insertion is layout.
+                .transition(.identity)
             }
 
             // Invisible, and behind everything: it only exists to present the
@@ -424,8 +428,6 @@ struct ContentView: View {
     /// while the caption is pinned is what let them meet at dusk.
     private static let titleContrast: Double = 9.0
     private static let captionContrast: Double = 3.5
-    /// Lands rather than settles, like every other move in the app.
-    private static let cardSpring = Animation.spring(response: 0.32, dampingFraction: 0.86)
 
     private var hourOfDay: Double {
         model.focusHour - Double(model.dayIndex) * 24
@@ -471,7 +473,10 @@ struct ContentView: View {
     /// nests, and opening the outer event was the only thing on offer.
     private func openEditor() {
         if model.activeEvent.flatMap({ calendar.occurrence(for: $0.id) }) != nil {
-            withAnimation(Self.cardSpring) { isEventChoiceOpen = true }
+            // Deliberately outside a transaction: everything in the body
+            // inherits one, and a branch flipping inside it picks up a free
+            // opacity transition nobody asked for.
+            isEventChoiceOpen = true
         } else {
             editorTarget = .new(model.focusDate)
         }

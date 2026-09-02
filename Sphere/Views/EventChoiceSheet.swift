@@ -29,14 +29,35 @@ enum EventChoiceStyle: String, CaseIterable, Identifiable {
 /// The two cards themselves, with no opinion about how they got on screen.
 struct EventChoiceCards: View {
     var height: CGFloat = 260
+    /// Pop on arrival, the way the header's lines do. Off for the sheet, which
+    /// has its own way in.
+    var pops = false
     let onChoose: (EventChoice) -> Void
+
+    /// The header's own spring and cascade. Scales rather than a transition:
+    /// a transition animates the view being inserted, which is layout; a scale
+    /// is a leaf modifier Core Animation tweens on the render server.
+    private static let pop = Animation.spring(response: 0.26, dampingFraction: 0.62)
+    @State private var openScale: CGFloat = 1
+    @State private var newScale: CGFloat = 1
 
     var body: some View {
         HStack(spacing: 14) {
             card(.openEvent, title: "Open") { onChoose(.open) }
+                .scaleEffect(openScale)
             card(.newEvent, title: "New") { onChoose(.create) }
+                .scaleEffect(newScale)
         }
         .frame(height: height)
+        .onAppear {
+            guard pops else { return }
+            openScale = 0.94
+            newScale = 0.94
+            // 40ms apart, the same gap that makes the title and caption read as
+            // one system with the left one leading.
+            withAnimation(Self.pop) { openScale = 1 }
+            withAnimation(Self.pop.delay(0.04)) { newScale = 1 }
+        }
     }
 
     /// Drawn in the wheel's line and weight, since it is the wheel's own button
