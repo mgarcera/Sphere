@@ -1,5 +1,6 @@
 import EventKit
 import SwiftUI
+import WidgetKit
 
 struct ContentView: View {
     @State private var model = DayModel()
@@ -425,6 +426,26 @@ struct ContentView: View {
         calendar.refreshSources()
         calendar.reloadAfterEdit(from: range.start, to: range.end, anchor: model.anchor)
         model.events = calendar.events
+        publishSnapshot()
+    }
+
+    /// Hand the lock screen what it cannot work out for itself.
+    ///
+    /// The sun it can compute from a coordinate and a clock, so those go across
+    /// as inputs. The next event it cannot: a widget has no event store unless
+    /// it asks for calendar access of its own, and one permission prompt is
+    /// enough for one app.
+    private func publishSnapshot() {
+        let next = calendar.nearestTimedEvent(.forward, from: .now)
+        SphereSnapshot.write(SphereSnapshot(
+            latitude: location.coordinate.latitude,
+            longitude: location.coordinate.longitude,
+            timeZoneIdentifier: location.timeZone.identifier,
+            placeName: location.placeName,
+            nextEventTitle: next?.title,
+            nextEventStart: next?.startDate
+        ))
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     private func reload() {
@@ -432,6 +453,7 @@ struct ContentView: View {
         calendar.refreshSources()
         calendar.load(from: range.start, to: range.end, anchor: model.anchor)
         model.events = calendar.events
+        publishSnapshot()
     }
 
     /// In empty time the centre button just creates. Inside an event there are
