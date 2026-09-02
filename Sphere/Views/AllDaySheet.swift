@@ -11,7 +11,9 @@ struct AllDaySheet: View {
     let onOpen: (CalendarEvent) -> Void
 
     /// Always counted, even at one.
-    private var title: String { "\(events.count) all day" }
+    private var title: String {
+        "\(events.count) all day event\(events.count == 1 ? "" : "s")"
+    }
 
     /// Enough for four rows before it scrolls, which covers a normal day of
     /// birthdays and holidays without becoming a list view.

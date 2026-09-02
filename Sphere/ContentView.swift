@@ -228,7 +228,7 @@ struct ContentView: View {
                             ClockFace(hour: hourOfDay)
                                 .stroke(captionColor, style: StrokeStyle(lineWidth: 1.1, lineCap: .round))
                                 .frame(width: 14, height: 14)
-                            Text("\(allDayCount) all day")
+                            Text("\(allDayCount) all day event\(allDayCount == 1 ? "" : "s")")
                                 .contentTransition(.identity)
                                 .font(.footnote)
                                 .foregroundStyle(captionColor)
