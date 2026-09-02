@@ -77,7 +77,7 @@ struct ContentView: View {
                 isDayPickerOpen = false
                 // Through travel, so a move of days does not sweep every
                 // capsule across the screen on the way.
-                travel { model.focus(onDayOf: day) }
+                travel { model.focus(onStartOf: day) }
             }
         }
         .sheet(isPresented: $isAllDayOpen) {

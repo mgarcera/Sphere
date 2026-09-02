@@ -104,11 +104,13 @@ final class DayModel {
         focusHour = nowHour
     }
 
-    /// Jump to another date, keeping the clock time you were already on.
-    func focus(onDayOf date: Date) {
+    /// Jump to the start of another date. Landing at midnight rather than at
+    /// the clock time you were already on puts the dot at the beginning of the
+    /// day, so the wheel scrolls forward through the whole of it.
+    func focus(onStartOf date: Date) {
         let target = calendar.startOfDay(for: date)
         let days = calendar.dateComponents([.day], from: anchor, to: target).day ?? 0
-        focusHour = Double(days) * 24 + (focusHour - Double(dayIndex) * 24)
+        focusHour = Double(days) * 24
     }
 
     func tick(_ date: Date = .now) {
