@@ -92,17 +92,19 @@ struct ActionMark: View {
     /// the arc redrawn through a ball lens.
     ///
     /// The mapping is the standard thin ball-lens one. A source point `d` from
-    /// the centre appears at `r = R sin(n asin(d/R))` for refractive index `n`;
-    /// glass is about 1.5. Only the disc within `R sin(π/2n)` — about 0.87R —
-    /// is visible through it, and that disc is spread across the whole lens,
-    /// which is the magnification. Curvature grows toward the rim, so the arc
-    /// bends as it approaches the edge and steps where it meets the arc
-    /// outside. That step is the thing that says glass.
+    /// the centre appears at `r = R sin(n asin(d/R))` for refractive index `n`.
+    /// Only the disc within `R sin(π/2n)` is visible through it, and that disc
+    /// is spread across the whole lens, which is the magnification. Curvature
+    /// grows toward the rim, so the arc bends as it approaches the edge and
+    /// steps where it meets the arc outside. That step is the thing that says
+    /// glass.
     private func lens(_ context: inout GraphicsContext, scale: CGFloat) {
         let style = StrokeStyle(lineWidth: stroke / scale, lineCap: .round, lineJoin: .round)
         let centre = CGPoint(x: 10, y: 9)
         let radius: CGFloat = 5.6
-        let index: CGFloat = 1.5
+        // 2.0 rather than glass's 1.5: the icon is 20 points wide and the bend
+        // has to survive that, so the lens is stronger than physical.
+        let index: CGFloat = 2.0
         let visible = radius * sin(.pi / (2 * index))
 
         /// The day, as a quad from (1,16) to (19,16) through (10,2), solved
@@ -138,11 +140,12 @@ struct ActionMark: View {
         }
         context.stroke(refracted, with: .color(color), style: style)
 
-        // The moment being looked at, magnified along with everything else.
-        let dot: CGFloat = 1.15 * index
-        context.fill(Path(ellipseIn: CGRect(x: centre.x - dot, y: centre.y - dot,
-                                            width: dot * 2, height: dot * 2)),
-                     with: .color(color))
+        // An event, not a moment: the same capsule the arc draws one with,
+        // lying along the tangent, which at the apex is flat. Drawn at its
+        // magnified size rather than mapped, since a filled shape refracted
+        // point by point would only muddy at this scale.
+        let capsule = CGRect(x: centre.x - 4, y: centre.y - 1.6, width: 8, height: 3.2)
+        context.fill(Path(roundedRect: capsule, cornerRadius: 1.6), with: .color(color))
 
         context.stroke(Path(ellipseIn: bounds), with: .color(color), style: style)
     }
