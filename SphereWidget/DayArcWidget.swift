@@ -155,6 +155,17 @@ struct LockArc: View {
             }
 
             let dot = CGPoint(x: x(hour), y: y(hour))
+
+            // The stem is what tells now apart from an event. Both are white
+            // marks on the line and differ only in length, so the distinction
+            // has to be a mark nothing else carries rather than a degree of the
+            // same one. The app hangs the same hairline from its own dot.
+            var stem = Path()
+            stem.move(to: CGPoint(x: dot.x, y: dot.y))
+            stem.addLine(to: CGPoint(x: dot.x, y: baseline))
+            context.stroke(stem, with: .color(.white.opacity(0.45)),
+                           style: StrokeStyle(lineWidth: 1))
+
             context.fill(Path(ellipseIn: CGRect(x: dot.x - 2.6, y: dot.y - 2.6,
                                                 width: 5.2, height: 5.2)),
                          with: .color(.white))
