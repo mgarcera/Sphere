@@ -118,6 +118,14 @@ struct ActionMark: View {
         arc.addQuadCurve(to: day(1), control: CGPoint(x: 10, y: 2))
         context.stroke(arc, with: .color(color), style: style)
 
+        // The event runs out past the glass on both sides, so the thin part
+        // outside sits next to the fat part inside. Without that there is
+        // nothing to compare the magnified size against, and a bigger capsule
+        // just looks like a bigger capsule.
+        let thin: CGFloat = 1.4
+        let outside = CGRect(x: 0.6, y: centre.y - thin / 2, width: 18.8, height: thin)
+        context.fill(Path(roundedRect: outside, cornerRadius: thin / 2), with: .color(color))
+
         // Clear the glass before drawing through it, or the unrefracted arc
         // shows behind its own magnified copy.
         let bounds = CGRect(x: centre.x - radius, y: centre.y - radius,
@@ -140,12 +148,19 @@ struct ActionMark: View {
         }
         context.stroke(refracted, with: .color(color), style: style)
 
-        // An event, not a moment: the same capsule the arc draws one with,
-        // lying along the tangent, which at the apex is flat. Drawn at its
-        // magnified size rather than mapped, since a filled shape refracted
-        // point by point would only muddy at this scale.
-        let capsule = CGRect(x: centre.x - 4, y: centre.y - 1.6, width: 8, height: 3.2)
-        context.fill(Path(roundedRect: capsule, cornerRadius: 1.6), with: .color(color))
+        // The same event again, seen through the glass. Scaled about the centre
+        // by the index rather than refracted point by point: that is exactly
+        // right at the centre and close enough near it, and a filled shape
+        // warped edge by edge only muddies at this scale. It runs past the rim
+        // and the clip cuts it there, which is what a real lens shows of
+        // something longer than its field.
+        context.drawLayer { glass in
+            glass.clip(to: Path(ellipseIn: bounds))
+            let fat = thin * index
+            let magnified = CGRect(x: centre.x - 18.8 * index / 2, y: centre.y - fat / 2,
+                                   width: 18.8 * index, height: fat)
+            glass.fill(Path(roundedRect: magnified, cornerRadius: fat / 2), with: .color(color))
+        }
 
         context.stroke(Path(ellipseIn: bounds), with: .color(color), style: style)
     }
