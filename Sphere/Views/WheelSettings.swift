@@ -114,68 +114,80 @@ struct WheelSettings: View {
         }
     }
 
-    /// What the selected position does, both ways round.
+    /// What the selected position does, both ways round and side by side.
+    ///
+    /// Two columns rather than two stacks: the two slots are alternatives to
+    /// each other, and reading them down the page made the second look like a
+    /// consequence of the first. Aligned to the top so the two headers sit on
+    /// one line however unevenly the lists below them run.
     @ViewBuilder
     private var assignment: some View {
         let _ = revision
-        VStack(spacing: 0) {
-            row(.tap,
-                mark: selected.tapMark,
-                value: selected.tapTitle,
-                current: selected == .bottom ? bottomPrimary : nil,
-                options: selected == .bottom ? [.now, .calendar] : [])
-            Rectangle().fill(Theme.hairline).frame(height: 1)
-            row(.hold,
-                mark: WheelMapping.hold(for: selected).mark,
-                value: WheelMapping.hold(for: selected).title,
-                current: WheelMapping.hold(for: selected),
-                options: selected.assignableActions)
+        HStack(alignment: .top, spacing: 18) {
+            column(.tap,
+                   mark: selected.tapMark,
+                   value: selected.tapTitle,
+                   current: selected == .bottom ? bottomPrimary : nil,
+                   options: selected == .bottom ? [.now, .calendar] : [])
+
+            Rectangle()
+                .fill(Theme.hairline)
+                .frame(width: 1)
+
+            column(.hold,
+                   mark: WheelMapping.hold(for: selected).mark,
+                   value: WheelMapping.hold(for: selected).title,
+                   current: WheelMapping.hold(for: selected),
+                   options: selected.assignableActions)
         }
+        .fixedSize(horizontal: false, vertical: true)
     }
 
-    /// A fixed gesture prints what it does. An assignable one lists its
-    /// choices instead: nothing to open, and the one in force reads at full
-    /// strength while the rest sit back. The brightness is the state, so there
-    /// is no tick or radio to add.
+    /// A fixed slot prints what it does. An assignable one lists its choices
+    /// instead: nothing to open, and the one in force reads at full strength
+    /// while the rest sit back. The brightness is the state, so there is no
+    /// tick or radio to add.
     @ViewBuilder
-    private func row(_ gesture: WheelGesture, mark: Mark, value: String,
-                     current: WheelAction?, options: [WheelAction]) -> some View {
-        VStack(spacing: 0) {
-            HStack {
-                // Named for what they are to the user, not for the gesture
-                // that reaches them: one is the thing the button is for, the
-                // other is the thing it also does.
-                Text(gesture == .tap ? "Primary" : "Secondary")
-                    .font(.system(size: 11, weight: .medium))
-                    .tracking(1.1)
-                    .textCase(.uppercase)
-                    .foregroundStyle(Theme.mutedLight)
-                Spacer()
-                if options.isEmpty {
-                    ActionMark(mark: mark, size: 18, color: Theme.mutedLight)
-                    Text(value)
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.mutedLight)
-                }
+    private func column(_ gesture: WheelGesture, mark: Mark, value: String,
+                        current: WheelAction?, options: [WheelAction]) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Named for what they are to the user, not for the gesture that
+            // reaches them: one is the thing the button is for, the other is
+            // the thing it also does.
+            Text(gesture == .tap ? "Primary" : "Secondary")
+                .font(.system(size: 11, weight: .medium))
+                .tracking(1.1)
+                .textCase(.uppercase)
+                .foregroundStyle(Theme.mutedLight)
+                .padding(.bottom, 10)
+
+            if options.isEmpty {
+                slot(mark: mark, title: value, color: Theme.mutedLight)
             }
-            .padding(.vertical, 12)
 
             ForEach(options) { option in
-                HStack(spacing: 10) {
-                    Spacer()
-                    ActionMark(mark: option.mark, size: 18, color: Theme.ink)
-                    Text(option.title)
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.ink)
-                }
-                .opacity(option == current ? 1 : 0.32)
-                .contentShape(.rect)
-                .padding(.vertical, 9)
-                .onTapGesture { choose(option, for: gesture) }
+                slot(mark: option.mark, title: option.title, color: Theme.ink)
+                    .opacity(option == current ? 1 : 0.32)
+                    .contentShape(.rect)
+                    .onTapGesture { choose(option, for: gesture) }
             }
-            .padding(.bottom, options.isEmpty ? 0 : 6)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .animation(.easeOut(duration: 0.16), value: current)
+    }
+
+    /// One line of the column. The mark keeps its own width so the titles line
+    /// up under each other even where one of them wraps.
+    private func slot(mark: Mark, title: String, color: Color) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            ActionMark(mark: mark, size: 18, color: color)
+            Text(title)
+                .font(.subheadline)
+                .foregroundStyle(color)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 7)
     }
 
     private func choose(_ action: WheelAction, for gesture: WheelGesture) {
