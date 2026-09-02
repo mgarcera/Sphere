@@ -365,7 +365,7 @@ detent, medium for an arrival, rigid for a wall.
 One switch in the menu, on by default: the wheel is the app's main control and
 shipping it mute would hide the feature from anyone who never opens settings.
 
-## DATE forks; the arc stops carrying a gesture (2026-09-01)
+## DATE forks; the arc stops carrying a gesture (2026-09-01, superseded same day)
 
 Returning to now was a tap on the arc, chosen because the arc is the one surface
 big enough to carry a gesture nothing can label. Unlabelled was the cost:
@@ -383,3 +383,37 @@ The calendar path runs from the sheet's `onDismiss`, not from the binding
 flipping: the binding flips while the fork is still on its way out, and
 presenting into that is the refusal that cost the event editor ten seconds
 earlier the same day.
+
+## The wheel is programmable (2026-09-01)
+
+The fork sheet is reverted. It cost a tap every single time; a setting costs one
+tap once, which is the argument that decided it.
+
+Every position now carries a fixed tap and one assignable hold. Taps are the
+wheel's vocabulary and do not move: a printed word that can come to mean
+something else stops being readable. Holds carry nothing printed, which is
+exactly why they are safe to reassign.
+
+The pool is NOW, Calendar, Previous day, Next day, and None. Creating an event
+and opening the menu already own a position each, so putting them in would hand
+out duplicates rather than access. Day-stepping is the one genuinely new
+capability: the chevrons' tap lands on an event, their hold lands on the same
+clock time a day either side.
+
+Shipped mapping: bottom taps NOW and holds Calendar, and setting one sets the
+other, so neither can be orphaned the way the arc tap was. Chevrons hold to step
+a day. MENU and the centre have hold slots that ship empty, because inventing a
+second meaning to fill a slot is worse than a slot that admits to being empty.
+
+A hold is invisible in the way the arc tap was invisible. The settings wheel is
+the answer to that: a copy drawn in the wheel's own line and proportions, at
+three fifths the size, printing every position's tap and hold whether or not it
+can be changed. Its first job is documentation, not configuration. Tapping a
+position there selects it rather than performs it — settings is not a place
+where the day should move under you.
+
+A `Button` cannot hold both gestures: a long press over one fires the press and
+then the action on release. Built from `onTapGesture` and `onLongPressGesture`
+directly, SwiftUI resolves them. The hold pays out the moment it registers
+rather than on release, with its own light haptic, since a hold that only landed
+when the thumb lifted felt like a slow tap.

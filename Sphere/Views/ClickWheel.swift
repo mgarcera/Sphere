@@ -15,11 +15,14 @@ struct ClickWheel: View {
     let onRotate: (Double) -> Void
     /// Fires once when a turn starts, before any time moves.
     var onRotateBegan: () -> Void = {}
-    let onMenu: () -> Void
-    let onDate: () -> Void
-    let onCentre: () -> Void
-    let onPrevious: () -> Void
-    let onNext: () -> Void
+
+    /// One way in for every press, so the routing lives in one place rather
+    /// than in six closures that can each be written slightly differently.
+    let onPress: (WheelPosition, WheelGesture) -> Void
+
+    /// What the bottom button is printed with, since it is the one word that
+    /// changes with the setting.
+    let bottomLabel: String
 
     static let diameter: CGFloat = 280
 
@@ -82,50 +85,71 @@ struct ClickWheel: View {
                         .onEnded { _ in lastAngle = nil }
                 )
 
-            Button(action: onCentre) {
-                Circle()
-                    .strokeBorder(line, lineWidth: 1.5)
-                    .frame(width: Self.buttonDiameter, height: Self.buttonDiameter)
-                    .contentShape(.circle)
-            }
-            .buttonStyle(WheelButtonStyle())
+            Circle()
+                .strokeBorder(line, lineWidth: 1.5)
+                .frame(width: Self.buttonDiameter, height: Self.buttonDiameter)
+                .contentShape(.circle)
+                .modifier(WheelPress(position: .centre, onPress: onPress))
 
-            printedButton("MENU", action: onMenu)
+            printedButton("MENU", position: .menu)
                 .position(x: outerRadius, y: Self.labelInset)
 
-            printedButton("DATE", action: onDate)
+            printedButton(bottomLabel, position: .bottom)
                 .position(x: outerRadius, y: Self.diameter - Self.labelInset)
 
             // These jump straight to the previous and next event's start. They
             // are not a generic time nudge — the wheel already does that.
-            printedButton("‹", size: 20, action: onPrevious)
+            printedButton("‹", position: .previous, size: 20)
                 .position(x: Self.labelInset, y: outerRadius)
 
-            printedButton("›", size: 20, action: onNext)
+            printedButton("›", position: .next, size: 20)
                 .position(x: Self.diameter - Self.labelInset, y: outerRadius)
         }
         .frame(width: Self.diameter, height: Self.diameter)
     }
 
-    private func printedButton(_ text: String, size: CGFloat = 11, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(text)
-                .font(.system(size: size, weight: size > 14 ? .medium : .semibold))
-                .tracking(size > 14 ? 0 : 1.2)
-                .foregroundStyle(line)
-                .frame(width: Self.hitTarget, height: Self.hitTarget)
-                .contentShape(.rect)
-        }
-        .buttonStyle(WheelButtonStyle())
+    private func printedButton(_ text: String, position: WheelPosition, size: CGFloat = 11) -> some View {
+        Text(text)
+            .font(.system(size: size, weight: size > 14 ? .medium : .semibold))
+            .tracking(size > 14 ? 0 : 1.2)
+            .foregroundStyle(line)
+            .frame(width: Self.hitTarget, height: Self.hitTarget)
+            .contentShape(.rect)
+            .modifier(WheelPress(position: position, onPress: onPress))
     }
 }
 
-/// Presses dim rather than scale — the wheel is meant to read as one drawn
-/// object, and a growing button would break that.
-private struct WheelButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .opacity(configuration.isPressed ? 0.45 : 1)
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+/// Tap and hold on one control.
+///
+/// A `Button` cannot carry both: a long press over one fires the press AND the
+/// action on release. Built from the two gestures directly, SwiftUI resolves
+/// them, and the hold reports the moment it registers rather than on release —
+/// a hold that only paid out when the thumb lifted felt like a slow tap.
+///
+/// Presses dim rather than scale: the wheel reads as one drawn object, and a
+/// growing button would break that.
+private struct WheelPress: ViewModifier {
+    let position: WheelPosition
+    let onPress: (WheelPosition, WheelGesture) -> Void
+
+    @State private var isPressed = false
+    @State private var didHold = false
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(isPressed ? 0.45 : 1)
+            .animation(.easeOut(duration: 0.12), value: isPressed)
+            .onTapGesture {
+                guard !didHold else { didHold = false; return }
+                onPress(position, .tap)
+            }
+            .onLongPressGesture(minimumDuration: 0.35, maximumDistance: 14) {
+                didHold = true
+                Haptics.held()
+                onPress(position, .hold)
+            } onPressingChanged: { pressing in
+                isPressed = pressing
+                if pressing { didHold = false }
+            }
     }
 }

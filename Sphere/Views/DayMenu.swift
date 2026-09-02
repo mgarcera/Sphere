@@ -11,6 +11,7 @@ struct DayMenu: View {
     let weather: WeatherService
     @Binding var appearance: Appearance
     @AppStorage(Haptics.key) private var hapticsEnabled = true
+    @AppStorage(WheelMapping.bottomKey) private var bottomPrimary: WheelAction = .now
     let onDismiss: () -> Void
 
     @State private var placeQuery = ""
@@ -65,6 +66,11 @@ struct DayMenu: View {
                             .padding(.vertical, 3)
                         }
                     }
+                }
+
+                divider
+                section("Wheel") {
+                    WheelSettings(bottomPrimary: $bottomPrimary)
                 }
             }
             .padding(.horizontal, 24)

@@ -20,14 +20,13 @@ struct ContentView: View {
     /// a transaction we control.
     @State private var allDayCount = 0
     @AppStorage("appearance") private var appearance: Appearance = .system
+    /// Observed rather than read once: the bottom button's printed word changes
+    /// with it, and a label that does not follow its setting is worse than no
+    /// setting at all.
+    @AppStorage(WheelMapping.bottomKey) private var bottomPrimary: WheelAction = .now
     @State private var eventsHidden = false
     @State private var isAllDayOpen = false
     @State private var isDayPickerOpen = false
-    @State private var isJumpOpen = false
-    /// Acted on after the fork closes, never while it is closing: presenting a
-    /// sheet from a sheet still dismissing is the same refusal that lost the
-    /// event editor for ten seconds.
-    @State private var pendingJump: JumpChoice?
     @State private var pickedDay: Date = .now
 
     var body: some View {
@@ -88,27 +87,6 @@ struct ContentView: View {
                 // capsule across the screen on the way.
                 travel { model.focus(onStartOf: day) }
             }
-        }
-        // onDismiss, not onChange: the binding flips the moment the row is
-        // tapped, while the sheet is still on its way out, and presenting the
-        // picker into that is the refusal that cost the editor ten seconds.
-        .sheet(isPresented: $isJumpOpen, onDismiss: {
-            guard let choice = pendingJump else { return }
-            pendingJump = nil
-            switch choice {
-            case .now:
-                travel { model.returnToNow() }
-            case .calendar:
-                pickedDay = model.focusDate
-                isDayPickerOpen = true
-            }
-        }) {
-            JumpSheet(now: model.realNow, focused: model.focusDate) { choice in
-                pendingJump = choice
-                isJumpOpen = false
-            }
-            .presentationDetents([.height(JumpSheet.height)])
-            .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $isAllDayOpen) {
             AllDaySheet(events: model.allDayEvents) { entry in
@@ -182,11 +160,8 @@ struct ContentView: View {
                     Haptics.warm()
                     lastDetent = (model.focusHour / Haptics.detentHours).rounded(.towardZero)
                 },
-                onMenu: { isMenuOpen = true },
-                onDate: { isJumpOpen = true },
-                onCentre: openEditor,
-                onPrevious: { step(.back) },
-                onNext: { step(.forward) }
+                onPress: press,
+                bottomLabel: bottomPrimary == .calendar ? "DATE" : "NOW"
             )
             .padding(.top, 16)
             .padding(.bottom, 24)
@@ -455,6 +430,38 @@ struct ContentView: View {
             return
         }
         travel { model.focusHour = far.startDate.timeIntervalSince(model.anchor) / 3600 }
+    }
+
+    /// Everything the wheel does, in one place.
+    ///
+    /// Taps are the wheel's vocabulary and are fixed, except at the bottom,
+    /// where the printed word changes with the setting. Holds are assignable,
+    /// which is only safe because nothing is printed for them: a label that
+    /// could come to mean something else stops being readable.
+    private func press(_ position: WheelPosition, _ gesture: WheelGesture) {
+        guard gesture == .tap else { return run(WheelMapping.hold(for: position)) }
+        switch position {
+        case .previous: step(.back)
+        case .next: step(.forward)
+        case .menu: isMenuOpen = true
+        case .centre: openEditor()
+        case .bottom: run(WheelMapping.bottomPrimary)
+        }
+    }
+
+    private func run(_ action: WheelAction) {
+        switch action {
+        case .none: break
+        case .now: travel { model.returnToNow() }
+        case .calendar:
+            pickedDay = model.focusDate
+            isDayPickerOpen = true
+        // The same clock time a day either side, which is what makes this
+        // different from the chevrons' tap: those land on an event, this lands
+        // on where you already were.
+        case .previousDay: travel { model.focusHour -= 24 }
+        case .nextDay: travel { model.focusHour += 24 }
+        }
     }
 
     /// One click per quarter hour of scrubbed time, counted against where the

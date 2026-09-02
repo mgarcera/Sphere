@@ -46,6 +46,14 @@ enum Haptics {
         arrival.impactOccurred(intensity: 0.7)
     }
 
+    /// A long press registered. Nothing about a hold is visible while it is
+    /// happening, so this is the only thing that says the gesture took before
+    /// the action itself lands.
+    static func held() {
+        guard isEnabled else { return }
+        arrival.impactOccurred(intensity: 0.45)
+    }
+
     /// Nothing in that direction. Blunter than an arrival and sharper than a
     /// detent, so it reads as a wall rather than as either.
     static func nothingThere() {
