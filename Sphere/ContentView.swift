@@ -118,7 +118,7 @@ struct ContentView: View {
             ClickWheel(
                 onRotate: { model.scrub(byRotations: $0) },
                 onMenu: { isMenuOpen = true },
-                onNow: { springTo { model.returnToNow() } },
+                onNow: { travel { model.returnToNow() } },
                 onCentre: openEditor,
                 onPrevious: { jump(to: model.previousEvent) },
                 onNext: { jump(to: model.nextEvent) }
@@ -346,31 +346,29 @@ struct ContentView: View {
     /// is what read as it being dragged along.
     private func jump(to event: CalendarEvent?) {
         guard let event else { return }
+        travel { model.focusHour = event.startHour }
+    }
 
-        // EVERY capsule is held back through the flight, not just the
-        // destination. A jump pans the whole arc, so all of them cross the
-        // screen, and suppressing only the one being jumped to left the rest
-        // sweeping past — which is most of what a long jump actually looks
-        // like.
+    /// Every way of moving the dot a long way at once goes through here.
+    ///
+    /// Moving the focus hour pans the whole arc, so every capsule crosses the
+    /// screen on the way — which is most of what a long move looks like. They
+    /// are all held back for the flight and revealed on arrival.
+    ///
+    /// Critically damped, both on the pan and the reveal: a move should land,
+    /// not settle. The reveal hangs off the animation's own completion rather
+    /// than a timer; a timer is a guess at when a spring settles, and it goes
+    /// stale the moment the spring is retuned.
+    ///
+    /// One function, because NOW and the chevrons do the same thing and the
+    /// suppression was written at one call site and not the other.
+    private func travel(_ change: () -> Void) {
         eventsHidden = true
-
-        // Critically damped, both here and on the reveal: a jump should land,
-        // not settle.
-        //
-        // The reveal hangs off the animation's own completion rather than a
-        // timer. It was a 440ms guess at when a spring settles, which is not
-        // something to guess: `.removed` fires when the pan has actually
-        // finished, so the capsule can never appear while the arc is still
-        // moving under it.
         withAnimation(.spring(response: 0.5, dampingFraction: 1), completionCriteria: .removed) {
-            model.focusHour = event.startHour
+            change()
         } completion: {
             withAnimation(.easeOut(duration: 0.22)) { eventsHidden = false }
         }
-    }
-
-    private func springTo(_ change: () -> Void) {
-        withAnimation(.spring(response: 0.55, dampingFraction: 0.86), change)
     }
 
     private static func dayLine(_ date: Date) -> String {
