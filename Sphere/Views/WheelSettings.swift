@@ -158,7 +158,10 @@ struct WheelSettings: View {
                      current: WheelAction?, options: [WheelAction]) -> some View {
         VStack(spacing: 0) {
             HStack {
-                Text(gesture == .tap ? "Tap" : "Hold")
+                // Named for what they are to the user, not for the gesture
+                // that reaches them: one is the thing the button is for, the
+                // other is the thing it also does.
+                Text(gesture == .tap ? "Primary" : "Secondary")
                     .font(.system(size: 11, weight: .medium))
                     .tracking(1.1)
                     .textCase(.uppercase)
