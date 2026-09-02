@@ -160,22 +160,4 @@ enum WheelMapping {
     static func setHold(_ action: WheelAction, for position: WheelPosition) {
         UserDefaults.standard.set(action.rawValue, forKey: position.storageKey)
     }
-
-    /// Back to the shipped mapping. Clears rather than writes the defaults, so
-    /// a position whose default later changes follows the new one instead of
-    /// staying pinned to whatever was current the day it was reset.
-    static func resetAll() {
-        UserDefaults.standard.removeObject(forKey: bottomKey)
-        for position in WheelPosition.allCases {
-            UserDefaults.standard.removeObject(forKey: position.storageKey)
-        }
-    }
-
-    /// Whether anything has been moved off the shipped mapping.
-    static var isDefault: Bool {
-        UserDefaults.standard.string(forKey: bottomKey) == nil
-            && WheelPosition.allCases.allSatisfy {
-                UserDefaults.standard.string(forKey: $0.storageKey) == nil
-            }
-    }
 }

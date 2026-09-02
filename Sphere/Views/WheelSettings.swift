@@ -13,7 +13,6 @@ struct WheelSettings: View {
     @State private var revision = 0
     @State private var selected: WheelPosition = .bottom
     @AppStorage(Haptics.key) private var hapticsEnabled = true
-    @State private var isConfirmingReset = false
 
     private static let diameter: CGFloat = 168
     private static let buttonRatio: CGFloat = 0.383
@@ -81,37 +80,8 @@ struct WheelSettings: View {
             }
             .tint(Theme.controlAccent)
             .padding(.vertical, 8)
-
-            Rectangle().fill(Theme.hairline).frame(height: 1)
-
-            Button { isConfirmingReset = true } label: {
-                HStack {
-                    Text("Reset to default")
-                        .font(.subheadline)
-                        .foregroundStyle(WheelMapping.isDefault ? Theme.mutedLight : Theme.controlAccent)
-                    Spacer()
-                }
-                .contentShape(.rect)
-                .padding(.vertical, 12)
-            }
-            .buttonStyle(.plain)
-            .disabled(WheelMapping.isDefault)
         }
         .padding(.top, 4)
-        // A confirmation, because a reset undoes every position at once and
-        // there is nothing on screen to read back what was there before.
-        .confirmationDialog("Reset the wheel?",
-                            isPresented: $isConfirmingReset,
-                            titleVisibility: .visible) {
-            Button("Reset to default", role: .destructive) {
-                WheelMapping.resetAll()
-                bottomPrimary = WheelMapping.bottomPrimary
-                revision += 1
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Every tap and hold goes back to how it shipped.")
-        }
     }
 
     /// What the selected position does, both ways round and side by side.
