@@ -140,12 +140,27 @@ final class DayModel {
     }
 
     /// The event the dot is inside. Real calendars overlap constantly, so the
-    /// shortest one wins: a standup sitting inside a focus block is what you
-    /// are actually doing.
+    /// most recently STARTED one wins, with the shorter breaking a tie.
+    ///
+    /// Shortest-wins was tried and broke the chevrons. With 8:23–8:45 and
+    /// 8:40–9:10, pressing next from the first lands on 8:40, which is the
+    /// second's start — but both contain 8:40 and the first is shorter, so the
+    /// header went on naming the first. Nothing appeared to happen, and the
+    /// next press skipped the second entirely.
+    ///
+    /// Most-recently-started fixes that by construction: jumping to an event's
+    /// start puts the focus exactly on it, and nothing else containing that
+    /// instant can have started later. It also still gets the case
+    /// shortest-wins existed for, since a standup inside a focus block starts
+    /// after the block.
     var activeEvent: CalendarEvent? {
         timedEvents
             .filter { $0.contains(focusHour) }
-            .min { $0.durationHours < $1.durationHours }
+            .max { a, b in
+                a.startHour == b.startHour
+                    ? a.durationHours > b.durationHours
+                    : a.startHour < b.startHour
+            }
     }
 
     private static let jumpEpsilon: Double = 1.0 / 600

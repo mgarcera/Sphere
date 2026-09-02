@@ -5,7 +5,7 @@ import SwiftUI
 /// What the centre button opens: Apple's own editor, either on a new event at
 /// the wheel's hour or on the event the dot is currently inside. The existing
 /// case carries Delete Event at the bottom, so removal comes free too.
-enum EventTarget: Identifiable {
+enum EventTarget: Identifiable, Equatable {
     case new(Date)
     case existing(EKEvent)
 
@@ -15,15 +15,41 @@ enum EventTarget: Identifiable {
         case .existing(let event): "edit-\(event.eventIdentifier ?? "")-\(event.startDate.timeIntervalSince1970)"
         }
     }
+
+    static func == (a: EventTarget, b: EventTarget) -> Bool { a.id == b.id }
 }
 
-struct EventEditorSheet: UIViewControllerRepresentable {
+/// An invisible host that PRESENTS the editor itself rather than being a
+/// SwiftUI sheet's content.
+///
+/// As sheet content, deleting an event never called the delegate at all: the
+/// controller dismisses itself as part of completing, and inside a sheet that
+/// SwiftUI owns, that dismissal goes nowhere and takes the callback with it.
+/// Saving happened to survive it; deleting did not. Presented from a real view
+/// controller, its own lifecycle works and every action reports back.
+struct EventEditorHost: UIViewControllerRepresentable {
+    @Binding var target: EventTarget?
     let store: EKEventStore
-    let target: EventTarget
     var defaultDuration: TimeInterval = 30 * 60
     let onFinish: () -> Void
 
-    func makeUIViewController(context: Context) -> EKEventEditViewController {
+    func makeUIViewController(context: Context) -> UIViewController {
+        let host = UIViewController()
+        host.view.isUserInteractionEnabled = false
+        return host
+    }
+
+    func updateUIViewController(_ host: UIViewController, context: Context) {
+        context.coordinator.parent = self
+
+        guard let target else {
+            if host.presentedViewController is EKEventEditViewController {
+                host.dismiss(animated: true)
+            }
+            return
+        }
+        guard host.presentedViewController == nil, host.view.window != nil else { return }
+
         let controller = EKEventEditViewController()
         controller.eventStore = store
         controller.editViewDelegate = context.coordinator
@@ -39,28 +65,22 @@ struct EventEditorSheet: UIViewControllerRepresentable {
             controller.event = event
         }
 
-        return controller
+        host.present(controller, animated: true)
     }
 
-    func updateUIViewController(_ controller: EKEventEditViewController, context: Context) {}
-
-    func makeCoordinator() -> Coordinator { Coordinator(onFinish: onFinish) }
+    func makeCoordinator() -> Coordinator { Coordinator(parent: self) }
 
     final class Coordinator: NSObject, EKEventEditViewDelegate {
-        let onFinish: () -> Void
-        init(onFinish: @escaping () -> Void) { self.onFinish = onFinish }
+        var parent: EventEditorHost
+
+        init(parent: EventEditorHost) { self.parent = parent }
 
         func eventEditViewController(_ controller: EKEventEditViewController,
                                      didCompleteWith action: EKEventEditViewAction) {
-            let name: String
-            switch action {
-            case .canceled: name = "canceled"
-            case .saved: name = "saved"
-            case .deleted: name = "deleted"
-            @unknown default: name = "unknown"
+            controller.dismiss(animated: true) { [parent] in
+                parent.target = nil
+                parent.onFinish()
             }
-            Trace.log("editor completed: \(name)")
-            onFinish()
         }
     }
 }

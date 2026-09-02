@@ -49,20 +49,19 @@ struct ContentView: View {
             } else {
                 day
             }
+
+            // Invisible, and behind everything: it only exists to present the
+            // event editor from a real view controller.
+            EventEditorHost(target: $editorTarget, store: calendar.store) {
+                let before = model.timedEvents.count
+                reloadAfterEdit()
+                Trace.log("reload: timed \(before) -> \(model.timedEvents.count)")
+            }
+            .frame(width: 0, height: 0)
+            .allowsHitTesting(false)
         }
         .animation(.easeInOut(duration: 0.25), value: calendar.access)
         .preferredColorScheme(appearance.colorScheme)
-        .sheet(item: $editorTarget) { target in
-            EventEditorSheet(store: calendar.store, target: target) {
-                editorTarget = nil
-                Task { @MainActor in
-                    let before = model.timedEvents.count
-                    reload()
-                    Trace.log("reload: timed \(before) -> \(model.timedEvents.count)")
-                }
-            }
-            .ignoresSafeArea()
-        }
         .sheet(isPresented: $isDayPickerOpen) {
             VStack(spacing: 0) {
                 DatePicker("", selection: $pickedDay, displayedComponents: .date)
@@ -380,6 +379,15 @@ struct ContentView: View {
     }
 
     // MARK: - Actions
+
+    /// After an edit, not a scroll: resets the store first so a write is
+    /// actually visible.
+    private func reloadAfterEdit() {
+        let range = model.loadedRange
+        calendar.refreshSources()
+        calendar.reloadAfterEdit(from: range.start, to: range.end, anchor: model.anchor)
+        model.events = calendar.events
+    }
 
     private func reload() {
         let range = model.loadedRange

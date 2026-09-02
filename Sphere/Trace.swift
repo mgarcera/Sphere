@@ -17,6 +17,7 @@ enum Trace {
         let lines = UserDefaults.standard.stringArray(forKey: key) ?? []
         print("[DBG-del] --- \(lines.count) lines from previous runs ---")
         lines.forEach { print("[DBG-del] \($0)") }
-        UserDefaults.standard.removeObject(forKey: key)
+        // Deliberately NOT cleared: dumping to a console nobody is attached to
+        // threw away the only copy last time.
     }
 }

@@ -89,6 +89,15 @@ final class CalendarService {
     /// Loads every occurrence between two dates. Querying by predicate is what
     /// expands recurring events for us — matching by identifier would return
     /// the series once and lose every repeat.
+    /// After an edit the store's cache still holds the old picture, so a
+    /// straight re-read reports the same events it did before — a saved event
+    /// went 10 to 10 in the trace. Resetting first is what makes a write
+    /// visible.
+    func reloadAfterEdit(from start: Date, to end: Date, anchor: Date) {
+        store.reset()
+        load(from: start, to: end, anchor: anchor)
+    }
+
     func load(from start: Date, to end: Date, anchor: Date) {
         guard access == .granted else {
             events = []
