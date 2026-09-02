@@ -25,7 +25,6 @@ struct ContentView: View {
     /// setting at all.
     @AppStorage(WheelMapping.bottomKey) private var bottomPrimary: WheelAction = .now
     @AppStorage(Haptics.key) private var hapticsEnabled = true
-    @AppStorage(WheelMapping.iconsKey) private var wheelShowsIcons = false
     @State private var eventsHidden = false
     @State private var isAllDayOpen = false
     @State private var isDayPickerOpen = false
@@ -174,8 +173,7 @@ struct ContentView: View {
                     lastDetent = (model.focusHour / Haptics.detentHours).rounded(.towardZero)
                 },
                 onPress: press,
-                bottomLabel: bottomPrimary == .calendar ? "DATE" : "NOW",
-                showsIcons: wheelShowsIcons
+                bottomLabel: bottomPrimary == .calendar ? "DATE" : "NOW"
             )
             .padding(.top, 16)
             .padding(.bottom, 24)

@@ -6,7 +6,7 @@ import SwiftUI
 /// Days are arcs here, the way they are everywhere else in the app: a whole arc
 /// is a day, half of one is a point in it. The exceptions borrow universal
 /// shapes where those read faster than restating the app's would — a grid of
-/// dots for the calendar.
+/// dots for the calendar, a lens for looking at one moment closely.
 ///
 /// The four directional marks share one construction: arrows, then a straight
 /// line, then that line rising into a day. One arrow steps an event and two
@@ -119,12 +119,6 @@ struct ActionMark: View {
             scallop(from: min(joint, far), to: max(joint, far), lobes: lobes, base: base, peak: 5)
         }
 
-        /// An event, drawn the way the arc draws one.
-        func capsule(x: CGFloat, width: CGFloat) {
-            line.addRoundedRect(in: CGRect(x: x, y: 8, width: width, height: 4),
-                                cornerSize: CGSize(width: 2, height: 2))
-        }
-
         switch mark {
         case .none:
             line.move(to: CGPoint(x: 5, y: 10))
@@ -201,7 +195,12 @@ struct ActionMark: View {
             }
 
         case .openEvent:
-            capsule(x: 3, width: 14)
+            // The day, a moment on it, and a lens over that moment. The dot
+            // sits on the curve rather than near it: its position is solved on
+            // the quad, not eyeballed.
+            scallop(from: 1, to: 19, lobes: 1, base: 16, peak: 4)
+            line.addEllipse(in: CGRect(x: 7.4, y: 5.7, width: 9.2, height: 9.2))
+            solid.addEllipse(in: CGRect(x: 10.5, y: 8.8, width: 3, height: 3))
 
         case .previousEvent:
             run(arrows: 1, lobes: 1, goingLeft: true)

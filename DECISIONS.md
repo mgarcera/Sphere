@@ -501,9 +501,16 @@ construction — arrows, a straight line, then that line rising into a day. One
 arrow steps an event and two step a day. Count carries the whole distinction,
 which survives the sixteen-point row where a difference in lobe counts did not.
 
-Icons on the wheel are a setting rather than a replacement: the printed words
-are the reference the control is built on. That switch and the haptics switch
-both live in the Wheel section, since both belong to the wheel.
+Icons on the wheel were tried behind a switch and removed. The printed words
+are the reference the whole control is built on, and marks made the four
+compass points lumpy where words gave them equal weight. The marks stay where
+they earn their place, in settings, naming actions that have no room for a
+word. The haptics switch stays in the Wheel section, since it belongs to the
+wheel.
+
+Restricting each position to its own pool is settled: the wheel keeps its shape
+and the lists stay short enough that grouping them would be scaffolding around
+nothing.
 
 ## The picker has no open state (2026-09-01)
 

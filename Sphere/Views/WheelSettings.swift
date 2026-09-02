@@ -12,7 +12,6 @@ struct WheelSettings: View {
     /// Bumped on every write, so the printed mappings re-read UserDefaults.
     @State private var revision = 0
     @State private var selected: WheelPosition = .bottom
-    @AppStorage(WheelMapping.iconsKey) private var wheelShowsIcons = false
     @AppStorage(Haptics.key) private var hapticsEnabled = true
     @State private var isConfirmingReset = false
 
@@ -53,17 +52,10 @@ struct WheelSettings: View {
     private func mark(_ position: WheelPosition, x: CGFloat, y: CGFloat) -> some View {
         let isSelected = position == selected
         let size: CGFloat = position == .previous || position == .next ? 17 : 10
-        return Group {
-            if wheelShowsIcons {
-                ActionMark(mark: position.tapMark, size: 18,
-                           color: isSelected ? Theme.ink : line)
-            } else {
-                Text(position.label)
-                    .font(.system(size: size, weight: size > 14 ? .medium : .semibold))
-                    .tracking(size > 14 ? 0 : 1.1)
-                    .foregroundStyle(isSelected ? Theme.ink : line)
-            }
-        }
+        return Text(position.label)
+            .font(.system(size: size, weight: size > 14 ? .medium : .semibold))
+            .tracking(size > 14 ? 0 : 1.1)
+            .foregroundStyle(isSelected ? Theme.ink : line)
             .frame(width: 44, height: 44)
             .background {
                 if isSelected {
@@ -76,19 +68,11 @@ struct WheelSettings: View {
             .animation(.easeOut(duration: 0.16), value: isSelected)
     }
 
-    /// Both switches belong to the wheel, so they live with it rather than in
-    /// a section of their own.
+    /// Haptics belong to the wheel, so the switch lives with it rather than in
+    /// a section of its own.
     private var switches: some View {
         VStack(spacing: 0) {
             Rectangle().fill(Theme.hairline).frame(height: 1)
-
-            Toggle(isOn: $wheelShowsIcons) {
-                Text("Icons instead of words")
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.ink)
-            }
-            .tint(Theme.controlAccent)
-            .padding(.vertical, 8)
 
             Toggle(isOn: $hapticsEnabled) {
                 Text("Haptics")
