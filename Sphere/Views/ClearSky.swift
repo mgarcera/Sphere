@@ -32,6 +32,13 @@ struct ClearSky: View, Equatable {
     let deck: SkyContinuous.Deck
     let variant: ClearSkyVariant
 
+    /// The scrub position, quantised. Everything else in this app moves because
+    /// the wheel moved, and a clock ticking on its own was the one thing that
+    /// did not — it also meant nine views redrawing while nothing was happening.
+    /// Stars wink as the sky passes instead, so an idle screen is perfectly
+    /// still and the cost is bounded by how fast a thumb can turn.
+    let blinkStep: Int
+
     /// Stars are a field and birds are an accident of a nice day, so their
     /// counts are not on the same scale. The middle deck draws neither: it is
     /// the one that would put them at the same altitude.
@@ -46,33 +53,54 @@ struct ClearSky: View, Equatable {
     private var drawsStars: Bool { deck == .high }
 
     var body: some View {
-        // Computed HERE, outside the timeline's closure, so the hashing and the
-        // trigonometry run once per update rather than once per frame. Left
-        // inside, nine of these recomputing every tick was the whole of the lag.
-        let marks = marks()
-
-        if drawsStars && !marks.isEmpty {
-            TimelineView(.animation(minimumInterval: 1.0 / 10, paused: false)) { timeline in
-                Canvas { context, _ in
-                    let phase = timeline.date.timeIntervalSinceReferenceDate
-                    for mark in marks { star(mark, in: &context, phase: phase) }
+        let marks = Self.marks(for: self)
+        Canvas { context, _ in
+            for mark in marks {
+                if drawsStars {
+                    star(mark, in: &context)
+                } else {
+                    bird(mark, in: &context)
                 }
             }
-            .frame(width: width, height: height)
-            .allowsHitTesting(false)
-        } else {
-            // Birds do not twinkle, so nothing here needs a clock.
-            Canvas { context, _ in
-                for mark in marks { bird(mark, in: &context) }
-            }
-            .frame(width: width, height: height)
-            .allowsHitTesting(false)
         }
+        .frame(width: width, height: height)
+        .allowsHitTesting(false)
     }
 
+    /// Birds hold still, so their decks ignore the scrub entirely and never
+    /// redraw while the wheel turns.
     static func == (a: ClearSky, b: ClearSky) -> Bool {
         a.daySeed == b.daySeed && a.deck == b.deck && a.variant == b.variant
             && a.width == b.width && a.height == b.height && a.hours == b.hours
+            && (!a.drawsStars || a.blinkStep == b.blinkStep)
+    }
+
+    // MARK: - Cache
+
+    private struct Key: Hashable {
+        let daySeed: Int
+        let deck: SkyContinuous.Deck
+        let variant: ClearSkyVariant
+        let width: CGFloat
+        let height: CGFloat
+    }
+
+    /// Where a mark sits never depends on the scrub, only on the day, so the
+    /// hashing and the trigonometry happen once per day rather than on every
+    /// redraw. Without this, winking on the scrub would have cost exactly what
+    /// winking on a clock did.
+    private static var cache: [Key: [Mark]] = [:]
+
+    private static func marks(for view: ClearSky) -> [Mark] {
+        let key = Key(daySeed: view.daySeed, deck: view.deck, variant: view.variant,
+                      width: view.width, height: view.height)
+        if let hit = cache[key] { return hit }
+        // Scrubbing far enough would otherwise grow this without bound; only a
+        // few days are ever mounted, so throwing the lot away costs one rebuild.
+        if cache.count > 60 { cache.removeAll(keepingCapacity: true) }
+        let built = view.buildMarks()
+        cache[key] = built
+        return built
     }
 
     // MARK: - Placement
@@ -93,7 +121,7 @@ struct ClearSky: View, Equatable {
             && entry.precipitation <= 0
     }
 
-    private func marks() -> [Mark] {
+    private func buildMarks() -> [Mark] {
         guard budget > 0, !hours.isEmpty else { return [] }
         let byHour = Dictionary(uniqueKeysWithValues: hours.map { ($0.hour, $0) })
         var result: [Mark] = []
@@ -149,12 +177,13 @@ struct ClearSky: View, Equatable {
 
     // MARK: - Drawing
 
-    /// On or off, never in between. Each star keeps its own period and phase,
-    /// and the off window is short, so the field winks rather than pulses.
-    private func star(_ mark: Mark, in context: inout GraphicsContext, phase: Double) {
-        let period = 3.0 + SkyMarks.jitter(daySeed, mark.salt &+ 601) * 5.0
-        let offset = SkyMarks.jitter(daySeed, mark.salt &+ 809) * period
-        guard (phase + offset).truncatingRemainder(dividingBy: period) > period * 0.14 else { return }
+    /// On or off, never in between. Each star keeps its own period and phase
+    /// against the scrub, and the off window is short, so passing sky winks
+    /// rather than strobes.
+    private func star(_ mark: Mark, in context: inout GraphicsContext) {
+        let period = 7 + Int(SkyMarks.jitter(daySeed, mark.salt &+ 601) * 12)
+        let offset = Int(SkyMarks.jitter(daySeed, mark.salt &+ 809) * Double(period))
+        guard (blinkStep &+ offset) % period != 0 else { return }
 
         let radius: CGFloat = 2.4
         var path = Path()
