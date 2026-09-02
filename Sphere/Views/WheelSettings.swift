@@ -12,8 +12,6 @@ struct WheelSettings: View {
     /// Bumped on every write, so the printed mappings re-read UserDefaults.
     @State private var revision = 0
     @State private var selected: WheelPosition = .bottom
-    // TEMPORARY — icon direction study.
-    @State private var iconStyle: IconStyle = .words
 
     private static let diameter: CGFloat = 168
     private static let buttonRatio: CGFloat = 0.383
@@ -27,8 +25,6 @@ struct WheelSettings: View {
         VStack(spacing: 16) {
             wheel
             assignment
-            studySwitcher
-            legend
         }
         .padding(.vertical, 4)
     }
@@ -69,38 +65,6 @@ struct WheelSettings: View {
             .animation(.easeOut(duration: 0.16), value: isSelected)
     }
 
-    // TEMPORARY — icon direction study. Strip with ActionMark.swift.
-    private var studySwitcher: some View {
-        Picker("Icons", selection: $iconStyle) {
-            ForEach(IconStyle.allCases) { style in
-                Text(style.title).tag(style)
-            }
-        }
-        .pickerStyle(.segmented)
-        .padding(.top, 8)
-    }
-
-    // TEMPORARY — the whole set at once, which is the only way to judge an
-    // icon set rather than one icon.
-    private var legend: some View {
-        VStack(spacing: 0) {
-            ForEach(WheelAction.allCases) { action in
-                HStack(spacing: 12) {
-                    ActionGlyph(action: action, style: iconStyle)
-                    Text(action.title)
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.ink)
-                    Spacer()
-                }
-                .padding(.vertical, 9)
-
-                if action != WheelAction.allCases.last {
-                    Rectangle().fill(Theme.hairline).frame(height: 1)
-                }
-            }
-        }
-    }
-
     /// What the selected position does, both ways round.
     @ViewBuilder
     private var assignment: some View {
@@ -132,7 +96,7 @@ struct WheelSettings: View {
                 picker
             } else {
                 HStack(spacing: 8) {
-                    ActionGlyph(action: action, style: iconStyle, color: Theme.mutedLight)
+                    ActionMark(action: action, color: Theme.mutedLight)
                     Text(value)
                         .font(.subheadline)
                         .foregroundStyle(Theme.mutedLight)

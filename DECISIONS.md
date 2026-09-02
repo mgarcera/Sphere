@@ -474,3 +474,22 @@ staying set to something settings can no longer show.
 
 Hold threshold is 0.25s, down from 0.35s. Below about a fifth of a second taps
 and holds start trading places.
+
+## Bespoke marks, drawn in the arc's line (2026-09-01)
+
+Three variants were built and switched live: words only, SF Symbols at
+ultraLight, and hand-drawn marks. Bespoke won.
+
+Drawn at 1.3 stroke with round caps and joins, in a 20-point box, no fill
+except where a dot is the point. That is the same family as the sky marks, one
+step lighter than the arc's 1.5.
+
+Days are arcs here, so the marks say it that way: NOW is the arc with its time
+dot, stepping a day is a run of three arcs with an arrow on the end, opening in
+Calendar is a day with an arrow leaving it. The one exception is the calendar
+itself, a grid of dots four across and three down, because the universal shape
+reads faster there than restating the app's would.
+
+Known limit: iOS context menus render only text and `Image`, so the marks
+cannot appear inside the picker dropdowns. They sit in the printed rows. If the
+marks are wanted in the picker too, the picker has to stop being a system menu.
