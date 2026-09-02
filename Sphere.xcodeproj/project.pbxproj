@@ -367,8 +367,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = T89Z7YKXVC;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "SphereWidget-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Sphere;
-				INFOPLIST_KEY_NSExtensionPointIdentifier = com.apple.widgetkit-extension;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -394,8 +394,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = T89Z7YKXVC;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "SphereWidget-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Sphere;
-				INFOPLIST_KEY_NSExtensionPointIdentifier = com.apple.widgetkit-extension;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (

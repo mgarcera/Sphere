@@ -649,3 +649,37 @@ inside it. Warping the path is simpler, sharper and has no dependencies.
 
 New is a plain plus. The lens beside it already says event, so restating that
 in the second mark only made the pair rhyme.
+
+## The lock screen, and the shared layer under it (2026-09-02)
+
+A widget runs in its own process with none of the app's services: no event
+store, no location manager, no forecast. So `Shared/` became a synchronized
+group belonging to both targets, holding the solar math and one snapshot
+struct.
+
+Only the inputs travel. The sun is arithmetic, so the coordinate and its
+timezone go across and the curve never does. The next event does go across as
+a result, since a widget has no event store unless it asks for calendar access
+of its own, and one permission prompt is enough for one app.
+
+The timeline hands over eight hours in ten-minute steps at once. A widget gets
+a few dozen reloads a day and most of them would be spent on a position that
+can simply be calculated, so precomputing costs nothing and moves the dot
+smoothly. Only the next event goes stale, and the app reloads the timeline
+whenever it changes.
+
+The accessory arc is drawn for its size rather than shrunk from the app. The
+main arc is 24 hours across roughly eight screen widths, so locally it reads
+nearly flat; the same day squeezed into a lock-screen accessory becomes a
+proper hill, which is the only reason it is legible that small.
+
+Two traps in the project file, both silent. A nested dictionary cannot be
+expressed as a flat `INFOPLIST_KEY_`, so `NSExtensionPointIdentifier` was
+dropped and the extension shipped with no extension point at all — it built
+and signed, and only failed at install. And an `Info.plist` inside a
+synchronized folder is copied as a resource as well as being the target's
+`INFOPLIST_FILE`, which collides; it lives outside that folder now.
+
+Still to do: the App Groups capability. `xcodebuild` cannot add it, so the
+entitlements files exist but are not referenced and the widget currently reads
+nothing.
