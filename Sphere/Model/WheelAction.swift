@@ -102,13 +102,19 @@ enum WheelPosition: String, CaseIterable, Identifiable {
     /// haptics could sit on a chevron would have five slots and no shape.
     var assignableActions: [WheelAction] {
         switch self {
+        // A chevron already steps by event; its secondary steps by day. Sending
+        // one to NOW or the calendar would have it leave the run it is walking.
         case .previous, .next:
-            [.none, .now, .calendar, .previousDay, .nextDay, .newAllDay]
+            [.none, .previousDay, .nextDay]
         case .menu:
             [.none, .appearance, .search, .openCalendarApp, .muteHaptics]
-        // Fixed: the centre makes events and nothing else, and the bottom's
-        // hold is whichever of the pair its tap is not.
-        case .centre, .bottom:
+        // The centre makes events and nothing else, so its only real choice is
+        // whether it makes the day-scale kind at all.
+        case .centre:
+            [.none, .newAllDay]
+        // Fixed: the bottom's secondary is whichever of the pair its primary is
+        // not, so offering None here would orphan the other one.
+        case .bottom:
             []
         }
     }
@@ -137,10 +143,8 @@ enum WheelMapping {
     }
 
     static func hold(for position: WheelPosition) -> WheelAction {
-        switch position {
-        case .bottom: return bottomPrimary == .now ? .calendar : .now
-        case .centre: return .newAllDay
-        default: break
+        if position == .bottom {
+            return bottomPrimary == .now ? .calendar : .now
         }
         guard let raw = UserDefaults.standard.string(forKey: position.storageKey),
               let action = WheelAction(rawValue: raw),
