@@ -458,6 +458,7 @@ struct ContentView: View {
         // The event containing the real now, not the one under the wheel: the
         // activity is about what is happening, not about what is being looked at.
         LiveActivity.sync(event: model.eventContainingNow,
+                          day: model.timedEvents,
                           anchor: model.anchor,
                           now: model.realNow,
                           coordinate: location.coordinate,

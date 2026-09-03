@@ -9,9 +9,14 @@ import Foundation
 /// push it — a Live Activity cannot animate a drawn mark on its own.
 struct DayActivityAttributes: ActivityAttributes {
     struct ContentState: Codable, Hashable {
-        /// The last time the app was able to say where the sun was. The clock
-        /// and the progress bar keep running without it; the dot does not.
+        /// The last time the app was able to say where the sun was. Nothing
+        /// else in the activity moves, so this holding still is the whole
+        /// consequence of not being pushed.
         var now: Date
+        /// The rest of the day, so the activity is an overview rather than a
+        /// report on one event. In the state and not the attributes, since the
+        /// day can gain an event while this one is still running.
+        var events: [SnapshotEvent]
     }
 
     var title: String

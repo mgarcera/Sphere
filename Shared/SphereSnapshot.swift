@@ -8,7 +8,7 @@ import Foundation
 /// Anything it cannot compute — the next event — is written across as a result.
 /// Just the span. The widget draws where an event sits on the day, not what it
 /// says, so a title per event would be payload nobody reads.
-struct SnapshotEvent: Codable, Equatable {
+struct SnapshotEvent: Codable, Hashable {
     var start: Date
     var end: Date
 }

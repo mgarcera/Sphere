@@ -10,9 +10,14 @@ import Foundation
 enum LiveActivity {
     private static var current: Activity<DayActivityAttributes>?
 
-    static func sync(event: CalendarEvent?, anchor: Date, now: Date,
+    static func sync(event: CalendarEvent?, day: [CalendarEvent], anchor: Date, now: Date,
                      coordinate: Coordinate, timeZone: TimeZone) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+
+        let spans = day.map {
+            SnapshotEvent(start: anchor.addingTimeInterval($0.startHour * 3600),
+                          end: anchor.addingTimeInterval($0.endHour * 3600))
+        }
 
         guard let event else { return end() }
         let start = anchor.addingTimeInterval(event.startHour * 3600)
@@ -22,7 +27,9 @@ enum LiveActivity {
         // Already running for this event: move the dot and leave it alone.
         if let current, current.attributes.title == event.title,
            abs(current.attributes.start.timeIntervalSince(start)) < 1 {
-            Task { await current.update(.init(state: .init(now: now), staleDate: nil)) }
+            Task {
+                await current.update(.init(state: .init(now: now, events: spans), staleDate: nil))
+            }
             return
         }
 
@@ -36,7 +43,7 @@ enum LiveActivity {
                 longitude: coordinate.longitude,
                 timeZoneIdentifier: timeZone.identifier
             ),
-            content: .init(state: .init(now: now), staleDate: nil)
+            content: .init(state: .init(now: now, events: spans), staleDate: nil)
         )
     }
 

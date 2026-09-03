@@ -721,3 +721,24 @@ position simply holds otherwise.
 The minimal presentation is one dot at the height the sun actually is. It is
 the whole app at its smallest, and the only thing that fits in that space that
 still means something.
+
+### Amended the same day: no countdown, and an overview instead
+
+A number falling towards zero is the one thing that turns a calm surface into
+a deadline, and nothing else in this app ticks. The countdown is gone from the
+lock screen, the compact presentation and the expanded one. Where it stood
+there is now the event's span, which states the same fact without counting
+down to it.
+
+So the activity shows the whole day with every event on it and the current one
+picked out, rather than reporting on one event. The day travels in the content
+state rather than the attributes, since a day can gain an event while one is
+still running.
+
+That is also honest about what a Live Activity can do. It redraws only when a
+new state is pushed, so anything that had to move by itself would have to be
+the system's own timer — which is exactly the ticking thing.
+
+Where nothing is coming, the widgets say nothing. A place name in that space
+was filling a line rather than carrying information, and an empty day should
+look empty.

@@ -4,10 +4,14 @@ import WidgetKit
 
 /// The event you are in, on the lock screen and in the Dynamic Island.
 ///
-/// The arc is static for the length of the activity, which is correct: the day
-/// does not change while one event runs. What moves is the countdown and the
-/// bar, both of which the system runs itself from a date range with no updates
-/// at all. The dot moves only when the app is there to push it.
+/// An overview of the day, not a report on one event. A countdown was tried
+/// and removed: a number falling towards zero is the one thing that turns a
+/// calm surface into a deadline, and nothing else in this app ticks.
+///
+/// So it shows the whole arc with every event on it and the current one picked
+/// out. That is also honest about what a Live Activity can do — it redraws only
+/// when a new state is pushed, so anything that had to move on its own would
+/// have to be the system's own timer, which is exactly the ticking thing.
 struct DayActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: DayActivityAttributes.self) { context in
@@ -23,11 +27,9 @@ struct DayActivityWidget: Widget {
                         .lineLimit(1)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text(timerInterval: context.attributes.start...context.attributes.end,
-                         countsDown: true)
-                        .font(.system(size: 15, weight: .medium))
+                    Text(span(context))
+                        .font(.system(size: 13))
                         .monospacedDigit()
-                        .multilineTextAlignment(.trailing)
                         .foregroundStyle(Theme.mutedLight)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
@@ -40,14 +42,23 @@ struct DayActivityWidget: Widget {
                 ActivityDot(context: context)
                     .frame(width: 18, height: 18)
             } compactTrailing: {
-                Text(timerInterval: context.attributes.start...context.attributes.end,
-                     countsDown: true)
-                    .monospacedDigit()
-                    .frame(width: 44)
+                Text(context.attributes.title)
+                    .font(.system(size: 13))
+                    .lineLimit(1)
+                    .frame(maxWidth: 76)
             } minimal: {
                 ActivityDot(context: context)
             }
         }
+    }
+
+    /// When it runs, not how long is left. The same two clock times the header
+    /// shows, which state the fact without counting down to it.
+    private func span(_ context: ActivityViewContext<DayActivityAttributes>) -> String {
+        let zone = context.attributes.timeZone
+        var style = Date.FormatStyle.dateTime.hour().minute()
+        style.timeZone = zone
+        return "\(context.attributes.start.formatted(style)) – \(context.attributes.end.formatted(style))"
     }
 
     private func lockScreen(_ context: ActivityViewContext<DayActivityAttributes>) -> some View {
@@ -58,12 +69,10 @@ struct DayActivityWidget: Widget {
                     .foregroundStyle(Theme.ink)
                     .lineLimit(1)
                 Spacer(minLength: 12)
-                Text(timerInterval: context.attributes.start...context.attributes.end,
-                     countsDown: true)
-                    .font(.system(size: 14, weight: .medium))
+                Text(span(context))
+                    .font(.system(size: 13))
                     .monospacedDigit()
                     .foregroundStyle(Theme.mutedLight)
-                    .frame(width: 62, alignment: .trailing)
             }
             ActivityArc(context: context)
                 .frame(height: 46)
@@ -83,7 +92,8 @@ struct ActivityArc: View {
                            timeZone: attributes.timeZone)
         HomeArc(day: day,
                 hour: hourOfDay(context.state.now),
-                events: [span(day)])
+                events: spans(),
+                highlight: current())
     }
 
     private func hourOfDay(_ date: Date) -> Double {
@@ -92,10 +102,21 @@ struct ActivityArc: View {
         return date.timeIntervalSince(calendar.startOfDay(for: date)) / 3600
     }
 
-    private func span(_ day: SolarDay) -> ClosedRange<Double> {
+    /// Every event of the day, so the activity is the day rather than the one
+    /// event that happens to be running.
+    private func spans() -> [ClosedRange<Double>] {
+        context.state.events.compactMap { event in
+            let start = hourOfDay(event.start)
+            let end = hourOfDay(event.end)
+            guard end > 0, start < 24 else { return nil }
+            let low = max(0, start)
+            return low...min(24, max(end, low + 0.35))
+        }
+    }
+
+    private func current() -> ClosedRange<Double> {
         let low = max(0, hourOfDay(context.attributes.start))
-        let high = min(24, max(hourOfDay(context.attributes.end), low + 0.35))
-        return low...high
+        return low...min(24, max(hourOfDay(context.attributes.end), low + 0.35))
     }
 }
 

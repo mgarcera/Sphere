@@ -63,12 +63,8 @@ struct HomeArcView: View {
                     .foregroundStyle(Theme.ink)
                     .lineLimit(family == .systemMedium ? 1 : 2)
             }
-        } else {
-            Text(snapshot.placeName)
-                .font(.display(family == .systemMedium ? 19 : 16))
-                .foregroundStyle(Theme.ink)
-                .lineLimit(1)
         }
+        // Nothing coming, nothing said. An empty day should look empty.
     }
 
     /// Sunrise and sunset under the curve they belong to, so the arc is labelled
@@ -119,6 +115,9 @@ struct HomeArc: View {
     let day: SolarDay
     let hour: Double
     var events: [ClosedRange<Double>] = []
+    /// Drawn at full strength while the rest of the day sits back, so an
+    /// overview still says which one you are in.
+    var highlight: ClosedRange<Double>?
 
     var body: some View {
         Canvas { context, size in
@@ -153,8 +152,10 @@ struct HomeArc: View {
                     let point = CGPoint(x: x(h), y: y(h))
                     if step == 0 { capsule.move(to: point) } else { capsule.addLine(to: point) }
                 }
-                context.stroke(capsule, with: .color(Theme.taskActive),
-                               style: StrokeStyle(lineWidth: 3.4, lineCap: .round))
+                let isCurrent = highlight.map { abs($0.lowerBound - span.lowerBound) < 0.01 } ?? false
+                context.stroke(capsule,
+                               with: .color(isCurrent ? Theme.taskActive : Theme.taskInactive),
+                               style: StrokeStyle(lineWidth: isCurrent ? 4 : 2.6, lineCap: .round))
             }
 
             let dot = CGPoint(x: x(hour), y: y(hour))
