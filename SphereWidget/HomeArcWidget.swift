@@ -52,15 +52,20 @@ struct HomeArcView: View {
     private func header(_ snapshot: SphereSnapshot) -> some View {
         if let title = snapshot.nextEventTitle, let start = snapshot.nextEventStart,
            start > entry.date {
-            VStack(alignment: .leading, spacing: 3) {
-                // The wheel's own next-event mark rather than the word. The
-                // app already says "next" with this shape, and a widget has
-                // less room to spend on a label than the wheel does.
-                ActionMark(mark: .nextEvent, size: 15, color: Theme.mutedLight)
+            // The wheel's own next-event mark rather than the word, and at the
+            // END of the title: it reads as the title carrying on into what
+            // comes next rather than as a label sitting over it. In ink at full
+            // strength, since it is the sentence and not an annotation on one.
+            HStack(alignment: .lastTextBaseline, spacing: 6) {
                 Text(title)
                     .font(.display(family == .systemMedium ? 19 : 16))
                     .foregroundStyle(Theme.ink)
                     .lineLimit(family == .systemMedium ? 1 : 2)
+
+                ActionMark(mark: .nextEvent, size: 15, color: Theme.ink)
+                    // A canvas has no baseline of its own, so it would hang off
+                    // its own bottom edge and sit low against the type.
+                    .alignmentGuide(.lastTextBaseline) { $0[.bottom] - 3 }
             }
         }
         // Nothing coming, nothing said. An empty day should look empty.
