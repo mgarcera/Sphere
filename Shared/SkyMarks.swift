@@ -6,6 +6,44 @@ import SwiftUI
 /// hand-placed rather than stamped, it is perturbed by a hash of the day and
 /// hour, so it is identical on every redraw and the sky does not shimmer while
 /// the wheel turns.
+/// The size-dependent half of the sky: how far the decks stand off the curve,
+/// how big a lobe is, and how heavy the line is.
+///
+/// The lock-screen arc established that a drawing is made for its size rather
+/// than shrunk from the app's, and the sky is the case that proves it. Shrinking
+/// everything by a third would give five-point clouds under a stroke still a
+/// point and a third wide, which reads as scribble. So the decks come in and the
+/// lobes get WIDER in hours: 24 hours across a widget is 14 points an hour, and
+/// a lobe measured in hours has to grow to stay a cloud.
+struct SkyScale: Equatable {
+    var lowOffset: CGFloat
+    var midOffset: CGFloat
+    var highOffset: CGFloat
+    /// Multiplies every lobe height, storm lobes included.
+    var amplitude: CGFloat
+    /// Hours per lobe.
+    var lobeHours: Double
+    var stroke: StrokeStyle
+
+    static let app = SkyScale(
+        lowOffset: SkyMarks.lowOffset,
+        midOffset: SkyMarks.midOffset,
+        highOffset: SkyMarks.highOffset,
+        amplitude: 1,
+        lobeHours: 0.40,
+        stroke: SkyMarks.stroke
+    )
+
+    static let widget = SkyScale(
+        lowOffset: 24,
+        midOffset: 33,
+        highOffset: 42,
+        amplitude: 0.55,
+        lobeHours: 1.15,
+        stroke: StrokeStyle(lineWidth: 1, lineCap: .round, lineJoin: .round)
+    )
+}
+
 enum SkyMarks {
     static let stroke = StrokeStyle(lineWidth: 1.3, lineCap: .round, lineJoin: .round)
 

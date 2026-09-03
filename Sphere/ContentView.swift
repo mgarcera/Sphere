@@ -474,7 +474,16 @@ struct ContentView: View {
                     start: model.anchor.addingTimeInterval(event.startHour * 3600),
                     end: model.anchor.addingTimeInterval(event.endHour * 3600)
                 )
-            }
+            },
+            // Today and tomorrow: a widget's timeline runs eight hours forward
+            // and crosses midnight, and the day the hours belong to is what
+            // makes them safe to draw.
+            sky: [model.todayIndex, model.todayIndex + 1].compactMap { index in
+                let hours = model.sky(forDayIndex: index)
+                guard !hours.isEmpty else { return nil }
+                return SnapshotSky(dayStart: model.date(forDayIndex: index), hours: hours)
+            },
+            skyFetchedAt: weather.fetchedAt
         ))
         WidgetCenter.shared.reloadAllTimelines()
 

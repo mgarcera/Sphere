@@ -18,10 +18,13 @@ struct SkyContinuous: View, Equatable {
     let daySeed: Int
     /// One deck per view, so the three can be panned at three rates.
     let deck: Deck
-
-    /// Roughly a third of an hour per lobe, which is a cloud-sized bump at the
-    /// three-hour zoom.
-    private static let lobeHours = 0.40
+    /// How far out the decks stand and how big a lobe is. The app's numbers are
+    /// tuned for a day spread over eight screens; a widget holds the same day in
+    /// one and needs its own.
+    var scale: SkyScale = .app
+    /// The box the curve sits in, which the sky has to agree with or it floats
+    /// off its own arc.
+    var geometry: ArcGeometry = .app
 
     var body: some View {
         Canvas { context, _ in
@@ -37,7 +40,7 @@ struct SkyContinuous: View, Equatable {
                     let fall = curtain(run, byHour: byHour)
                     context.stroke(fall.far, with: faint,
                                    style: StrokeStyle(lineWidth: 0.9, lineCap: .round))
-                    context.stroke(fall.near, with: ink, style: SkyMarks.stroke)
+                    context.stroke(fall.near, with: ink, style: scale.stroke)
                 }
             }
 
@@ -45,7 +48,7 @@ struct SkyContinuous: View, Equatable {
                                              && !stormHours.contains($0.hour) }) {
                 let path = lobedSilhouette(run, deck: deck, byHour: byHour)
                 context.fill(path, with: ground)
-                context.stroke(path, with: ink, style: SkyMarks.stroke)
+                context.stroke(path, with: ink, style: scale.stroke)
             }
 
             // A storm is this same deck with much bigger lobes and coverage
@@ -53,19 +56,19 @@ struct SkyContinuous: View, Equatable {
             for run in runs(byHour, where: { $0.isConvective }) {
                 let path = stormLayer(run, deck: deck)
                 context.fill(path, with: ground)
-                context.stroke(path, with: ink, style: SkyMarks.stroke)
+                context.stroke(path, with: ink, style: scale.stroke)
             }
 
             if deck == .low {
                 for entry in hours where entry.hasLightning {
-                    context.stroke(strike(at: entry), with: ink, style: SkyMarks.stroke)
+                    context.stroke(strike(at: entry), with: ink, style: scale.stroke)
                 }
                 for run in runs(byHour, where: { $0.condition == .fog }) {
-                    context.stroke(fog(run), with: ink, style: SkyMarks.stroke)
+                    context.stroke(fog(run), with: ink, style: scale.stroke)
                 }
             }
         }
-        .frame(width: width, height: ArcGeometry.totalHeight(height), alignment: .topLeading)
+        .frame(width: width, height: geometry.totalHeight(height), alignment: .topLeading)
     }
 
     /// Where the band sits and which way it leans, from the curve this layer
@@ -75,7 +78,7 @@ struct SkyContinuous: View, Equatable {
         let delta = 0.35
         func x(_ h: Double) -> CGFloat { width * (h / 24) }
         func y(_ h: Double) -> CGFloat {
-            ArcGeometry.y(normalized: day.normalizedElevation(atHour: h), height: height)
+            geometry.y(normalized: day.normalizedElevation(atHour: h), height: height)
         }
         let angle = atan2(y(hour + delta) - y(hour - delta), x(hour + delta) - x(hour - delta))
         return (CGPoint(x: x(hour), y: y(hour)), angle)
@@ -101,32 +104,32 @@ struct SkyContinuous: View, Equatable {
             }
         }
 
-        var offset: CGFloat {
+        func offset(_ scale: SkyScale) -> CGFloat {
             switch self {
-            case .high: SkyMarks.highOffset
-            case .mid: SkyMarks.midOffset
-            case .low: SkyMarks.lowOffset
+            case .high: scale.highOffset
+            case .mid: scale.midOffset
+            case .low: scale.lowOffset
             }
         }
 
         /// How tall the lobes get at full coverage. Bulkier than the deck
         /// spacing in places, deliberately: a low cloud passing in front of a
         /// mid one is what the background fill is there to handle.
-        var amplitude: CGFloat {
+        func amplitude(_ scale: SkyScale) -> CGFloat {
             switch self {
-            case .high: 7
-            case .mid: 10
-            case .low: 14
+            case .high: 7 * scale.amplitude
+            case .mid: 10 * scale.amplitude
+            case .low: 14 * scale.amplitude
             }
         }
 
         /// Lobe size for a storm: the same three positions, roughly doubled,
         /// which is what makes a storm read as heavy rather than as tall.
-        var stormAmplitude: CGFloat {
+        func stormAmplitude(_ scale: SkyScale) -> CGFloat {
             switch self {
-            case .high: 14
-            case .mid: 20
-            case .low: 28
+            case .high: 14 * scale.amplitude
+            case .mid: 20 * scale.amplitude
+            case .low: 28 * scale.amplitude
             }
         }
 
@@ -200,10 +203,10 @@ struct SkyContinuous: View, Equatable {
     private func lobedSilhouette(_ run: ClosedRange<Int>, deck: Deck, byHour: [Int: SkyHour]) -> Path {
         scallopedMass(
             from: Double(run.lowerBound), to: Double(run.upperBound) + 1,
-            baseOut: deck.offset,
-            plinth: deck.amplitude * 0.78,
-            peakAmplitude: deck.amplitude,
-            lobeHours: Self.lobeHours,
+            baseOut: deck.offset(scale),
+            plinth: deck.amplitude(scale) * 0.78,
+            peakAmplitude: deck.amplitude(scale),
+            lobeHours: scale.lobeHours,
             salt: deck.saltBase &+ run.lowerBound &* 31,
             coverage: { hour in self.reading(byHour, at: hour).map { deck.coverage($0) } ?? 0 }
         )
@@ -311,10 +314,10 @@ struct SkyContinuous: View, Equatable {
     private func stormLayer(_ run: ClosedRange<Int>, deck: Deck) -> Path {
         scallopedMass(
             from: Double(run.lowerBound), to: Double(run.upperBound) + 1,
-            baseOut: deck.offset,
-            plinth: deck.stormAmplitude * 0.78,
-            peakAmplitude: deck.stormAmplitude,
-            lobeHours: Self.lobeHours,
+            baseOut: deck.offset(scale),
+            plinth: deck.stormAmplitude(scale) * 0.78,
+            peakAmplitude: deck.stormAmplitude(scale),
+            lobeHours: scale.lobeHours,
             salt: deck.saltBase &+ run.lowerBound &* 31 &+ 4_099,
             coverage: { _ in 1 }
         )
@@ -334,7 +337,7 @@ struct SkyContinuous: View, Equatable {
     private func curtain(_ run: ClosedRange<Int>, byHour: [Int: SkyHour]) -> (near: Path, far: Path) {
         var near = Path()
         var far = Path()
-        let base = SkyMarks.lowOffset - 4
+        let base = scale.lowOffset - 4 * scale.amplitude
 
         for hour in run {
             guard let entry = byHour[hour] else { continue }
@@ -394,7 +397,7 @@ struct SkyContinuous: View, Equatable {
             let salt = entry.hour &* 211 &+ index
             let at = Double(entry.hour) + 0.25 + 0.5 * SkyMarks.jitter(daySeed, salt)
             let height = CGFloat(13 + SkyMarks.jitter(daySeed, salt &+ 41) * 10)
-            let anchor = point(hour: at, out: SkyMarks.lowOffset - 6)
+            let anchor = point(hour: at, out: scale.lowOffset - 6 * scale.amplitude)
             let base = placement(at)
             var transform = CGAffineTransform(translationX: anchor.x, y: anchor.y)
             transform = transform.rotated(by: base.angle)
@@ -406,7 +409,7 @@ struct SkyContinuous: View, Equatable {
     private func fog(_ run: ClosedRange<Int>) -> Path {
         var path = Path()
         for hour in run {
-            let anchor = point(hour: Double(hour) + 0.5, out: SkyMarks.lowOffset - 12)
+            let anchor = point(hour: Double(hour) + 0.5, out: scale.lowOffset - 12 * scale.amplitude)
             let base = placement(Double(hour) + 0.5)
             var transform = CGAffineTransform(translationX: anchor.x, y: anchor.y)
             transform = transform.rotated(by: base.angle)

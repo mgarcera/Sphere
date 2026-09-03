@@ -135,3 +135,12 @@ private extension Double {
     /// The equation of time is assembled in radians before being scaled to minutes.
     var inDegrees: Double { self / degreesToRadians }
 }
+
+/// Lives here rather than beside the model because the sky drawing uses it and
+/// the widget compiles that without the app's half of the project. The
+/// standard library has its own `clamped`, but it is package-internal.
+extension Comparable {
+    func clamped(to range: ClosedRange<Self>) -> Self {
+        min(max(self, range.lowerBound), range.upperBound)
+    }
+}
