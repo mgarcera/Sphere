@@ -257,8 +257,11 @@ Switches and pickers tint with `ControlAccent`, not `Ink`. In dark mode ink is
 nearly white, and a near-white track under a white knob makes a toggle read as
 one solid white pill with no visible state. A two-card grid and a tightened list were built,
 compared on device and removed.
-- **Monetization**, which decides whether Open-Meteo's non-commercial free tier
-  is enough or WeatherKit is needed. Deferred to a 6pm block, 2026-09-01.
+- ~~**Monetization**, which decides whether Open-Meteo's non-commercial free tier
+  is enough or WeatherKit is needed.~~ Closed 2026-09-02: the app is not being
+  monetized, so the free tier stands and WeatherKit is not needed. This is also
+  what makes a widget fetching its own forecast a live option rather than a
+  licensing question.
 - **The tilt of the sky band is gentle**, about 8° at most, because a day is
   eight screens wide and the arc is 190pt tall. Exaggerating it is a one-line
   multiplier if the spatial effect needs more.
@@ -742,3 +745,68 @@ the system's own timer — which is exactly the ticking thing.
 Where nothing is coming, the widgets say nothing. A place name in that space
 was filling a line rather than carrying information, and an empty day should
 look empty.
+
+## The sun decides light and dark (2026-09-02)
+
+"Auto" is "System", which is what it always was: the device's setting. The
+fourth mode is the app's own, and it reads the sun's elevation — the same
+number the arc's height comes from, so sunrise needs no trigger of its own. It
+is simply where that crosses zero.
+
+**It follows the wheel, not the real now.** The alternative was to anchor it to
+the actual moment, the way the menu's sun, moon and weather are anchored. That
+would be the calm choice and it is the wrong one here: the whole screen is a
+drawing of the hour you are on, and scrubbing into the evening while the screen
+stays bright is the app disagreeing with itself. Now the surface goes over with
+you. The menu's material stays anchored to the real now, because that block is a
+reference for the day rather than a picture of the hour.
+
+A threshold at zero would strobe. The wheel can be parked on a crossing and
+jogged, so the mode holds what it last decided inside half a degree either side
+of the horizon — about the sun's own width, and two minutes of a day. That
+memory lives in the view, since the enum is a value and has nowhere to keep it.
+
+The name is Sun, over Daylight, Solar and Sundial. System, Light and Dark each
+name the authority that decides; this one names its authority too, and it is the
+app's own word. It is the only one of the four that needs a line under it, since
+it names its source rather than its effect.
+
+The wheel's light/dark action still lands on an explicit setting, but it now
+computes what is on screen from the resolved scheme rather than from the system
+one, or flipping out of Sun would have landed on whatever the device happened to
+be doing.
+
+## Weather on a large widget (2026-09-02)
+
+The sky is the whole reason the large family exists. Everything else the tile
+shows fits in a medium; the decks need vertical room that medium does not have.
+
+**The drawing is shared, the scale is not.** `SkyContinuous`, `ClearSky`,
+`SkyMarks` and `ArcGeometry` moved to `Shared/`, and a `SkyScale` moved with
+them. Shrinking everything by a third would have given five-point clouds under a
+stroke still a point and a third wide, which reads as scribble. So the decks
+come in, the lobes get WIDER in hours — 24 hours across a widget is 14 points an
+hour, and a lobe measured in hours has to grow to stay a cloud — and the stroke
+comes down to a point. Same code, same hand, different size: the rule the lock
+screen accessory set.
+
+`ArcGeometry` became a value to make that possible. The app reads it off the
+type exactly as before; the widget builds one shaped like `HomeArc`'s own box,
+full height at peak over `arcHeight - 3`, or the clouds would follow a curve the
+visible arc never takes.
+
+**The forecast rides in the snapshot.** It is the one thing a widget cannot work
+out from a coordinate and a clock, and unlike the next event it is not a single
+fact, so it is the only real payload in there: about forty-eight hours at a few
+hundred bytes each. Two days, because a timeline runs eight hours forward and
+crosses midnight, and each day carries the day it belongs to.
+
+It also carries when it was fetched. Past twelve hours, or on a day the app
+never wrote, the sky is left out rather than guessed at — a forecast for the
+right day is still a forecast, but half a day after it was fetched it is the
+app's memory of the weather rather than the weather.
+
+The widget's own network fetch was the other option and is not needed for this:
+Open-Meteo is a keyless GET and a timeline provider may make one, but it wants
+its own cache for offline and its own copy of the provider layer, for freshness
+the app's own launches mostly supply.
