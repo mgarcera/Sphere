@@ -16,7 +16,8 @@ enum LiveActivity {
 
         let spans = day.map {
             SnapshotEvent(start: anchor.addingTimeInterval($0.startHour * 3600),
-                          end: anchor.addingTimeInterval($0.endHour * 3600))
+                          end: anchor.addingTimeInterval($0.endHour * 3600),
+                          color: $0.snapshotColor)
         }
 
         guard let event else { return end() }

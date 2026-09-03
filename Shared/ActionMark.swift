@@ -22,36 +22,6 @@ enum Mark {
     case menu, openEvent, newEvent, previousEvent, nextEvent
 }
 
-extension WheelAction {
-    var mark: Mark {
-        switch self {
-        case .none: .none
-        case .now: .now
-        case .calendar: .calendar
-        case .previousDay: .previousDay
-        case .nextDay: .nextDay
-        case .newAllDay: .newAllDay
-        case .appearance: .appearance
-        case .search: .search
-        case .openCalendarApp: .openCalendarApp
-        case .muteHaptics: .muteHaptics
-        }
-    }
-}
-
-extension WheelPosition {
-    /// What tapping this position looks like. The bottom's follows its setting.
-    var tapMark: Mark {
-        switch self {
-        case .previous: .previousEvent
-        case .next: .nextEvent
-        case .menu: .menu
-        case .centre: .openEvent
-        case .bottom: WheelMapping.bottomPrimary.mark
-        }
-    }
-}
-
 struct ActionMark: View {
     let mark: Mark
     var size: CGFloat = 20

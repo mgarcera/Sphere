@@ -850,3 +850,27 @@ What the branch established, so the next attempt does not rediscover it:
   way to the mark inside the turn.
 
 The whole line of work is one `git revert` of this commit away.
+
+## The widgets draw the calendar's colours (2026-09-03)
+
+The home widget was drawing every capsule in `TaskInactive`, a flat blue that
+belongs to nothing: the app draws each event in its calendar's own colour, at
+full strength for the one you are in and 0.72 for the rest. The widget was the
+only place that disagreed.
+
+So the colour travels. `SnapshotEvent` carries components — `Color` is not
+`Codable` and the group container is JSON — and it is optional, so a snapshot
+written before this decodes and falls back to the flat colour rather than
+going blank. The Live Activity reads the same payload, so it picked the
+calendars up too.
+
+The lock screen accessory does not, and cannot: its rendering mode flattens
+everything to vibrancy. That is the one place the flat colour was never the
+problem.
+
+**The word "Next" is now the wheel's next-event mark.** The app already says
+next with that shape — one arrow, a line, and the line rising into a day — and a
+widget has less room for a label than the wheel does. The marks moved to
+`Shared/ActionMark.swift` for it; the `WheelAction` and `WheelPosition` mappings
+stayed behind in `Sphere/Views/WheelMarks.swift`, since they are about the wheel
+and mean nothing in a widget.

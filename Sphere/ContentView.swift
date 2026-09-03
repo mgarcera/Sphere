@@ -449,7 +449,8 @@ struct ContentView: View {
             events: model.timedEvents.map { event in
                 SnapshotEvent(
                     start: model.anchor.addingTimeInterval(event.startHour * 3600),
-                    end: model.anchor.addingTimeInterval(event.endHour * 3600)
+                    end: model.anchor.addingTimeInterval(event.endHour * 3600),
+                    color: event.snapshotColor
                 )
             }
         ))

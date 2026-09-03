@@ -104,13 +104,14 @@ struct ActivityArc: View {
 
     /// Every event of the day, so the activity is the day rather than the one
     /// event that happens to be running.
-    private func spans() -> [ClosedRange<Double>] {
+    private func spans() -> [ArcSpan] {
         context.state.events.compactMap { event in
             let start = hourOfDay(event.start)
             let end = hourOfDay(event.end)
             guard end > 0, start < 24 else { return nil }
             let low = max(0, start)
-            return low...min(24, max(end, low + 0.35))
+            return ArcSpan(hours: low...min(24, max(end, low + 0.35)),
+                           color: event.color?.swiftUI)
         }
     }
 

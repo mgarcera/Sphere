@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 /// What the app hands the lock screen.
 ///
@@ -11,6 +12,20 @@ import Foundation
 struct SnapshotEvent: Codable, Hashable {
     var start: Date
     var end: Date
+    /// The calendar's own colour, which is what the app draws its capsules in.
+    /// Optional so a snapshot written before this existed still decodes; a
+    /// widget reading one falls back to the flat task colour.
+    var color: SnapshotColor?
+}
+
+/// A colour as components, since `Color` is not `Codable` and the group
+/// container is JSON.
+struct SnapshotColor: Codable, Hashable {
+    var red: Double
+    var green: Double
+    var blue: Double
+
+    var swiftUI: Color { Color(red: red, green: green, blue: blue) }
 }
 
 struct SphereSnapshot: Codable, Equatable {

@@ -52,12 +52,11 @@ struct HomeArcView: View {
     private func header(_ snapshot: SphereSnapshot) -> some View {
         if let title = snapshot.nextEventTitle, let start = snapshot.nextEventStart,
            start > entry.date {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Next")
-                    .font(.system(size: 10, weight: .medium))
-                    .tracking(1.1)
-                    .textCase(.uppercase)
-                    .foregroundStyle(Theme.mutedLight)
+            VStack(alignment: .leading, spacing: 3) {
+                // The wheel's own next-event mark rather than the word. The
+                // app already says "next" with this shape, and a widget has
+                // less room to spend on a label than the wheel does.
+                ActionMark(mark: .nextEvent, size: 15, color: Theme.mutedLight)
                 Text(title)
                     .font(.display(family == .systemMedium ? 19 : 16))
                     .foregroundStyle(Theme.ink)
@@ -93,7 +92,7 @@ struct HomeArcView: View {
         return entry.date.timeIntervalSince(calendar.startOfDay(for: entry.date)) / 3600
     }
 
-    private func spans(_ snapshot: SphereSnapshot) -> [ClosedRange<Double>] {
+    private func spans(_ snapshot: SphereSnapshot) -> [ArcSpan] {
         guard let events = snapshot.events else { return [] }
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = snapshot.timeZone
@@ -104,17 +103,26 @@ struct HomeArcView: View {
             let end = event.end.timeIntervalSince(midnight) / 3600
             guard end > 0, start < 24 else { return nil }
             let low = max(0, start)
-            return low...min(24, max(end, low + 0.35))
+            return ArcSpan(hours: low...min(24, max(end, low + 0.35)),
+                           color: event.color?.swiftUI)
         }
     }
 }
 
 /// The lock screen's arc in the app's palette. Three tiers again: the day
 /// faintest, events on it, the sun brightest and carrying the stem.
+/// One event on the arc: where it sits, and the calendar it came from.
+struct ArcSpan {
+    let hours: ClosedRange<Double>
+    /// Nil where the snapshot predates colours travelling, which is the only
+    /// time the flat task colour is still used.
+    let color: Color?
+}
+
 struct HomeArc: View {
     let day: SolarDay
     let hour: Double
-    var events: [ClosedRange<Double>] = []
+    var events: [ArcSpan] = []
     /// Drawn at full strength while the rest of the day sits back, so an
     /// overview still says which one you are in.
     var highlight: ClosedRange<Double>?
@@ -144,17 +152,22 @@ struct HomeArc: View {
                            style: StrokeStyle(lineWidth: 1.4, lineCap: .round, lineJoin: .round))
 
             for span in events {
+                let hours = span.hours
                 var capsule = Path()
-                let steps = max(2, Int((span.upperBound - span.lowerBound) * 4))
+                let steps = max(2, Int((hours.upperBound - hours.lowerBound) * 4))
                 for step in 0...steps {
-                    let h = span.lowerBound
-                        + (span.upperBound - span.lowerBound) * Double(step) / Double(steps)
+                    let h = hours.lowerBound
+                        + (hours.upperBound - hours.lowerBound) * Double(step) / Double(steps)
                     let point = CGPoint(x: x(h), y: y(h))
                     if step == 0 { capsule.move(to: point) } else { capsule.addLine(to: point) }
                 }
-                let isCurrent = highlight.map { abs($0.lowerBound - span.lowerBound) < 0.01 } ?? false
+                let isCurrent = highlight.map { abs($0.lowerBound - hours.lowerBound) < 0.01 } ?? false
+                // The calendar's own colour, the same as the app draws it in,
+                // and at the same two strengths: full for the one you are in,
+                // held back for the rest of the day.
+                let tint = span.color ?? (isCurrent ? Theme.taskActive : Theme.taskInactive)
                 context.stroke(capsule,
-                               with: .color(isCurrent ? Theme.taskActive : Theme.taskInactive),
+                               with: .color(tint.opacity(isCurrent ? 1 : 0.72)),
                                style: StrokeStyle(lineWidth: isCurrent ? 4 : 2.6, lineCap: .round))
             }
 
