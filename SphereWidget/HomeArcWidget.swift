@@ -35,11 +35,6 @@ struct HomeArcView: View {
 
                 HomeArc(day: day, hour: hour(snapshot.timeZone), events: spans(snapshot))
                     .frame(height: family == .systemMedium ? 62 : 48)
-
-                if family == .systemMedium {
-                    Spacer(minLength: 8)
-                    sunLine(day)
-                }
             }
         } else {
             Text("Open Sphere")
@@ -52,43 +47,22 @@ struct HomeArcView: View {
     private func header(_ snapshot: SphereSnapshot) -> some View {
         if let title = snapshot.nextEventTitle, let start = snapshot.nextEventStart,
            start > entry.date {
-            // The wheel's own next-event mark rather than the word, and at the
-            // END of the title: it reads as the title carrying on into what
-            // comes next rather than as a label sitting over it. In ink at full
-            // strength, since it is the sentence and not an annotation on one.
-            HStack(alignment: .lastTextBaseline, spacing: 6) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Next")
+                    .font(.system(size: 10, weight: .medium))
+                    .tracking(1.1)
+                    .textCase(.uppercase)
+                    .foregroundStyle(Theme.mutedLight)
                 Text(title)
                     .font(.display(family == .systemMedium ? 19 : 16))
                     .foregroundStyle(Theme.ink)
-                    .lineLimit(family == .systemMedium ? 1 : 2)
-
-                ActionMark(mark: .nextEvent, size: 15, color: Theme.ink)
-                    // A canvas has no baseline of its own, so it would hang off
-                    // its own bottom edge and sit low against the type.
-                    .alignmentGuide(.lastTextBaseline) { $0[.bottom] - 3 }
+                    // Two lines on both now. Medium gave up the sun's times for
+                    // the room, and a title that fits is worth more than a pair
+                    // of readings the arc already draws.
+                    .lineLimit(2)
             }
         }
         // Nothing coming, nothing said. An empty day should look empty.
-    }
-
-    /// Sunrise and sunset under the curve they belong to, so the arc is labelled
-    /// rather than annotated.
-    private func sunLine(_ day: SolarDay) -> some View {
-        HStack {
-            Text(day.sunrise.map(clock) ?? "—")
-            Spacer()
-            Text(day.sunset.map(clock) ?? "—")
-        }
-        .font(.system(size: 11))
-        .foregroundStyle(Theme.mutedLight)
-    }
-
-    private func clock(_ hour: Double) -> String {
-        let total = Int((hour * 60).rounded())
-        let h24 = (total / 60) % 24
-        let minute = total % 60
-        let h12 = h24 % 12 == 0 ? 12 : h24 % 12
-        return String(format: "%d:%02d %@", h12, minute, h24 < 12 ? "AM" : "PM")
     }
 
     private func hour(_ zone: TimeZone) -> Double {

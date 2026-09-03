@@ -868,14 +868,12 @@ The lock screen accessory does not, and cannot: its rendering mode flattens
 everything to vibrancy. That is the one place the flat colour was never the
 problem.
 
-**The word "Next" is now the wheel's next-event mark, at the END of the title**
-— it reads as the title carrying on into what comes next rather than as a label
-sitting over it — in ink at full strength, since it is part of the sentence and
-not an annotation on one. A canvas has no baseline, so the mark carries an
-alignment guide or it hangs off its own bottom edge and sits low against the
-type. The app already says
-next with that shape — one arrow, a line, and the line rising into a day — and a
-widget has less room for a label than the wheel does. The marks moved to
-`Shared/ActionMark.swift` for it; the `WheelAction` and `WheelPosition` mappings
-stayed behind in `Sphere/Views/WheelMarks.swift`, since they are about the wheel
-and mean nothing in a widget.
+**The arrow was tried and dropped.** The wheel's next-event mark went into the
+widget in place of the word, then to the end of the title in full ink, and it
+was a look worth seeing rather than one worth keeping: in a widget the mark has
+no wheel around it to mean anything against. The word stands. `ActionMark` came
+back out of `Shared` with it, since nothing outside the app draws a mark now.
+
+**The medium widget gave up the sun's times.** Sunrise and sunset were a pair of
+readings under a curve that already draws both; the row they cost is worth more
+as a second line of title. Both families now take two lines.
