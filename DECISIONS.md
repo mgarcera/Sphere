@@ -776,7 +776,20 @@ computes what is on screen from the resolved scheme rather than from the system
 one, or flipping out of Sun would have landed on whatever the device happened to
 be doing.
 
-## Weather on a large widget (2026-09-02)
+## Weather on a large widget, built and removed (2026-09-02)
+
+**Removed the same evening, on the device.** The sky at widget scale looked
+strange: the drawing that reads as weather across eight screens does not survive
+being asked to hold a whole day in one, whatever the lobes and standoffs are
+tuned to. The large family went with it, since the sky was the only thing it had
+that a medium does not. The shared moves, the scale, and the forecast in the
+snapshot came out too: none of them had another caller, and an unused file with
+no reason on it is drift.
+
+What follows is what was built, kept because the next attempt at this should
+start from it rather than rediscover it.
+
+
 
 The sky is the whole reason the large family exists. Everything else the tile
 shows fits in a medium; the decks need vertical room that medium does not have.

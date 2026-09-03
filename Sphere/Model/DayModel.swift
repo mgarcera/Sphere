@@ -272,3 +272,9 @@ final class DayModel {
         (date(forDayIndex: dayIndex - 1), date(forDayIndex: dayIndex + 2))
     }
 }
+
+extension Comparable {
+    func clamped(to range: ClosedRange<Self>) -> Self {
+        min(max(self, range.lowerBound), range.upperBound)
+    }
+}

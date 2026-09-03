@@ -2,7 +2,7 @@ import Foundation
 
 /// What the sky is doing in one hour, reduced to the handful of states the
 /// band can name. Providers map their own vocabularies onto this.
-enum SkyCondition: String, Codable, Equatable, CaseIterable {
+enum SkyCondition: String, Equatable, CaseIterable {
     case clear, partlyCloudy, cloudy, fog, drizzle, rain, snow, thunderstorm
 
     /// WMO 4677, which is what Open-Meteo reports.
@@ -24,8 +24,29 @@ enum SkyCondition: String, Codable, Equatable, CaseIterable {
     var isWet: Bool { self == .drizzle || self == .rain || self == .snow || self == .thunderstorm }
 }
 
+/// One hour as the provider reports it. Coverage is split by altitude because
+/// that is what lets two overcast hours look different: cirrus and cumulus are
+/// not the same sky.
+struct WeatherHour: Equatable {
+    let date: Date
+    let condition: SkyCondition
+    let cloudLow: Double
+    let cloudMid: Double
+    let cloudHigh: Double
+    /// Millimetres in the hour.
+    let precipitation: Double
+    /// km/h at 10m.
+    let wind: Double
+    /// Convective available potential energy, J/kg. The actual measure of how
+    /// unstable the air is, and a far better storm signal than the code.
+    let cape: Double
+    /// Fetched in celsius and localised at the point of display, so the unit
+    /// follows the reader rather than the request.
+    let celsius: Double?
+}
+
 /// One hour of sky, ready to draw.
-struct SkyHour: Identifiable, Codable, Equatable {
+struct SkyHour: Identifiable, Equatable {
     let hour: Int
     let condition: SkyCondition
     let isDaylight: Bool

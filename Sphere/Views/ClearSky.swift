@@ -17,8 +17,6 @@ struct ClearSky: View, Equatable {
     let hours: [SkyHour]
     let daySeed: Int
     let deck: SkyContinuous.Deck
-    var scale: SkyScale = .app
-    var geometry: ArcGeometry = .app
 
     /// The scrub position, quantised. Everything else in this app moves because
     /// the wheel moved, and a clock ticking on its own was the one thing that
@@ -51,7 +49,7 @@ struct ClearSky: View, Equatable {
         // everything the gutter is there to hold, and since these marks are
         // placed in the arc's coordinate space that meant the low ones simply
         // vanished.
-        .frame(width: width, height: geometry.totalHeight(height), alignment: .topLeading)
+        .frame(width: width, height: ArcGeometry.totalHeight(height), alignment: .topLeading)
         .allowsHitTesting(false)
     }
 
@@ -165,7 +163,7 @@ struct ClearSky: View, Equatable {
                 guard presence > 0.25 else { continue }
 
                 let spread = SkyMarks.jitter(daySeed &+ deck.saltBase, salt &+ 41)
-                let out = deck.offset(scale) + CGFloat(spread - 0.5) * (drawsStars ? 30 : 16) * scale.amplitude
+                let out = deck.offset + CGFloat(spread - 0.5) * (drawsStars ? 30 : 16)
 
                 result.append(Mark(point: point(hour: placed, out: out),
                                    opacity: presence,
@@ -255,7 +253,7 @@ struct ClearSky: View, Equatable {
         let delta = 0.35
         func x(_ h: Double) -> CGFloat { width * (h / 24) }
         func y(_ h: Double) -> CGFloat {
-            geometry.y(normalized: day.normalizedElevation(atHour: h), height: height)
+            ArcGeometry.y(normalized: day.normalizedElevation(atHour: h), height: height)
         }
         let angle = atan2(y(hour + delta) - y(hour - delta), x(hour + delta) - x(hour - delta))
         return (CGPoint(x: x(hour), y: y(hour)), angle)

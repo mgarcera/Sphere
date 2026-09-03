@@ -7,9 +7,6 @@ final class WeatherService {
     private let provider: WeatherProvider
     private var byHour: [Date: WeatherHour] = [:]
     private var fetchedFor: Coordinate?
-    /// When the store was last filled, so the widgets can tell a forecast from
-    /// a memory of one.
-    private(set) var fetchedAt: Date?
     private var requestID = 0
 
     init(provider: WeatherProvider = OpenMeteoProvider()) {
@@ -37,7 +34,6 @@ final class WeatherService {
                 guard id == requestID else { return }
                 byHour = Dictionary(hours.map { ($0.date, $0) }, uniquingKeysWith: { first, _ in first })
                 fetchedFor = coordinate
-                fetchedAt = .now
                 return
             } catch {
                 guard id == requestID else { return }
