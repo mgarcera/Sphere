@@ -31,16 +31,6 @@ struct DayMenu: View {
                     }
                     .pickerStyle(.segmented)
                     .padding(.vertical, 4)
-
-                    // Only under Sun. The other three say what they do in one
-                    // word; this one names its source rather than its effect,
-                    // so it is the only one that needs a line.
-                    if appearance == .sun {
-                        Text("Light while the sun is up at the hour you are on.")
-                            .font(.system(size: 12))
-                            .foregroundStyle(Theme.mutedLight)
-                            .padding(.top, 2)
-                    }
                 }
 
                 if !calendar.sources.isEmpty {

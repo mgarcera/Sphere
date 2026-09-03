@@ -21,10 +21,6 @@ struct ContentView: View {
     /// a transaction we control.
     @State private var allDayCount = 0
     @AppStorage("appearance") private var appearance: Appearance = .system
-    /// What the `sun` mode last settled on. `Appearance` holds a band around
-    /// the horizon rather than a threshold, so it needs somewhere to remember
-    /// its own answer while the wheel sits inside that band.
-    @State private var sunHold: ColorScheme = .light
     /// Observed rather than read once: the bottom button's printed word changes
     /// with it, and a label that does not follow its setting is worse than no
     /// setting at all.
@@ -80,16 +76,7 @@ struct ContentView: View {
             .allowsHitTesting(false)
         }
         .animation(.easeInOut(duration: 0.25), value: calendar.access)
-        .preferredColorScheme(resolvedScheme)
-        // The elevation the arc is already drawn from, so sunrise needs no
-        // trigger of its own: the scheme turns over where the curve crosses.
-        .onChange(of: focusElevation) { _, elevation in
-            guard appearance == .sun else { return }
-            let resolved = Appearance.sun.colorScheme(elevationDegrees: elevation, holding: sunHold)
-            guard let resolved, resolved != sunHold else { return }
-            withAnimation(.easeInOut(duration: 0.3)) { sunHold = resolved }
-        }
-        .onAppear { sunHold = focusElevation >= 0 ? .light : .dark }
+        .preferredColorScheme(appearance.colorScheme)
         .sheet(isPresented: $isDayPickerOpen) {
             VStack(spacing: 0) {
                 DatePicker("", selection: $pickedDay, displayedComponents: .date)
@@ -366,18 +353,8 @@ struct ContentView: View {
         return WeatherWash.amount(precipitation: sky.precipitation, lightning: sky.lightning)
     }
 
-    /// Degrees above the horizon at the hour the wheel is on. Negative at night.
-    private var focusElevation: Double {
-        model.elevationDegrees(atAbsoluteHour: model.focusHour)
-    }
-
-    /// Nil where the device decides.
-    private var resolvedScheme: ColorScheme? {
-        appearance.colorScheme(elevationDegrees: focusElevation, holding: sunHold)
-    }
-
     private var effectiveScheme: ColorScheme {
-        resolvedScheme ?? systemScheme
+        appearance.colorScheme ?? systemScheme
     }
 
     private var titleColor: Color {
@@ -575,9 +552,9 @@ struct ContentView: View {
     ///
     /// Reaching for the toggle is already a statement that you do not want it
     /// decided for you, so it lands on the opposite of what is on screen. The
-    /// menu is where System and Sun are chosen again.
+    /// menu is where system is chosen again.
     private func flipAppearance() {
-        let showingDark = effectiveScheme == .dark
+        let showingDark = appearance == .dark || (appearance == .system && systemScheme == .dark)
         withAnimation(.easeInOut(duration: 0.25)) {
             appearance = showingDark ? .light : .dark
         }

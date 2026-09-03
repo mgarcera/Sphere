@@ -746,7 +746,7 @@ Where nothing is coming, the widgets say nothing. A place name in that space
 was filling a line rather than carrying information, and an empty day should
 look empty.
 
-## The sun decides light and dark (2026-09-02)
+## The sun decides light and dark (2026-09-02) — REMOVED 2026-09-03
 
 "Auto" is "System", which is what it always was: the device's setting. The
 fourth mode is the app's own, and it reads the sun's elevation — the same
@@ -823,3 +823,30 @@ The widget's own network fetch was the other option and is not needed for this:
 Open-Meteo is a keyless GET and a timeline provider may make one, but it wants
 its own cache for offline and its own copy of the provider layer, for freshness
 the app's own launches mostly supply.
+
+## The sun mode is parked (2026-09-03)
+
+Taken out of the app, tag `palette-experiment`, along with everything that grew
+out of it. Appearance is System, Light and Dark again, on the asset catalog,
+exactly as it was before.
+
+What the branch established, so the next attempt does not rediscover it:
+
+- **A scheme switch cannot be made soft by covering it.** Extending the twilight
+  wash so both schemes composite to the same dusk at the crossing hid the
+  ground and left the ink snapping, which is most of what you look at.
+- **The crossing cannot be dodged at all.** Ink starts darker than the ground
+  and ends lighter, so their luminances must meet, and at that instant a mark is
+  the colour of what it sits on. No pair of continuous curves avoids it.
+- **So it has to be spent, not avoided**: every mark holding its designed
+  contrast against the moving ground, crossing one at a time on its own
+  schedule, over a ground that runs through a warm dusk rather than through
+  grey, and quickly. That version measured at most two faint marks at any
+  instant against nine, and read as very close on the device.
+- **What was left unsolved** is the header. The title and the caption sit on the
+  wash rather than on the background, and holding a contrast ratio through the
+  crossing pushes them back to full strength on either side of it — so they snap
+  while the drawing dissolves. The last thing tried was letting the hold give
+  way to the mark inside the turn.
+
+The whole line of work is one `git revert` of this commit away.
