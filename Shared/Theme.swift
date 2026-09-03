@@ -26,26 +26,44 @@ extension Font {
     }
 }
 
-/// Light, dark, or follow the device. Every colour is an asset-catalog pair,
-/// so overriding the scheme is all this has to do.
+/// Light, dark, follow the device, or follow the sun. Every colour is an
+/// asset-catalog pair, so overriding the scheme is all this has to do.
+///
+/// `sun` reads the sun's elevation at the hour the wheel is on, so the screen
+/// is light while the sun is up THERE and dark once it has set, and scrubbing
+/// across a sunset carries the whole surface over with it. Raw values are
+/// unchanged, so a preference stored before `sun` existed still decodes.
 enum Appearance: String, CaseIterable, Identifiable {
-    case system, light, dark
+    case system, light, dark, sun
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .system: "Auto"
+        case .system: "System"
         case .light: "Light"
         case .dark: "Dark"
+        case .sun: "Sun"
         }
     }
 
-    var colorScheme: ColorScheme? {
+    /// The band around the horizon inside which `sun` holds whatever it last
+    /// decided. Elevation is read from the wheel, and the wheel can be parked
+    /// on a crossing and jogged; without a band the screen would strobe there.
+    /// Half a degree is about the sun's own width, and two minutes of a day.
+    static let sunHysteresis: Double = 0.5
+
+    /// Nil means "no opinion, use the device's". The elevation is only read by
+    /// `sun`; the other three ignore it.
+    func colorScheme(elevationDegrees: Double, holding held: ColorScheme) -> ColorScheme? {
         switch self {
         case .system: nil
         case .light: .light
         case .dark: .dark
+        case .sun:
+            if elevationDegrees > Self.sunHysteresis { .light }
+            else if elevationDegrees < -Self.sunHysteresis { .dark }
+            else { held }
         }
     }
 }
