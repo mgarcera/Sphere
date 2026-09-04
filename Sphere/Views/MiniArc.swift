@@ -11,9 +11,19 @@ import SwiftUI
 /// It is anchored to the real now, not to the wheel, so it stays a reference
 /// for the actual day however far the wheel has wandered.
 struct MiniArc: View {
+    /// One event on the day, in the calendar's own colour — the same capsule
+    /// the widgets draw, for the same reason: the arc is a picture of the day
+    /// and the day has things in it.
+    struct Span: Equatable {
+        let hours: ClosedRange<Double>
+        let color: Color
+        let isCurrent: Bool
+    }
+
     let day: SolarDay
     /// Real current hour of day, 0..24.
     let nowHour: Double
+    var spans: [Span] = []
     var height: CGFloat = 62
 
     private static let peak: CGFloat = 0.74
@@ -40,6 +50,28 @@ struct MiniArc: View {
                 Curve(day: day, arcHeight: height, peak: Self.peak)
                     .stroke(Theme.ink, style: StrokeStyle(lineWidth: 1.3, lineCap: .round, lineJoin: .round))
                     .frame(width: width, height: height)
+
+                // On the curve rather than beside it, at the two strengths the
+                // rest of the app uses: full for the one happening now, held
+                // back for the rest of the day.
+                Canvas { context, _ in
+                    for span in spans {
+                        var path = Path()
+                        let low = span.hours.lowerBound
+                        let high = span.hours.upperBound
+                        let steps = max(2, Int((high - low) * 6))
+                        for step in 0...steps {
+                            let hour = low + (high - low) * Double(step) / Double(steps)
+                            let point = Self.point(hour, day: day, width: width, height: height)
+                            if step == 0 { path.move(to: point) } else { path.addLine(to: point) }
+                        }
+                        context.stroke(path,
+                                       with: .color(span.color.opacity(span.isCurrent ? 1 : 0.72)),
+                                       style: StrokeStyle(lineWidth: span.isCurrent ? 3.6 : 2.6,
+                                                          lineCap: .round))
+                    }
+                }
+                .frame(width: width, height: height)
 
                 ForEach(markers, id: \.label) { marker in
                     let point = Self.point(marker.hour, day: day, width: width, height: height)

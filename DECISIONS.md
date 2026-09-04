@@ -877,3 +877,28 @@ back out of `Shared` with it, since nothing outside the app draws a mark now.
 **The medium widget gave up the sun's times.** Sunrise and sunset were a pair of
 readings under a curve that already draws both; the row they cost is worth more
 as a second line of title. Both families now take two lines.
+
+## The span replaces the label, and the menu's arc gets its day (2026-09-03)
+
+**"Next" is gone from the widgets.** The word said what the position already
+says — it is the only thing at the top of the tile — and the span is the fact
+that was missing. Under the title now: "2:30 – 3:15 PM", with the meridiem
+printed once where both ends share it, since "2:30 PM – 3:15 PM" is the same
+fact said twice. An event that is not today carries "Tomorrow," or its weekday,
+because a start time alone on an empty afternoon reads as sooner than it is.
+The end travels in the snapshot for it, optional like everything else there, so
+an older snapshot prints the start alone rather than nothing.
+
+**The menu's moon and temperature moved down to the arc.** They were up beside
+the place name, which is where the sheet says WHERE; they belong with the thing
+that says WHEN. The row above the arc now reads "TODAY" on the left and the moon
+and the temperature on the right, and the arc draws the day's events as capsules
+in their calendars' colours, at the widgets' two strengths — full for the one
+happening now, 0.72 for the rest. The arc was already the picture that saves
+three timestamps from being arithmetic; the events are what it was missing.
+
+**Today or the wheel's day is a toggle, for now.** Tapping the label switches
+the arc between the two, and the label becomes the date when it follows the
+wheel. Today is what agrees with its neighbours — everything else in this sheet
+is anchored to the real now — but the other reading is worth living with before
+it is decided.

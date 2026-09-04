@@ -35,6 +35,9 @@ struct SphereSnapshot: Codable, Equatable {
     var placeName: String
     var nextEventTitle: String?
     var nextEventStart: Date?
+    /// Optional for the usual reason: a snapshot written before this decodes,
+    /// and a widget with a start but no end prints the start alone.
+    var nextEventEnd: Date?
     /// Optional so a snapshot written before this existed still decodes; a
     /// missing key on a non-optional throws and the widget would go blank
     /// until the app happened to run again.

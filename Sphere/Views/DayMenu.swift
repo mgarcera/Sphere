@@ -13,6 +13,11 @@ struct DayMenu: View {
     @AppStorage(WheelMapping.bottomKey) private var bottomPrimary: WheelAction = .now
     let onDismiss: () -> Void
 
+    /// Whether the small arc follows the wheel or stays on today. A toggle
+    /// while both are being tried: the rest of this sheet is anchored to the
+    /// real now, so today is the one that agrees with its neighbours.
+    @AppStorage("miniArcFollowsWheel") private var followsWheel = false
+
     @State private var placeQuery = ""
     @State private var search = PlaceSearch()
     @FocusState private var placeFocused: Bool
@@ -83,8 +88,6 @@ struct DayMenu: View {
                         .font(.caption2)
                         .foregroundStyle(Theme.mutedLight)
                 }
-                Spacer(minLength: 8)
-                nowCorner
             }
 
             VStack(alignment: .leading, spacing: 0) {
@@ -97,8 +100,27 @@ struct DayMenu: View {
             }
 
             Rectangle().fill(Theme.hairline).frame(height: 1).padding(.top, 4)
-            MiniArc(day: model.todaySolarDay, nowHour: model.todayHourOfDay)
-                .padding(.top, 2)
+
+            // The moon and the temperature belong to the day the arc is
+            // drawing, so they sit with it rather than up beside the place.
+            HStack(alignment: .center) {
+                Button {
+                    followsWheel.toggle()
+                } label: {
+                    Text(followsWheel ? wheelDayLabel : "Today")
+                        .font(.system(size: 11, weight: .medium))
+                        .tracking(1.1)
+                        .textCase(.uppercase)
+                        .foregroundStyle(Theme.mutedLight)
+                }
+                .buttonStyle(.plain)
+
+                Spacer(minLength: 8)
+                nowCorner
+            }
+            .padding(.top, 2)
+
+            MiniArc(day: shownSolarDay, nowHour: shownHour, spans: arcSpans)
         }
         .padding(.vertical, 12)
     }
@@ -197,6 +219,34 @@ struct DayMenu: View {
 
     /// The real now, in the corner: tonight's moon and what it is doing
     /// outside, both independent of where the wheel is.
+    private var shownIndex: Int { followsWheel ? model.dayIndex : model.todayIndex }
+
+    private var shownSolarDay: SolarDay { model.solarDay(shownIndex) }
+
+    private var shownHour: Double {
+        followsWheel ? model.focusHour - Double(shownIndex) * 24 : model.todayHourOfDay
+    }
+
+    private var wheelDayLabel: String {
+        model.focusDate.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())
+    }
+
+    /// The day's timed events, in hours of that day. An event either side of
+    /// midnight is clipped to the day being drawn rather than dropped, and a
+    /// very short one is given enough length to read as a capsule.
+    private var arcSpans: [MiniArc.Span] {
+        let now = model.eventContainingNow
+        return model.timedEvents.compactMap { event in
+            let start = event.startHour - Double(shownIndex) * 24
+            let end = event.endHour - Double(shownIndex) * 24
+            guard end > 0, start < 24 else { return nil }
+            let low = max(0, start)
+            return MiniArc.Span(hours: low...min(24, max(end, low + 0.35)),
+                                color: event.color,
+                                isCurrent: event.id == now?.id)
+        }
+    }
+
     private var nowCorner: some View {
         let sky = weather.hour(at: .now)
         return HStack(spacing: 10) {

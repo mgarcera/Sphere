@@ -444,6 +444,7 @@ struct ContentView: View {
             placeName: location.placeName,
             nextEventTitle: next?.title,
             nextEventStart: next?.startDate,
+            nextEventEnd: next?.endDate,
             // The loaded window is a day either side, which is more than the
             // widget draws; it filters to the day it is showing.
             events: model.timedEvents.map { event in
