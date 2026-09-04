@@ -174,7 +174,7 @@ struct HomeArc: View {
                 curve.addLine(to: CGPoint(x: x(h), y: y(h)))
             }
             context.stroke(curve, with: .color(Theme.mutedLight),
-                           style: StrokeStyle(lineWidth: 1.4, lineCap: .round, lineJoin: .round))
+                           style: StrokeStyle(lineWidth: 1.1, lineCap: .round, lineJoin: .round))
 
             for span in events {
                 let hours = span.hours
@@ -193,7 +193,7 @@ struct HomeArc: View {
                 let tint = span.color ?? (isCurrent ? Theme.taskActive : Theme.taskInactive)
                 context.stroke(capsule,
                                with: .color(tint.opacity(isCurrent ? 1 : 0.72)),
-                               style: StrokeStyle(lineWidth: isCurrent ? 4 : 2.6, lineCap: .round))
+                               style: StrokeStyle(lineWidth: isCurrent ? 5 : 3.4, lineCap: .round))
             }
 
             let dot = CGPoint(x: x(hour), y: y(hour))

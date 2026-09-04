@@ -48,7 +48,11 @@ struct MiniArc: View {
                     .position(x: width / 2, y: height)
 
                 Curve(day: day, arcHeight: height, peak: Self.peak)
-                    .stroke(Theme.ink, style: StrokeStyle(lineWidth: 1.3, lineCap: .round, lineJoin: .round))
+                    // Muted, not ink, and at the widgets' weight: the curve is
+                    // what the day is drawn ON, and the capsules are what is on
+                    // it. Drawing the ground in ink made it compete.
+                    .stroke(Theme.mutedLight,
+                            style: StrokeStyle(lineWidth: 1.1, lineCap: .round, lineJoin: .round))
                     .frame(width: width, height: height)
 
                 // On the curve rather than beside it, at the two strengths the
@@ -67,7 +71,7 @@ struct MiniArc: View {
                         }
                         context.stroke(path,
                                        with: .color(span.color.opacity(span.isCurrent ? 1 : 0.72)),
-                                       style: StrokeStyle(lineWidth: span.isCurrent ? 3.6 : 2.6,
+                                       style: StrokeStyle(lineWidth: span.isCurrent ? 5 : 3.4,
                                                           lineCap: .round))
                     }
                 }

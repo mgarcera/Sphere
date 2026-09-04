@@ -902,3 +902,23 @@ the arc between the two, and the label becomes the date when it follows the
 wheel. Today is what agrees with its neighbours — everything else in this sheet
 is anchored to the real now — but the other reading is worth living with before
 it is decided.
+
+### One arc, three places (2026-09-03)
+
+The menu's arc was drawing its curve in INK at 1.3 while both widgets drew
+theirs in `MutedLight` at 1.4 — so the same picture read as a different object
+in each place, and in the menu the ground competed with what was on it. The
+curve is `MutedLight` everywhere now.
+
+Weights are aligned and split further apart. The curve came down to 1.1 in all
+three, and the capsules went up to 3.4, with 5 for the one happening now — the
+accessory keeps 3, since vibrancy and its own size do some of that work. What
+matters is the gap between the two: the curve is what the day is drawn on, the
+capsules are what is on it, and a point of difference was not enough to say so.
+
+For the record, since it was asked: the home widget and the Live Activity draw
+horizon `Hairline` 1, curve `MutedLight`, capsules in the calendar's colour at
+1.0 and 0.72, stem `HairlineSoft` 1, dot `Ink`. The lock screen accessory has no
+palette at all — vibrancy flattens it — so it is white at 0.25 for the ground,
+0.40 for the curve, 0.55 for the capsules, 0.45 for the stem and full white for
+the dot.

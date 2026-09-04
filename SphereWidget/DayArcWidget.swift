@@ -133,7 +133,7 @@ struct LockArc: View {
             // Under the capsules rather than level with them, so an event
             // reads as an object on the day instead of a thickening of it.
             context.stroke(path, with: .color(.white.opacity(0.4)),
-                           style: StrokeStyle(lineWidth: 1.4, lineCap: .round, lineJoin: .round))
+                           style: StrokeStyle(lineWidth: 1.1, lineCap: .round, lineJoin: .round))
 
             var ground = Path()
             ground.move(to: CGPoint(x: 0, y: baseline))
@@ -154,8 +154,10 @@ struct LockArc: View {
                 }
                 // Thinner and dimmer than the dot, so the sun is the only
                 // fully bright thing on the line.
+                // Heavier than the curve by the same margin the other two use,
+                // pulled back a little for the accessory's own size.
                 context.stroke(capsule, with: .color(.white.opacity(0.55)),
-                               style: StrokeStyle(lineWidth: 2.4, lineCap: .round))
+                               style: StrokeStyle(lineWidth: 3, lineCap: .round))
             }
 
             let dot = CGPoint(x: x(hour), y: y(hour))
