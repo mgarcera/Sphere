@@ -53,6 +53,15 @@ struct DayMenu: View {
                     }
                     .buttonStyle(.plain)
                     .padding(.vertical, 2)
+
+                    // The same two addresses App Store Connect points at.
+                    HStack(spacing: 18) {
+                        Link("Privacy", destination: SphereLinks.privacyPolicy)
+                        Link("Support", destination: SphereLinks.support)
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(Theme.mutedLight)
+                    .padding(.top, 8)
                 }
 
                 if !calendar.sources.isEmpty {

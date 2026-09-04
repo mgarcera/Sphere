@@ -108,7 +108,7 @@ struct FeedbackSheet: View {
         .alert("Couldn't send", isPresented: alertBinding(.failed)) {
             Button("OK") {}
         } message: {
-            Text("Something went wrong. Please try again, or email \(FeedbackService.contactEmail).")
+            Text("Something went wrong. Please try again, or email \(SphereLinks.contactEmail).")
         }
     }
 
@@ -142,8 +142,6 @@ struct FeedbackSheet: View {
 enum FeedbackService {
     /// Sphere's own Formspree form — each app has its own. Manage at formspree.io.
     private static let endpoint = URL(string: "https://formspree.io/f/xnpqzgeb")!
-
-    static let contactEmail = "mason@smidgecraft.com"
 
     enum FeedbackError: Error { case server }
 
