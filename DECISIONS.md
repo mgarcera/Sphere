@@ -1011,3 +1011,26 @@ calendar through Apple's own editor, reverse geocoding and place search send
 fixes and keystrokes to Apple, one real event title is drawn on the lock screen
 by the widget and the Live Activity, and `UserDefaults` — which holds a manual
 place's coordinate — travels in device backups.
+
+## A way to say something back (2026-09-04)
+
+Fil and Weeklite both carry the same in-app feedback sheet — sentiment, a
+message, an optional email — posted to Formspree, which turns it into an email.
+No account, no backend, no key. Sphere now carries it too, at its own form,
+since each app has its own.
+
+Ported rather than reinvented: same fields, same payload, same alerts. What
+changed is the register — system type on the app's own ink, and the fields drawn
+as hairline rectangles rather than filled cards, because nothing else here is a
+card.
+
+**It makes Formspree the second thing this app talks to.** Until now the privacy
+story was one non-Apple host receiving a rounded coordinate. It is now two, and
+the second carries what a person typed plus the app version, device model, iOS
+version and a timestamp. That has to be said in all three places — the manifest,
+the App Store questionnaire, and the policy page — before this ships.
+
+Worth noting for the other two apps: **neither Fil's nor Weeklite's privacy
+policy mentions the feedback form at all**, and Fil's says "the ONLY time
+anything leaves your device is if you subscribe to Fil Extra and run a smart
+search", which the sheet contradicts every time someone uses it.

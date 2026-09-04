@@ -13,6 +13,8 @@ struct DayMenu: View {
     @AppStorage(WheelMapping.bottomKey) private var bottomPrimary: WheelAction = .now
     let onDismiss: () -> Void
 
+    @State private var isFeedbackOpen = false
+
     @State private var placeQuery = ""
     @State private var search = PlaceSearch()
     @FocusState private var placeFocused: Bool
@@ -31,6 +33,26 @@ struct DayMenu: View {
                     }
                     .pickerStyle(.segmented)
                     .padding(.vertical, 4)
+                }
+
+                divider
+                section("Feedback") {
+                    Button {
+                        isFeedbackOpen = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Text("Tell me how it is going")
+                                .font(.subheadline)
+                                .foregroundStyle(Theme.ink)
+                            Spacer(minLength: 8)
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Theme.mutedLight)
+                        }
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.vertical, 2)
                 }
 
                 if !calendar.sources.isEmpty {
@@ -66,6 +88,7 @@ struct DayMenu: View {
             .padding(.bottom, 32)
         }
         .background(Theme.background)
+        .sheet(isPresented: $isFeedbackOpen) { FeedbackSheet() }
     }
 
     // MARK: - Layouts
