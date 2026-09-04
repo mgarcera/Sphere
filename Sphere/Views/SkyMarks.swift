@@ -66,14 +66,4 @@ enum SkyMarks {
         return path
     }
 
-    static func fogLines(width: CGFloat) -> Path {
-        var path = Path()
-        for index in 0..<3 {
-            let y = CGFloat(index) * 4
-            let inset = CGFloat(index) * 3
-            path.move(to: CGPoint(x: -width / 2 + inset, y: y))
-            path.addLine(to: CGPoint(x: width / 2 - inset, y: y))
-        }
-        return path
-    }
 }

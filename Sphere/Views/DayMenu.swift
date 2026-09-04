@@ -249,13 +249,17 @@ struct DayMenu: View {
             }
 
             if let sky {
+                // The same three things the header carries, in the same order:
+                // the mark, the word, the temperature.
                 HStack(spacing: 5) {
                     SkyGlyph(condition: sky.condition)
                         .stroke(Theme.muted, style: StrokeStyle(lineWidth: 1.1, lineCap: .round, lineJoin: .round))
                         .frame(width: 15, height: 15)
+                    Text(sky.condition.title)
+                        .font(.caption2)
+                        .foregroundStyle(Theme.mutedLight)
                     if let celsius = sky.celsius {
-                        Text(Measurement(value: celsius, unit: UnitTemperature.celsius)
-                            .formatted(.measurement(width: .narrow, usage: .weather)))
+                        Text(ContentView.degrees(celsius))
                             .font(.caption2)
                             .foregroundStyle(Theme.mutedLight)
                             .monospacedDigit()

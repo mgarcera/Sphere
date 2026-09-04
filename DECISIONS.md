@@ -956,3 +956,30 @@ the way IN only — a delay reads as sequence when several things arrive togethe
 and as lag when one thing leaves alone.
 
 The commit is `dc2bbdb`, one revert away.
+
+## Fog is a field, and the sky gets a line (2026-09-03)
+
+The old fog was the weather ICON for fog: three straight lines, evenly spaced,
+centred, one stamp per hour. Three replacements were built and compared on the
+phone — long broken wisps drifting across the whole bank, the same wisps with
+ends dissolving rather than stopping, and a density field of very short dashes
+thickest mid-bank. The field won, and the other two are stripped along with
+their picker.
+
+Nothing in it is long enough to read as a stroke, which is the point: the mass
+reads as haze where a line reads as a line. Deterministic per day and hour like
+every other mark, so it does not shimmer while the wheel turns.
+
+**The sky now says what it is.** Under the all-day row: the mark, the word and
+the temperature in whole degrees — "Clear 71°". It follows the WHEEL, unlike
+the widgets and the menu, because the clouds directly above it are drawn for
+the focused hour and a reading anchored to the real now would contradict the
+picture it sits under. The row is reserved whether or not the forecast has
+arrived, for the reason the all-day row is: a line that appears later shifts
+the whole arc.
+
+The condition is not blended across the hour the way precipitation is. A
+condition is a word, and half of "rain" is not a word.
+
+The menu's corner carries the same three things in the same order, and both
+round to whole degrees.

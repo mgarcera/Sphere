@@ -18,6 +18,8 @@ struct SkyContinuous: View, Equatable {
     let daySeed: Int
     /// One deck per view, so the three can be panned at three rates.
     let deck: Deck
+    /// Which fog is drawn. A study setting, and part of the comparison so the
+    /// cached layer rebuilds when it changes.
 
     /// Roughly a third of an hour per lobe, which is a cloud-sized bump at the
     /// three-hour zoom.
@@ -61,7 +63,7 @@ struct SkyContinuous: View, Equatable {
                     context.stroke(strike(at: entry), with: ink, style: SkyMarks.stroke)
                 }
                 for run in runs(byHour, where: { $0.condition == .fog }) {
-                    context.stroke(fog(run), with: ink, style: SkyMarks.stroke)
+                    drawFog(run, into: &context)
                 }
             }
         }
@@ -403,15 +405,40 @@ struct SkyContinuous: View, Equatable {
         return path
     }
 
-    private func fog(_ run: ClosedRange<Int>) -> Path {
-        var path = Path()
+    // MARK: - Fog
+
+    /// Fog is a density field rather than a drawing: a scatter of very short
+    /// dashes, thickest in the middle of the bank and thinning to its edges,
+    /// each at its own low opacity. Nothing in it is long enough to read as a
+    /// stroke, and the mass reads as haze.
+    ///
+    /// The three stacked lines this replaced were the weather ICON for fog —
+    /// one stamp per hour, evenly spaced, centred. Wisps and dissolving wisps
+    /// were tried against it on the phone; the field won.
+    private func drawFog(_ run: ClosedRange<Int>, into context: inout GraphicsContext) {
+        let thin = StrokeStyle(lineWidth: 0.9, lineCap: .round)
+        let span = Double(run.upperBound - run.lowerBound + 1)
+
         for hour in run {
-            let anchor = point(hour: Double(hour) + 0.5, out: SkyMarks.lowOffset - 12)
-            let base = placement(Double(hour) + 0.5)
-            var transform = CGAffineTransform(translationX: anchor.x, y: anchor.y)
-            transform = transform.rotated(by: base.angle)
-            path.addPath(SkyMarks.fogLines(width: 26).applying(transform))
+            let position = (Double(hour - run.lowerBound) + 0.5) / span
+            let density = 0.45 + 0.55 * sin(position * .pi)
+            let count = max(4, Int((14 * density).rounded()))
+
+            for index in 0..<count {
+                let salt = hour &* 271 &+ index
+                let at = Double(hour) + SkyMarks.jitter(daySeed, salt)
+                let out = SkyMarks.lowOffset - CGFloat(2 + SkyMarks.jitter(daySeed, salt &+ 53) * 20)
+                let length = 0.06 + SkyMarks.jitter(daySeed, salt &+ 131) * 0.10
+                let fade = 0.22 + SkyMarks.jitter(daySeed, salt &+ 307) * 0.38
+
+                var path = Path()
+                path.move(to: point(hour: at, out: out))
+                path.addLine(to: point(hour: at + length, out: out))
+                context.stroke(path,
+                               with: .color(Theme.ink.opacity(SkyMarks.inkOpacity * fade)),
+                               style: thin)
+            }
         }
-        return path
     }
+
 }

@@ -20,6 +20,21 @@ enum SkyCondition: String, Equatable, CaseIterable {
         }
     }
 
+    /// What the header calls it. Sentence case, since it is read as a phrase
+    /// beside the temperature rather than as a label.
+    var title: String {
+        switch self {
+        case .clear: "Clear"
+        case .partlyCloudy: "Partly cloudy"
+        case .cloudy: "Cloudy"
+        case .fog: "Fog"
+        case .drizzle: "Drizzle"
+        case .rain: "Rain"
+        case .snow: "Snow"
+        case .thunderstorm: "Storm"
+        }
+    }
+
     var isFrozen: Bool { self == .snow }
     var isWet: Bool { self == .drizzle || self == .rain || self == .snow || self == .thunderstorm }
 }

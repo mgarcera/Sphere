@@ -274,6 +274,9 @@ struct ContentView: View {
             .frame(height: 16, alignment: .leading)
             .scaleEffect(allDayScale, anchor: .leading)
             .padding(.top, 7)
+
+            weatherLine
+                .padding(.top, 5)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)
@@ -355,6 +358,51 @@ struct ContentView: View {
 
     private var effectiveScheme: ColorScheme {
         appearance.colorScheme ?? systemScheme
+    }
+
+    /// What the sky is doing at the hour the wheel is on: the mark, the word
+    /// and the temperature.
+    ///
+    /// It follows the wheel like the rest of the header — the arc's clouds are
+    /// already drawn for the focused hour, so a reading anchored to the real
+    /// now would disagree with the picture directly above it.
+    @ViewBuilder
+    private var weatherLine: some View {
+        let condition = model.condition(atAbsoluteHour: model.focusHour)
+        let reading = weather.hour(at: model.focusDate)
+
+        HStack(spacing: 6) {
+            SkyGlyph(condition: condition ?? .clear)
+                .stroke(captionColor, style: StrokeStyle(lineWidth: 1.1, lineCap: .round, lineJoin: .round))
+                .frame(width: 14, height: 14)
+
+            Text((condition ?? .clear).title)
+                .contentTransition(.identity)
+                .font(.footnote)
+                .foregroundStyle(captionColor)
+
+            if let celsius = reading?.celsius {
+                Text(Self.degrees(celsius))
+                    .contentTransition(.identity)
+                    .font(.footnote)
+                    .monospacedDigit()
+                    .foregroundStyle(captionColor)
+            }
+        }
+        // Reserved whether or not the forecast has arrived, for the reason the
+        // all-day row is: a line that appears later shifts the whole arc.
+        .frame(height: 16, alignment: .leading)
+        .opacity(condition == nil ? 0 : 1)
+    }
+
+    /// Whole degrees, in the reader's own unit. Fetched in celsius and
+    /// localised at the point of display, so the unit follows the reader rather
+    /// than the request.
+    static func degrees(_ celsius: Double) -> String {
+        Measurement(value: celsius, unit: UnitTemperature.celsius)
+            .formatted(.measurement(width: .narrow,
+                                    usage: .weather,
+                                    numberFormatStyle: .number.precision(.fractionLength(0))))
     }
 
     private var titleColor: Color {

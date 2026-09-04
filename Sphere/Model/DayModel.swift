@@ -245,6 +245,12 @@ final class DayModel {
         skyByDay = result
     }
 
+    /// The condition on the hour containing `hour`. Not blended: a condition is
+    /// a word, and half of "rain" is not a word.
+    func condition(atAbsoluteHour hour: Double) -> SkyCondition? {
+        skyHour(atAbsoluteHour: floor(hour))?.condition
+    }
+
     private func skyHour(atAbsoluteHour hour: Double) -> SkyHour? {
         let index = Int(floor(hour / 24))
         let inDay = Int(floor(hour - Double(index) * 24))
