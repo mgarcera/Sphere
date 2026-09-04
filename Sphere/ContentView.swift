@@ -435,8 +435,21 @@ struct ContentView: View {
     /// as inputs. The next event it cannot: a widget has no event store unless
     /// it asks for calendar access of its own, and one permission prompt is
     /// enough for one app.
+    /// Everything outside the arc is about NOW, never about the wheel.
+    ///
+    /// The events used to be whatever the wheel had loaded — a day either side
+    /// of the focus — so scrubbing three days out left the widgets with a
+    /// snapshot that held no events for today at all. They come from the store
+    /// now, for today and tomorrow, which is what a timeline running eight
+    /// hours forward can reach.
     private func publishSnapshot() {
         let next = calendar.nearestTimedEvent(.forward, from: .now)
+        let today = Calendar.current.startOfDay(for: .now)
+        let events = calendar.timedOccurrences(
+            from: today,
+            to: today.addingTimeInterval(2 * 86_400)
+        )
+
         SphereSnapshot.write(SphereSnapshot(
             latitude: location.coordinate.latitude,
             longitude: location.coordinate.longitude,
@@ -445,22 +458,14 @@ struct ContentView: View {
             nextEventTitle: next?.title,
             nextEventStart: next?.startDate,
             nextEventEnd: next?.endDate,
-            // The loaded window is a day either side, which is more than the
-            // widget draws; it filters to the day it is showing.
-            events: model.timedEvents.map { event in
-                SnapshotEvent(
-                    start: model.anchor.addingTimeInterval(event.startHour * 3600),
-                    end: model.anchor.addingTimeInterval(event.endHour * 3600),
-                    color: event.snapshotColor
-                )
-            }
+            events: events
         ))
         WidgetCenter.shared.reloadAllTimelines()
 
         // The event containing the real now, not the one under the wheel: the
         // activity is about what is happening, not about what is being looked at.
         LiveActivity.sync(event: model.eventContainingNow,
-                          day: model.timedEvents,
+                          day: events,
                           anchor: model.anchor,
                           now: model.realNow,
                           coordinate: location.coordinate,

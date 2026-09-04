@@ -1,6 +1,7 @@
 import EventKit
 import Observation
 import SwiftUI
+import UIKit
 
 /// Reads the user's calendar and hands the arc a flat list of occurrences.
 ///
@@ -134,6 +135,27 @@ final class CalendarService {
         occurrences = found
     }
 
+    /// Timed events in a window, taken from the store rather than from
+    /// whatever the wheel happens to have loaded.
+    ///
+    /// The arc loads a day either side of the FOCUS, so a wheel three days out
+    /// left the widgets with a snapshot that had no events for today in it at
+    /// all — and a widget is about now, always. This is what they read.
+    func timedOccurrences(from start: Date, to end: Date) -> [SnapshotEvent] {
+        guard access == .granted else { return [] }
+        if hiddenSourceIDs.isEmpty == false, visibleCalendars?.isEmpty == true { return [] }
+
+        let predicate = store.predicateForEvents(withStart: start, end: end, calendars: visibleCalendars)
+        return store.events(matching: predicate)
+            .filter { !$0.isAllDay }
+            .sorted { $0.startDate < $1.startDate }
+            .map { event in
+                SnapshotEvent(start: event.startDate,
+                              end: max(event.endDate, event.startDate),
+                              color: Self.snapshotColor(for: event))
+            }
+    }
+
     /// The nearest timed event outside the drawn window.
     ///
     /// The arc only loads a day either side, so the chevrons could not see an
@@ -177,6 +199,13 @@ final class CalendarService {
     /// The exact occurrence the arc is showing, so an edit or a delete lands on
     /// the day you are looking at.
     func occurrence(for id: CalendarEvent.ID) -> EKEvent? { occurrences[id] }
+
+    /// The same colour as components, since the group container is JSON.
+    private static func snapshotColor(for event: EKEvent) -> SnapshotColor {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        UIColor(color(for: event)).getRed(&r, green: &g, blue: &b, alpha: &a)
+        return SnapshotColor(red: Double(r), green: Double(g), blue: Double(b))
+    }
 
     private static func color(for event: EKEvent) -> Color {
         guard let cgColor = event.calendar?.cgColor else { return Theme.taskActive }

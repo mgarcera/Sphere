@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 /// One occurrence of a calendar event, flattened into the arc's coordinate
 /// space. Hours are measured from the model's anchor midnight and are
@@ -20,14 +19,5 @@ struct CalendarEvent: Identifiable, Equatable {
 
     func contains(_ hour: Double) -> Bool {
         hour >= startHour && hour < endHour
-    }
-}
-
-extension CalendarEvent {
-    /// The capsule colour as components, for the snapshot the widgets read.
-    var snapshotColor: SnapshotColor {
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        UIColor(color).getRed(&r, green: &g, blue: &b, alpha: &a)
-        return SnapshotColor(red: Double(r), green: Double(g), blue: Double(b))
     }
 }

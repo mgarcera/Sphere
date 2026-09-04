@@ -10,15 +10,11 @@ import Foundation
 enum LiveActivity {
     private static var current: Activity<DayActivityAttributes>?
 
-    static func sync(event: CalendarEvent?, day: [CalendarEvent], anchor: Date, now: Date,
+    /// `day` is the same list the widgets read: today's events from the store,
+    /// not the wheel's window.
+    static func sync(event: CalendarEvent?, day spans: [SnapshotEvent], anchor: Date, now: Date,
                      coordinate: Coordinate, timeZone: TimeZone) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
-
-        let spans = day.map {
-            SnapshotEvent(start: anchor.addingTimeInterval($0.startHour * 3600),
-                          end: anchor.addingTimeInterval($0.endHour * 3600),
-                          color: $0.snapshotColor)
-        }
 
         guard let event else { return end() }
         let start = anchor.addingTimeInterval(event.startHour * 3600)

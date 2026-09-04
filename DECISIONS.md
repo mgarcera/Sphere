@@ -897,11 +897,10 @@ in their calendars' colours, at the widgets' two strengths — full for the one
 happening now, 0.72 for the rest. The arc was already the picture that saves
 three timestamps from being arithmetic; the events are what it was missing.
 
-**Today or the wheel's day is a toggle, for now.** Tapping the label switches
-the arc between the two, and the label becomes the date when it follows the
-wheel. Today is what agrees with its neighbours — everything else in this sheet
-is anchored to the real now — but the other reading is worth living with before
-it is decided.
+**Today, decided.** The toggle between today and the wheel's day is gone: the
+label is TODAY and the arc is today's. Everything outside the main arc is about
+now — the sheet's sun, moon and weather already were, and one thing following
+the wheel in a block anchored to the real hour was the odd one.
 
 ### One arc, three places (2026-09-03)
 
@@ -922,3 +921,20 @@ horizon `Hairline` 1, curve `MutedLight`, capsules in the calendar's colour at
 palette at all — vibrancy flattens it — so it is white at 0.25 for the ground,
 0.40 for the curve, 0.55 for the capsules, 0.45 for the stem and full white for
 the dot.
+
+### Now only, and read from the store (2026-09-03)
+
+The wheel was leaking into the widgets. Their events came from
+`model.timedEvents`, which holds a day either side of the FOCUS, so scrubbing
+three days out published a snapshot with nothing for today in it and the tiles
+went empty. The menu's small arc had the same fault from the same source.
+
+Both read the store directly now, for the day they draw: the snapshot takes
+today and tomorrow, which is what a timeline running eight hours forward can
+reach, and the menu takes today. `CalendarService.timedOccurrences(from:to:)` is
+the one place that asks. The Live Activity shares the snapshot's list rather
+than mapping its own, since it is about now as well.
+
+The rule this settles: **the arc is the only thing that follows the wheel.**
+Everything else — widgets, the activity, the menu's readings and its arc — is
+about the real now, whatever is being looked at.
