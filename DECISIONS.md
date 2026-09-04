@@ -938,3 +938,34 @@ than mapping its own, since it is about now as well.
 The rule this settles: **the arc is the only thing that follows the wheel.**
 Everything else — widgets, the activity, the menu's readings and its arc — is
 about the real now, whatever is being looked at.
+
+## The date line becomes the week (2026-09-03)
+
+A written date says which day it is. A week says that and where the day sits in
+it, which is what the sentence could only spell out in a word — so the caption
+is now seven circled dates, Sunday to Saturday, under the title.
+
+**It follows the wheel**, unlike everything else outside the arc. This line sits
+under a title that already reads the wheel's hour, and its whole job is to say
+what day is being looked at. Today keeps a small mark of its own underneath, for
+when the wheel has wandered off it.
+
+Tap a date to land on the start of that day; hold to open the date picker, so
+anything outside this week is one gesture rather than a trip to the menu.
+
+**Two strengths of motion.** The selection springs between dots on a bouncy
+spring — the distance is short, so the overshoot is most of what reads as a pop
+— and when the week itself changes, its seven columns arrive one after another,
+35ms apart. The stagger is on the way IN only: a delay reads as sequence when
+several things arrive together and as lag when one thing leaves alone.
+
+The strip animates from held state rather than from the model. The wheel moves
+`focusHour` with no transaction, so a transition reading a computed value off it
+is attributed to nothing and never runs — the same trap the all-day row hit.
+The numbers carry `.contentTransition(.identity)`, or they crossfade into each
+other as the week slides, which the transaction does whether or not it is asked.
+
+The written line is not entirely gone: it is the MONTH now, in the menu's own
+header style, because a bare 1 at the start of a week does not say which month
+has begun. When the wheel is inside an event, that line still carries the span
+after it, which is what it used to carry beside the date.
