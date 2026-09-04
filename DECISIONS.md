@@ -983,3 +983,31 @@ condition is a word, and half of "rain" is not a word.
 
 The menu's corner carries the same three things in the same order, and both
 round to whole degrees.
+
+## The one request that leaves rounds first (2026-09-04)
+
+An audit of every data flow in the app, for the privacy policy the App Store
+needs, turned up one thing worth changing rather than describing.
+
+Open-Meteo is the only non-Apple host this app talks to, and it was being handed
+`String(coordinate.latitude)` — the raw Double off CoreLocation, unrounded.
+`kCLLocationAccuracyKilometer` is a hint about the FIX, not a cap on what gets
+sent, so the request carried a doorstep where the app only ever needed a
+neighbourhood. Two decimals is about 1.1km, matches what the app asks
+CoreLocation for, and is finer than the forecast grid the answer comes off, so
+nothing on screen changes.
+
+The fix itself stays precise. The sun's arc is computed on device and wants
+every digit; it is only the outbound copy that is coarsened.
+
+What the audit confirmed, for the policy: no analytics, no crash reporting, no
+third-party SDK, no dependency manifests, and exactly one non-Apple host in
+6,250 lines. Calendar titles never leave the device. Location is When-In-Use,
+one-shot, never appended to a history.
+
+What it caught that the policy must not overclaim: the app takes FULL calendar
+access and reads a year of events into memory for search, it WRITES to the
+calendar through Apple's own editor, reverse geocoding and place search send
+fixes and keystrokes to Apple, one real event title is drawn on the lock screen
+by the widget and the Live Activity, and `UserDefaults` — which holds a manual
+place's coordinate — travels in device backups.

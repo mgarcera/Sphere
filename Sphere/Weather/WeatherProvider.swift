@@ -33,11 +33,23 @@ struct OpenMeteoProvider: WeatherProvider {
         let hourly: Hourly
     }
 
+    /// Rounded before it is sent, never after: the fix itself stays precise for
+    /// the sun's arc, which is drawn on device.
+    static func coarse(_ degrees: Double) -> String {
+        String(format: "%.2f", degrees)
+    }
+
     func hourly(coordinate: Coordinate, from: Date, to: Date) async throws -> [WeatherHour] {
         var components = URLComponents(string: "https://api.open-meteo.com/v1/forecast")!
         components.queryItems = [
-            .init(name: "latitude", value: String(coordinate.latitude)),
-            .init(name: "longitude", value: String(coordinate.longitude)),
+            // Two decimals, about 1.1km — the same resolution the app ASKS
+            // CoreLocation for (`kCLLocationAccuracyKilometer`) and finer than
+            // the forecast grid this is drawn from, so nothing on screen
+            // changes. What changes is what a third party is handed: the one
+            // request that leaves this app now carries a neighbourhood rather
+            // than a doorstep.
+            .init(name: "latitude", value: Self.coarse(coordinate.latitude)),
+            .init(name: "longitude", value: Self.coarse(coordinate.longitude)),
             .init(name: "hourly", value: "weather_code,cloud_cover_low,cloud_cover_mid,cloud_cover_high,precipitation,wind_speed_10m,cape,temperature_2m"),
             .init(name: "timezone", value: "UTC"),
             .init(name: "past_days", value: String(Self.pastDays)),
