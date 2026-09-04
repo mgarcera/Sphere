@@ -35,35 +35,6 @@ struct DayMenu: View {
                     .padding(.vertical, 4)
                 }
 
-                divider
-                section("Feedback") {
-                    Button {
-                        isFeedbackOpen = true
-                    } label: {
-                        HStack(spacing: 8) {
-                            Text("Tell me how it is going")
-                                .font(.subheadline)
-                                .foregroundStyle(Theme.ink)
-                            Spacer(minLength: 8)
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(Theme.mutedLight)
-                        }
-                        .contentShape(.rect)
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.vertical, 2)
-
-                    // The same two addresses App Store Connect points at.
-                    HStack(spacing: 18) {
-                        Link("Privacy", destination: SphereLinks.privacyPolicy)
-                        Link("Support", destination: SphereLinks.support)
-                    }
-                    .font(.footnote)
-                    .foregroundStyle(Theme.mutedLight)
-                    .padding(.top, 8)
-                }
-
                 if !calendar.sources.isEmpty {
                     divider
                     section("Calendars") {
@@ -90,6 +61,35 @@ struct DayMenu: View {
                 divider
                 section("Wheel") {
                     WheelSettings(bottomPrimary: $bottomPrimary)
+                }
+
+                divider
+                section("Feedback", trailing: {
+                    // Upper right of the section, on the header's own line: the
+                    // same two addresses App Store Connect points at.
+                    HStack(spacing: 14) {
+                        Link("Privacy", destination: SphereLinks.privacyPolicy)
+                        Link("Support", destination: SphereLinks.support)
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(Theme.mutedLight)
+                }) {
+                    Button {
+                        isFeedbackOpen = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Text("Open feedback form")
+                                .font(.subheadline)
+                                .foregroundStyle(Theme.ink)
+                            Spacer(minLength: 8)
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(Theme.mutedLight)
+                        }
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.vertical, 2)
                 }
             }
             .padding(.horizontal, 24)
@@ -132,7 +132,7 @@ struct DayMenu: View {
             // drawing, so they sit with it rather than up beside the place.
             HStack(alignment: .center) {
                 Text("Today")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.display(12))
                     .tracking(1.1)
                     .textCase(.uppercase)
                     .foregroundStyle(Theme.mutedLight)
@@ -332,15 +332,32 @@ struct DayMenu: View {
         Rectangle().fill(Theme.hairline).frame(height: 1)
     }
 
-    private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func section<Content: View>(_ title: String,
+                                        @ViewBuilder content: () -> Content) -> some View {
+        section(title, trailing: { EmptyView() }, content: content)
+    }
+
+    /// A section whose header carries something on its right — links, a reading,
+    /// anything belonging to the section rather than to a row inside it.
+    private func section<Trailing: View, Content: View>(
+        _ title: String,
+        @ViewBuilder trailing: () -> Trailing,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(.system(size: 11, weight: .bold))
-                .tracking(1.1)
-                .textCase(.uppercase)
-                .foregroundStyle(Theme.mutedLight)
-                .padding(.top, 16)
-                .padding(.bottom, 6)
+            HStack(alignment: .firstTextBaseline) {
+                Text(title)
+                    // The app's own display face, the one the clock is set in.
+                    .font(.display(12))
+                    .tracking(1.1)
+                    .textCase(.uppercase)
+                    .foregroundStyle(Theme.mutedLight)
+                Spacer(minLength: 8)
+                trailing()
+            }
+            .padding(.top, 16)
+            .padding(.bottom, 6)
+
             content()
         }
         .frame(maxWidth: .infinity, alignment: .leading)

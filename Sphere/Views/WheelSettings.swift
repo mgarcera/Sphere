@@ -125,7 +125,7 @@ struct WheelSettings: View {
             // reaches them: one is the thing the button is for, the other is
             // the thing it also does.
             Text(gesture == .tap ? "Primary" : "Secondary")
-                .font(.system(size: 11, weight: .bold))
+                .font(.display(12))
                 .tracking(1.1)
                 .textCase(.uppercase)
                 .foregroundStyle(Theme.mutedLight)

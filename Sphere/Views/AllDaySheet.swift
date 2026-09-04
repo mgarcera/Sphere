@@ -24,7 +24,7 @@ struct AllDaySheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(title)
-                .font(.system(size: 11, weight: .bold))
+                .font(.display(12))
                 .tracking(1.1)
                 .textCase(.uppercase)
                 .foregroundStyle(Theme.mutedLight)
