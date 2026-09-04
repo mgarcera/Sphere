@@ -100,7 +100,7 @@ struct DayMenu: View {
             // drawing, so they sit with it rather than up beside the place.
             HStack(alignment: .center) {
                 Text("Today")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(size: 11, weight: .bold))
                     .tracking(1.1)
                     .textCase(.uppercase)
                     .foregroundStyle(Theme.mutedLight)
@@ -299,7 +299,7 @@ struct DayMenu: View {
     private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(size: 11, weight: .bold))
                 .tracking(1.1)
                 .textCase(.uppercase)
                 .foregroundStyle(Theme.mutedLight)
