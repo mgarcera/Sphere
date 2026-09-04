@@ -12,12 +12,6 @@ struct ContentView: View {
     @State private var isMenuOpen = false
     @State private var titleScale: CGFloat = 1
     @State private var captionScale: CGFloat = 1
-    /// The week strip animates from these, not from the model. The wheel moves
-    /// `focusHour` with no transaction, so a transition reading a computed
-    /// value off it is never attributed to anything and never runs.
-    @State private var heldWeek: [Date] = []
-    @State private var heldSelected: Int = 0
-    @State private var heldToday: Int?
     /// Which quarter-hour the wheel last clicked at, so a click fires on
     /// crossing rather than on every frame of the drag.
     @State private var lastDetent: Double = 0
@@ -244,27 +238,10 @@ struct ContentView: View {
 
             Text(subtitle)
                 .contentTransition(.identity)
-                .font(.system(size: 11, weight: .medium))
-                .tracking(1.1)
-                .textCase(.uppercase)
+                .font(.footnote)
                 .foregroundStyle(captionColor)
                 .monospacedDigit()
                 .scaleEffect(captionScale, anchor: .leading)
-
-            WeekStrip(days: heldWeek,
-                      selected: heldSelected,
-                      today: heldToday,
-                      timeZone: model.timeZone,
-                      ink: Theme.ink,
-                      ground: Theme.background,
-                      muted: Theme.mutedLight,
-                      hairline: Theme.hairline,
-                      onPick: { day in travel { model.focus(onStartOf: day) } },
-                      onHold: {
-                          pickedDay = model.focusDate
-                          isDayPickerOpen = true
-                      })
-                .padding(.top, 6)
 
             // The row is always reserved, present or not. Letting it appear
             // and vanish shifted the whole arc down and back as you scrubbed
@@ -300,13 +277,6 @@ struct ContentView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)
-        .onChange(of: dayKey) { _, _ in
-            // One transaction for the lot: the selection springs to its new dot
-            // and, when the week itself has changed, its seven columns arrive
-            // one after another.
-            withAnimation(Self.popSpring) { holdWeek() }
-        }
-        .onAppear { holdWeek() }
         .onChange(of: titleKey) { _, _ in popTitle() }
         .onChange(of: captionKey) { _, _ in popCaption() }
         .onChange(of: allDayKey) { _, _ in popAllDay() }
@@ -366,12 +336,6 @@ struct ContentView: View {
 
     /// The 40ms delay is what makes the pair read as one system with the title
     /// leading. It stays when the caption pops alone, where it is invisible.
-    private func holdWeek() {
-        heldWeek = weekDays
-        heldSelected = selectedWeekday
-        heldToday = todayInWeek
-    }
-
     private func popCaption() {
         captionScale = 0.94
         withAnimation(Self.popSpring.delay(0.04)) { captionScale = 1 }
@@ -437,50 +401,20 @@ struct ContentView: View {
     }
 
     /// Carries the day change, since the arc itself deliberately doesn't.
-    /// The month, because a bare 1 in the strip does not say which one — and
-    /// the event's span after it when the wheel is inside an event, which is
-    /// what this line used to carry alongside the written date.
     private var subtitle: String {
-        let month = Self.monthLine(model.focusDate, in: model.timeZone)
-        guard let active = model.activeEvent else { return month }
-
-        let offset = Double(model.dayIndex) * 24
-        let start = ArcContent.clock(active.startHour - offset)
-        // A zero-length event would otherwise read "1:24 PM – 1:24 PM".
-        guard active.durationHours > 1.0 / 60 else { return "\(month) · \(start)" }
-        let end = ArcContent.clock(active.endHour - offset)
-        return "\(month) · \(start) – \(end)"
-    }
-
-    /// Sunday first, so the shape of the week is the familiar one.
-    private var weekDays: [Date] {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = model.timeZone
-        let day = calendar.startOfDay(for: model.focusDate)
-        let weekday = calendar.component(.weekday, from: day)
-        guard let start = calendar.date(byAdding: .day, value: -(weekday - 1), to: day) else {
-            return [day]
+        if let active = model.activeEvent {
+            // Date first, times last: the title already names the event, so the
+            // caption reads as context then when it runs.
+            let offset = Double(model.dayIndex) * 24
+            let start = ArcContent.clock(active.startHour - offset)
+            // A zero-length event would otherwise read "1:24 PM – 1:24 PM".
+            guard active.durationHours > 1.0 / 60 else {
+                return "\(Self.dayLine(model.focusDate, in: model.timeZone)) · \(start)"
+            }
+            let end = ArcContent.clock(active.endHour - offset)
+            return "\(Self.dayLine(model.focusDate, in: model.timeZone)) · \(start) – \(end)"
         }
-        return (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: start) }
-    }
-
-    private var selectedWeekday: Int {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = model.timeZone
-        return calendar.component(.weekday, from: model.focusDate) - 1
-    }
-
-    private var todayInWeek: Int? {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = model.timeZone
-        return weekDays.firstIndex { calendar.isDate($0, inSameDayAs: model.realNow) }
-    }
-
-    /// Which day the wheel is on, as one value to watch.
-    private var dayKey: Date {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = model.timeZone
-        return calendar.startOfDay(for: model.focusDate)
+        return Self.dayLine(model.focusDate, in: model.timeZone)
     }
 
     // MARK: - Actions
@@ -699,16 +633,6 @@ struct ContentView: View {
     private static func dayLine(_ date: Date, in zone: TimeZone) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE, MMMM d"
-        formatter.timeZone = zone
-        return formatter.string(from: date)
-    }
-
-    /// The month alone. The strip carries the day and the weekday now, and this
-    /// is only here because a bare 1 at the start of a week does not say which
-    /// month it has just begun.
-    private static func monthLine(_ date: Date, in zone: TimeZone) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM"
         formatter.timeZone = zone
         return formatter.string(from: date)
     }
