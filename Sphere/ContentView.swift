@@ -185,8 +185,7 @@ struct ContentView: View {
         VStack(spacing: 0) {
             header
 
-            ArcWindow(model: model, eventsHidden: eventsHidden,
-                      onPlaneTap: { travel { model.returnToNow() } })
+            ArcWindow(model: model, eventsHidden: eventsHidden)
                 .padding(.top, 8)
 
             Spacer(minLength: 16)
