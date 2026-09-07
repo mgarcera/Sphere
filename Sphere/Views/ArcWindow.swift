@@ -10,6 +10,9 @@ struct ArcWindow: View {
     /// of what a long jump looks like.
     var eventsHidden = false
     var arcHeight: CGFloat = 190
+    /// Tapping the plane goes home. The travel itself belongs to the screen that
+    /// owns the model, so this only reports the tap.
+    var onPlaneTap: () -> Void = {}
 
     var body: some View {
         GeometryReader { proxy in
@@ -102,6 +105,24 @@ struct ArcWindow: View {
                 .offset(x: pan)
                 .opacity(eventsHidden ? 0 : 1)
 
+                if planeOpacity > 0 {
+                    let hours = model.nowHour - model.focusHour
+                    PlaneMark(hoursToNow: hours)
+                        .opacity(planeOpacity)
+                        .position(x: centreX + CGFloat(hours) * pointsPerHour * PlaneMark.parallax,
+                                  y: Self.planeAltitude)
+                        // The mark is small and the sky is empty; the target is
+                        // the size of a finger, not the size of the drawing.
+                        .overlay {
+                            Color.clear
+                                .frame(width: 56, height: 56)
+                                .contentShape(.rect)
+                                .position(x: centreX + CGFloat(hours) * pointsPerHour * PlaneMark.parallax,
+                                          y: Self.planeAltitude)
+                                .onTapGesture { onPlaneTap() }
+                        }
+                }
+
                 Rectangle()
                     .fill(Theme.hairlineSoft)
                     .frame(width: 1, height: max(0, ArcGeometry.baseline(arcHeight) - dotY))
@@ -118,5 +139,17 @@ struct ArcWindow: View {
             .clipped()
         }
         .frame(height: ArcGeometry.totalHeight(arcHeight))
+    }
+
+    /// Near the top of the sky gutter — above the high deck's 104pt standoff,
+    /// with room left for the tallest storm to build under it.
+    private static let planeAltitude: CGFloat = 34
+
+    /// Absent while you are home, and absent in a storm: planes route around
+    /// weather, and a mark competing with lightning loses.
+    private var planeOpacity: Double {
+        let hours = model.nowHour - model.focusHour
+        guard model.condition(atAbsoluteHour: model.nowHour) != .thunderstorm else { return 0 }
+        return PlaneMark.opacity(hoursToNow: hours)
     }
 }

@@ -1034,3 +1034,33 @@ Worth noting for the other two apps: **neither Fil's nor Weeklite's privacy
 policy mentions the feedback form at all**, and Fil's says "the ONLY time
 anything leaves your device is if you subscribe to Fil Extra and run a smart
 search", which the sheet contradicts every time someone uses it.
+
+## Now, drawn as a plane (2026-09-07)
+
+A visual counterpart to the NOW button, and the design turns on one decision:
+**the plane is not near now, it IS now.** It sits at the real hour, high above
+the cloud decks, so its position on screen answers "where is now from here"
+without a word. Everything else falls out of that. The heading needs no bearing —
+it faces the way it is travelling relative to you, which is home. The tap needs
+no special case — you fly to the plane, and the plane is where now lives.
+
+**It does not tick.** Nothing in this app moves on its own clock; the stars wink
+off the scrub and the countdown was cut for the same reason. So the plane moves
+because the wheel moved, and a still screen stays perfectly still. That killed
+the obvious version — a plane crossing on a timer — and the version that
+replaced it is better, because a mark pinned to now is information where a mark
+crossing on a schedule is decoration.
+
+Absent while you are home: its presence is the message. Absent in a storm:
+planes route around weather, and a mark competing with lightning loses.
+
+The parallax is 0.35, against the high deck's 0.85, and the number is not a
+taste call. It decides how long the plane is on screen. At 0.7 it left the
+screen two hours out and then spent the whole fade invisible — full opacity,
+nothing to see. At 0.35 it reaches the edge at about four and a half hours,
+which is exactly where the fade finishes: it goes and it disappears in the same
+moment. The arithmetic caught that before the device did.
+
+One drawing, day and night — no branch, nothing to keep true twice. Top-down,
+because that is the only view this app can honestly have of an aircraft, with a
+contrail that says direction and speed while nothing moves.
