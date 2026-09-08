@@ -18,6 +18,12 @@ struct SkyContinuous: View, Equatable {
     let daySeed: Int
     /// One deck per view, so the three can be panned at three rates.
     let deck: Deck
+    /// Marks above the horizon lighten as the sky darkens, so a cloud keeps its
+    /// weight against whatever it is sitting on.
+    var skyInk: Color = Theme.ink
+    /// What sits BEHIND the marks, which is what a cloud fills with to occlude
+    /// the deck behind it.
+    var skyGround: Color = Theme.background
     /// Which fog is drawn. A study setting, and part of the comparison so the
     /// cached layer rebuilds when it changes.
 
@@ -27,9 +33,9 @@ struct SkyContinuous: View, Equatable {
 
     var body: some View {
         Canvas { context, _ in
-            let ink = GraphicsContext.Shading.color(Theme.ink.opacity(SkyMarks.inkOpacity))
-            let ground = GraphicsContext.Shading.color(Theme.background)
-            let faint = GraphicsContext.Shading.color(Theme.ink.opacity(SkyMarks.inkOpacity * 0.5))
+            let ink = GraphicsContext.Shading.color(skyInk.opacity(SkyMarks.inkOpacity))
+            let ground = GraphicsContext.Shading.color(skyGround)
+            let faint = GraphicsContext.Shading.color(skyInk.opacity(SkyMarks.inkOpacity * 0.5))
             let byHour = Dictionary(uniqueKeysWithValues: hours.map { ($0.hour, $0) })
             let stormHours = Set(hours.filter(\.isConvective).map(\.hour))
 
@@ -435,7 +441,7 @@ struct SkyContinuous: View, Equatable {
                 path.move(to: point(hour: at, out: out))
                 path.addLine(to: point(hour: at + length, out: out))
                 context.stroke(path,
-                               with: .color(Theme.ink.opacity(SkyMarks.inkOpacity * fade)),
+                               with: .color(skyInk.opacity(SkyMarks.inkOpacity * fade)),
                                style: thin)
             }
         }

@@ -1,12 +1,16 @@
 import SwiftUI
 
-/// The ground warms as the focus hour passes through the horizon, and is plain
-/// white the rest of the time.
+/// The sky: one layer, from the top of the screen down to the horizon.
+///
+/// It does two jobs that used to be one. It warms as the focus hour passes
+/// through the horizon — dawn cool into cream, dusk plum into amber — and it
+/// DARKENS once the sun is properly down, so the band above the arc is a night
+/// sky while the ground below it stays paper. Drawn once rather than as two
+/// layers meeting somewhere, because a seam across the screen is the one thing
+/// that would give it away.
 ///
 /// It follows the focus hour rather than the real one, so it agrees with the
-/// dot: turning the wheel through dawn warms the screen. Kept well under full
-/// strength, since the app is ink on white and the line work has to stay
-/// readable through it.
+/// dot: turning the wheel through dusk darkens the sky.
 struct TwilightBackground: View {
     @Environment(\.colorScheme) private var colorScheme
 
@@ -16,6 +20,23 @@ struct TwilightBackground: View {
     let isMorning: Bool
     /// 0 to 1. Weather takes precedence, so dusk does not tint a storm.
     var suppressedBy: Double = 0
+
+    /// Where every wash on this screen sits, vertically. Full strength across
+    /// the header, gone before the arc block — the night, the twilight tint and
+    /// the weather all read from here, so moving them is one edit rather than
+    /// three.
+    ///
+    /// Taking them to half the screen was tried and pulled back: the fade then
+    /// ran past the horizon and into the hour labels.
+    enum Fall {
+        /// The mood stops of a three-colour wash.
+        static let first: Double = 0.20
+        static let second: Double = 0.40
+        /// Where a two-colour wash stops being solid.
+        static let hold: Double = 0.34
+        /// Where all of them reach zero.
+        static let out: Double = 0.52
+    }
 
     /// How far either side of the horizon the wash reaches.
     static let spanDegrees: Double = 8
@@ -30,6 +51,15 @@ struct TwilightBackground: View {
     /// already light and the ground only gets darker.
     static func lightTopColor(isMorning: Bool) -> (r: Double, g: Double, b: Double) {
         isMorning ? (0.62, 0.70, 0.88) : (0.70, 0.55, 0.66)
+    }
+
+    /// The night fill at the top of the screen, and how much of it there is —
+    /// the header measures what it is ACTUALLY on, and since this arrived it is
+    /// no longer paper. Without it the title stays dark on a dark sky.
+    static let nightTopComponents = (r: 0.043, g: 0.055, b: 0.098)
+
+    static func nightOpacity(elevationDegrees: Double, suppressedBy: Double) -> Double {
+        SkyDepth.nightness(elevationDegrees: elevationDegrees) * (1 - min(suppressedBy, 1))
     }
 
     private var strength: Double {
@@ -78,15 +108,15 @@ struct TwilightBackground: View {
         LinearGradient(
             stops: [
                 .init(color: colors[0], location: 0),
-                .init(color: colors[1], location: 0.20),
-                .init(color: colors[2], location: 0.40),
-                .init(color: Theme.background.opacity(0), location: 0.52),
+                .init(color: colors[1], location: Fall.first),
+                .init(color: colors[2], location: Fall.second),
+                .init(color: Theme.background.opacity(0), location: Fall.out),
             ],
             startPoint: .top,
             endPoint: .bottom
         )
-            .opacity(strength * Self.peakOpacity * (1 - min(suppressedBy, 1)))
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
+        .opacity(strength * Self.peakOpacity * (1 - min(suppressedBy, 1)))
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
     }
 }

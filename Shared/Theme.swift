@@ -19,6 +19,35 @@ enum Theme {
     static let controlAccent = Color("ControlAccent")
 }
 
+/// How dark the SKY is at a given sun elevation, 0 by day and 1 once the sun is
+/// properly down. Nautical twilight (-12°) is where the last light goes.
+///
+/// It is not the app's appearance: the ground never moves. Only the band above
+/// the horizon reads this.
+enum SkyDepth {
+    static let nightDegrees: Double = -12
+
+    static func nightness(elevationDegrees: Double) -> Double {
+        // No `clamped` here: this file is compiled into the widget too, and
+        // that helper lives with the app's model. The stdlib's own `clamped` is
+        // package-internal and silently returns a Duration.
+        let t = min(max(-elevationDegrees / -nightDegrees, 0), 1)
+        return t * t * (3 - 2 * t)
+    }
+}
+
+extension Theme {
+    /// The ink for marks ABOVE the horizon — clouds, stars, birds, rain. It
+    /// lightens as the sky darkens, so a cloud keeps its weight against
+    /// whatever it is sitting on.
+    ///
+    /// In dark mode `ink` is already near-white, so the blend is a no-op there
+    /// and one expression covers both appearances.
+    static func skyInk(nightness: Double) -> Color {
+        ink.mix(with: Color(red: 0.949, green: 0.933, blue: 0.910), by: nightness)
+    }
+}
+
 extension Font {
     /// Display/title face. `.serif` resolves to New York on iOS.
     static func display(_ size: CGFloat = 22) -> Font {

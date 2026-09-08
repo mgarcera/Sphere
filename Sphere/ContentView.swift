@@ -185,7 +185,9 @@ struct ContentView: View {
         VStack(spacing: 0) {
             header
 
-            ArcWindow(model: model, eventsHidden: eventsHidden)
+            ArcWindow(model: model, eventsHidden: eventsHidden,
+                      nightness: nightness,
+                      nightSuppressedBy: washAmount / WeatherWash.stormPeak)
                 .padding(.top, 8)
 
             Spacer(minLength: 16)
@@ -405,14 +407,30 @@ struct ContentView: View {
                                     numberFormatStyle: .number.precision(.fractionLength(0))))
     }
 
+    /// How dark the sky is at the hour the wheel is on.
+    private var nightness: Double {
+        SkyDepth.nightness(elevationDegrees: model.elevationDegrees(atAbsoluteHour: model.focusHour))
+    }
+
+    /// Held against the ground by day, and taken over by the sky at night.
+    ///
+    /// The hold both raises and CAPS, which is what it is for — the title comes
+    /// down to its target on a clear day so the caption cannot catch it. On a
+    /// night sky the cap is the wrong instinct: it lifts the ink to nine to one
+    /// and stops there, which is a light grey. Above the horizon the header is
+    /// sky, so it ends on the sky's own ink like every other mark up there.
     private var titleColor: Color {
         guard effectiveScheme == .light else { return Theme.ink }
-        return ContrastHold.color(ContrastHold.ink, target: Self.titleContrast, on: headerLuminance)
+        let held = ContrastHold.color(ContrastHold.ink, target: Self.titleContrast, on: headerLuminance)
+        return held.mix(with: Theme.skyInk(nightness: 1), by: nightness)
     }
 
     private var captionColor: Color {
         guard effectiveScheme == .light else { return Theme.muted }
-        return ContrastHold.color(ContrastHold.muted, target: Self.captionContrast, on: headerLuminance)
+        let held = ContrastHold.color(ContrastHold.muted, target: Self.captionContrast, on: headerLuminance)
+        // A step back from the title's white, so the pair keeps the distance it
+        // has at every other hour.
+        return held.mix(with: Theme.skyInk(nightness: 1).opacity(0.72), by: nightness)
     }
 
 
@@ -433,7 +451,11 @@ struct ContentView: View {
         return WeatherWash.topLuminance(
             precipitation: sky.precipitation,
             lightning: sky.lightning,
-            twilight: (TwilightBackground.lightTopColor(isMorning: isMorning), twilight)
+            twilight: (TwilightBackground.lightTopColor(isMorning: isMorning), twilight),
+            night: (TwilightBackground.nightTopComponents,
+                    TwilightBackground.nightOpacity(
+                        elevationDegrees: elevation,
+                        suppressedBy: washAmount / WeatherWash.stormPeak))
         )
     }
 

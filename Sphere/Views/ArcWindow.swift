@@ -10,6 +10,11 @@ struct ArcWindow: View {
     /// of what a long jump looks like.
     var eventsHidden = false
     var arcHeight: CGFloat = 190
+    /// How dark the sky is: the night's own strength, and what the marks above
+    /// the horizon lighten with.
+    var nightness: Double = 0
+    /// Weather takes precedence over night, the way it does over dusk.
+    var nightSuppressedBy: Double = 0
 
     var body: some View {
         GeometryReader { proxy in
@@ -22,6 +27,10 @@ struct ArcWindow: View {
             let dotY = ArcGeometry.y(normalized: model.normalizedElevation(atAbsoluteHour: model.focusHour), height: arcHeight)
 
             ZStack(alignment: .topLeading) {
+                // The clip moved off this stack and onto the two groups that
+                // actually pan, so the night between them can reach above the
+                // block and cover the header's sky as well.
+                ZStack(alignment: .topLeading) {
                 // Each day is its own cached layer, so only the set of three
                 // changes when the wheel crosses a boundary. Panning never
                 // re-samples a path.
@@ -33,7 +42,27 @@ struct ArcWindow: View {
                 }
                 .frame(width: dayWidth * 3, alignment: .topLeading)
                 .offset(x: pan)
+                }
+                .frame(width: proxy.size.width, height: ArcGeometry.totalHeight(arcHeight),
+                       alignment: .topLeading)
+                .clipped()
 
+                // Over the curve, the ticks and the labels; under the sky. The
+                // fill's edge IS the curve, so covering the line it is drawn
+                // from is what makes it read as an edge of the world rather
+                // than a shape laid over one.
+                if nightness > 0 {
+                    NightSky(nightness: nightness,
+                             arcHeight: arcHeight,
+                             focusHour: model.focusHour,
+                             normalizedElevation: { model.normalizedElevation(atAbsoluteHour: $0) },
+                             suppressedBy: nightSuppressedBy)
+                        .frame(width: proxy.size.width,
+                               height: NightSky.reach + ArcGeometry.totalHeight(arcHeight))
+                        .offset(y: -NightSky.reach)
+                }
+
+                ZStack(alignment: .topLeading) {
                 // Each deck is its own layer so it can trail the arc by its own
                 // amount. Further decks lag more, which is the parallax; they
                 // catch up the moment the wheel stops, so a cloud is never
@@ -52,6 +81,8 @@ struct ArcWindow: View {
                                     hours: model.sky(forDayIndex: index),
                                     daySeed: index,
                                     deck: deck,
+                                    skyInk: skyInk,
+                                    skyGround: skyGround,
                                     blinkStep: Int(model.focusHour * 8)
                                 )
                                 .equatable()
@@ -62,7 +93,9 @@ struct ArcWindow: View {
                                     height: arcHeight,
                                     hours: model.sky(forDayIndex: index),
                                     daySeed: index,
-                                    deck: deck
+                                    deck: deck,
+                                    skyInk: skyInk,
+                                    skyGround: skyGround
                                 )
                                 .equatable()
                             }
@@ -113,10 +146,23 @@ struct ArcWindow: View {
                     ceilingDegrees: model.focusSolarDay.seasonalCeiling
                 )
                 .position(x: centreX, y: dotY)
+                }
+                .frame(width: proxy.size.width, height: ArcGeometry.totalHeight(arcHeight),
+                       alignment: .topLeading)
+                .clipped()
             }
             .frame(width: proxy.size.width, height: ArcGeometry.totalHeight(arcHeight), alignment: .topLeading)
-            .clipped()
         }
         .frame(height: ArcGeometry.totalHeight(arcHeight))
+    }
+
+    /// One pair for the whole window: it is three hours wide, so the difference
+    /// between its edges is not worth redrawing three cached layers for.
+    private var skyInk: Color { Theme.skyInk(nightness: nightness) }
+
+    /// What a cloud fills with to cut a hole in the deck behind it — the sky's
+    /// own colour, not the paper's, or the clouds punch white holes in a night.
+    private var skyGround: Color {
+        Theme.background.mix(with: NightSky.colour, by: nightness)
     }
 }

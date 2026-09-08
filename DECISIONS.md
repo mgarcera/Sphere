@@ -1057,3 +1057,46 @@ and the end of the fade in the same moment. Any future mark pinned to an hour
 inherits that arithmetic.
 
 The commit is `02fe696`, one revert away.
+
+## The night is the shape of the day (2026-09-07)
+
+The sky above the arc darkens at night while the ground below it stays paper.
+Not the whole screen — that was tried in August and abandoned, and the reason it
+failed is the reason this works: a ground that inverts drags every mark on it
+through a moment of no contrast, and a SKY that darkens drags nothing, because
+the things standing on the ground never move.
+
+**The boundary is the sun's own curve.** Not a fraction of the screen, not a
+line drawn near the arc: the fill is sampled from the same elevation function
+the arc is, so the edge of the night and the drawn curve are one line rather
+than two that agree. Below the horizon the elevation clamps at zero, so through
+the night the fill is flat to the baseline and stops there — below the line is
+ground, and ground is paper at every hour.
+
+Three things were got wrong on the way, all worth keeping:
+
+- **A wash that fades cannot be a night.** The first version faded out mid-air
+  like the twilight and rain washes do, and a dark wash dissolving into a light
+  ground is a band of neither. Twilight and rain get away with it because they
+  are tints over paper; night is a different ground.
+- **The same colour twice is still a seam.** It was drawn in two pieces — solid
+  to the top of the arc block, then curved inside it — on the theory that
+  matching colours cannot show a join. They can: each piece carried its own
+  opacity, and the dawn wash covered one and not the other, so the sky arrived
+  in blocks.
+- **A reported position is a thing that can be wrong.** Drawn at screen level
+  the fill had to be told where the arc block was, through a preference in a
+  named coordinate space, and the number came back wrong: the night stopped
+  short of the horizon with a white gap under it. Moving the drawing INSIDE the
+  block deleted the measurement rather than fixing it. The clip had to move off
+  the outer stack onto the two groups that actually pan, so the night between
+  them can still reach up over the header.
+
+Everything above the horizon takes the sky's ink, which lightens as the sky
+darkens: the clouds, the stars, the birds, and the header. The header needed it
+most — the contrast hold both raises and caps, so on a night sky it lifted the
+title to exactly its nine-to-one target and stopped, which is a light grey. It
+ends on the sky's own ink now, because that is what it is sitting on.
+
+A cloud fills with the sky's colour rather than the paper's, or it punches white
+holes in the night.

@@ -17,6 +17,12 @@ struct ClearSky: View, Equatable {
     let hours: [SkyHour]
     let daySeed: Int
     let deck: SkyContinuous.Deck
+    /// Marks above the horizon lighten as the sky darkens, so a cloud keeps its
+    /// weight against whatever it is sitting on.
+    var skyInk: Color = Theme.ink
+    /// What sits BEHIND the marks, which is what a cloud fills with to occlude
+    /// the deck behind it.
+    var skyGround: Color = Theme.background
 
     /// The scrub position, quantised. Everything else in this app moves because
     /// the wheel moved, and a clock ticking on its own was the one thing that
@@ -218,7 +224,7 @@ struct ClearSky: View, Equatable {
         path.addQuadCurve(to: CGPoint(x: mark.point.x, y: mark.point.y + radius), control: mark.point)
         path.addQuadCurve(to: CGPoint(x: mark.point.x - radius, y: mark.point.y), control: mark.point)
         context.fill(path, with: .color(
-            Theme.ink.opacity(SkyMarks.inkOpacity * mark.opacity * (dimmed ? 0.5 : 1))))
+            skyInk.opacity(SkyMarks.inkOpacity * mark.opacity * (dimmed ? 0.5 : 1))))
     }
 
     /// Two strokes meeting, the way a bird reads at this size.
@@ -243,7 +249,7 @@ struct ClearSky: View, Equatable {
                           control: CGPoint(x: centre.x - wing * 0.5, y: centre.y - bow))
         path.addQuadCurve(to: CGPoint(x: centre.x + wing, y: centre.y + drop + wing * lean),
                           control: CGPoint(x: centre.x + wing * 0.5, y: centre.y - bow))
-        context.stroke(path, with: .color(Theme.ink.opacity(SkyMarks.inkOpacity * mark.opacity)),
+        context.stroke(path, with: .color(skyInk.opacity(SkyMarks.inkOpacity * mark.opacity)),
                        style: StrokeStyle(lineWidth: 1.0, lineCap: .round, lineJoin: .round))
     }
 
