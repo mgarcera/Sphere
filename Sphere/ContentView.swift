@@ -76,7 +76,18 @@ struct ContentView: View {
             .allowsHitTesting(false)
         }
         .animation(.easeInOut(duration: 0.25), value: calendar.access)
-        .preferredColorScheme(appearance.colorScheme)
+        // The status bar reads the HOSTING CONTROLLER's style, and
+        // `preferredColorScheme` is the only lever SwiftUI gives onto it —
+        // `UIStatusBarStyle.default` claims to adapt to the content below it
+        // and in practice only ever moved the battery.
+        //
+        // So the scheme goes dark at night, and the app's own colours are
+        // pinned straight back underneath it. The palette is asset pairs, so
+        // without the pin the ground below the horizon would inherit the dark
+        // side and the whole app would flip — which is the thing this sky was
+        // built to avoid doing.
+        .preferredColorScheme(statusBarNight ? .dark : appearance.colorScheme)
+        .environment(\.colorScheme, effectiveScheme)
         .sheet(isPresented: $isDayPickerOpen) {
             VStack(spacing: 0) {
                 DatePicker("", selection: $pickedDay, displayedComponents: .date)
@@ -183,7 +194,12 @@ struct ContentView: View {
 
     private var day: some View {
         VStack(spacing: 0) {
+            // Above the arc block, not below it. The night is drawn inside the
+            // block and reaches up over this whole area, and a later sibling in
+            // a stack draws on top — so without this the type is behind the sky
+            // rather than on it, whatever colour it is.
             header
+                .zIndex(1)
 
             ArcWindow(model: model, eventsHidden: eventsHidden,
                       nightness: nightness,
@@ -407,6 +423,13 @@ struct ContentView: View {
                                     numberFormatStyle: .number.precision(.fractionLength(0))))
     }
 
+    /// Whether the system's own furniture should be dressed for night. Fires on
+    /// the same crossing the header's type uses, so the glyphs turn when the
+    /// title does.
+    private var statusBarNight: Bool {
+        typeNight > 0.5 && effectiveScheme == .light
+    }
+
     /// How dark the sky is at the hour the wheel is on.
     private var nightness: Double {
         SkyDepth.nightness(elevationDegrees: model.elevationDegrees(atAbsoluteHour: model.focusHour))
@@ -419,10 +442,28 @@ struct ContentView: View {
     /// night sky the cap is the wrong instinct: it lifts the ink to nine to one
     /// and stops there, which is a light grey. Above the horizon the header is
     /// sky, so it ends on the sky's own ink like every other mark up there.
+    /// When the header's type turns over: at the horizon, across two degrees,
+    /// which is a few minutes either side of sunset.
+    ///
+    /// NOT on the sky's own schedule. The sky keeps darkening for another
+    /// twelve degrees after that, and waiting for it left the type dark on a
+    /// dimming ground for the best part of an hour. The contrast arithmetic
+    /// agreed with the wait — at a ground of 0.25 a dark ink scores 6:1 against
+    /// white's 3.5:1, so the hold kept choosing dark — and it was wrong: by
+    /// then the screen reads as evening and evening type is light.
+    private var typeNight: Double {
+        let t = ((1 - focusElevation) / 2).clamped(to: 0...1)
+        return t * t * (3 - 2 * t)
+    }
+
+    private var focusElevation: Double {
+        model.elevationDegrees(atAbsoluteHour: model.focusHour)
+    }
+
     private var titleColor: Color {
         guard effectiveScheme == .light else { return Theme.ink }
         let held = ContrastHold.color(ContrastHold.ink, target: Self.titleContrast, on: headerLuminance)
-        return held.mix(with: Theme.skyInk(nightness: 1), by: nightness)
+        return held.mix(with: Theme.skyInk(nightness: 1), by: typeNight)
     }
 
     private var captionColor: Color {
@@ -430,7 +471,7 @@ struct ContentView: View {
         let held = ContrastHold.color(ContrastHold.muted, target: Self.captionContrast, on: headerLuminance)
         // A step back from the title's white, so the pair keeps the distance it
         // has at every other hour.
-        return held.mix(with: Theme.skyInk(nightness: 1).opacity(0.72), by: nightness)
+        return held.mix(with: Theme.skyInk(nightness: 1).opacity(0.72), by: typeNight)
     }
 
 

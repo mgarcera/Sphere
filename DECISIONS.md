@@ -1100,3 +1100,23 @@ ends on the sky's own ink now, because that is what it is sitting on.
 
 A cloud fills with the sky's colour rather than the paper's, or it punches white
 holes in the night.
+
+### The status bar had to be told (2026-09-08)
+
+`UIStatusBarStyle.default` is documented as adapting "to maintain contrast with
+the content below it". Over the night sky it moved the battery and nothing
+else — the clock and the radios stayed black, before and after an override, in
+every arrangement tried. It is declared, not detected.
+
+The style comes from the hosting controller, which a `WindowGroup` app does not
+own, and setting the window's `overrideUserInterfaceStyle` is not a stand-in: it
+produced exactly the same single moving glyph. The one lever SwiftUI puts on
+that controller is `preferredColorScheme`, which flips the whole palette on the
+way through — so it goes dark at night and the app's own colours are pinned
+straight back underneath with an explicit `colorScheme` environment. The outer
+modifier reaches the controller; the inner one re-pins the views.
+
+The price: everything else the window governs — sheets, the keyboard, the
+EventKit editors — follows the outer one, so at night they arrive dark while the
+app stays light. Taken knowingly, over inverting the palette or ending the sky
+below the status bar.
