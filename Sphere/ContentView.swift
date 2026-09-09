@@ -8,18 +8,6 @@ struct ContentView: View {
     @State private var location = LocationService()
     @State private var weather = WeatherService()
     @State private var editorTarget: EventTarget?
-    /// A TRIGGER, not a source of truth. `preferredColorScheme` writes this
-    /// value, so anything that decides the override by reading it closes a loop.
-    @Environment(\.colorScheme) private var schemeDidChange
-    /// The device's own light/dark setting. Nil until read once.
-    ///
-    /// Sampled from the environment only on a pass where nothing is overriding
-    /// it. Reading `UIWindowScene.traitCollection` instead does NOT work:
-    /// `preferredColorScheme` reaches the scene's traits too, so it reports the
-    /// override straight back and the app latches into the wrong palette.
-    /// Verified against the simulator's own home screen, which stayed light
-    /// while the scene reported dark.
-    @State private var deviceScheme: ColorScheme?
     @State private var isMenuOpen = false
     @State private var titleScale: CGFloat = 1
     @State private var captionScale: CGFloat = 1
@@ -31,7 +19,7 @@ struct ContentView: View {
     /// model, so the row's appearance and disappearance always happen inside
     /// a transaction we control.
     @State private var allDayCount = 0
-    @AppStorage("appearance") private var appearance: Appearance = .system
+    @AppStorage("appearance") private var appearance: Appearance = .sun
     /// Observed rather than read once: the bottom button's printed word changes
     /// with it, and a label that does not follow its setting is worse than no
     /// setting at all.
@@ -49,6 +37,14 @@ struct ContentView: View {
     /// Fetched when the sheet opens, not on every keystroke.
     @State private var searchable: [EKEvent] = []
     @State private var pickedDay: Date = .now
+    /// Which side of the horizon the Sun mode is on.
+    ///
+    /// Held in state rather than read from `typeNight` so the flip can be made
+    /// with animations explicitly off. The wheel scrubs through sunset inside
+    /// an animated transaction, and everything in a transaction animates
+    /// whether or not you asked — a palette crossfade is precisely what this
+    /// mode exists not to do.
+    @State private var sunIsNight = false
 
     var body: some View {
         ZStack {
@@ -97,18 +93,8 @@ struct ContentView: View {
         // without the pin the ground below the horizon would inherit the dark
         // side and the whole app would flip — which is the thing this sky was
         // built to avoid doing.
-        .preferredColorScheme(statusBarNight ? .dark : appearance.colorScheme)
+        .preferredColorScheme(preferredScheme)
         .environment(\.colorScheme, effectiveScheme)
-        // The first pass runs with no override, so this reading is the real
-        // device setting. Every reading after it is gated.
-        .task { if deviceScheme == nil { deviceScheme = schemeDidChange } }
-        .onChange(of: schemeDidChange) { _, new in
-            // While the status bar is overridden this value is our own doing,
-            // so it is not evidence of anything. The cost: a phone switched to
-            // dark mid-night is not picked up until the override lifts at dawn.
-            guard !statusBarNight else { return }
-            deviceScheme = new
-        }
         .sheet(isPresented: $isDayPickerOpen) {
             VStack(spacing: 0) {
                 DatePicker("", selection: $pickedDay, displayedComponents: .date)
@@ -327,6 +313,18 @@ struct ContentView: View {
         .onChange(of: titleKey) { _, _ in popTitle() }
         .onChange(of: captionKey) { _, _ in popCaption() }
         .onChange(of: allDayKey) { _, _ in popAllDay() }
+        // A cut, not a fade. The parked palette experiment was built on the
+        // opposite premise — that the wheel turning through sunset under a
+        // thumb meant the change had to be continuous or it would read as a
+        // jump — and it spent a bespoke Palette, staged per-mark turns and a
+        // custom ground path trying to survive the crossing. There is no
+        // crossing to survive if nothing travels through it.
+        .task { sunIsNight = sunNight }
+        .onChange(of: sunNight) { _, isNight in
+            var cut = Transaction()
+            cut.disablesAnimations = true
+            withTransaction(cut) { sunIsNight = isNight }
+        }
         // The row appears and disappears from HERE, never from the model
         // directly.
         //
@@ -401,7 +399,33 @@ struct ContentView: View {
     }
 
     private var effectiveScheme: ColorScheme {
-        appearance.colorScheme ?? deviceScheme ?? .light
+        if appearance == .sun { return sunIsNight ? .dark : .light }
+        return appearance.colorScheme ?? .light
+    }
+
+    /// The same crossing the header's type turns on. The Sun mode reads the
+    /// RAW turn rather than the gated one below — gated, it would read 0 in
+    /// light mode and the mode could never leave day.
+    ///
+    /// It is not the sky's own 0° to −12°: that schedule was rejected for the
+    /// header for leaving type dark on a dimming ground for the best part of an
+    /// hour, and it would do the same to a whole palette.
+    private var sunNight: Bool { nightTurn > 0.5 }
+
+    /// Whether a night sky is drawn at all.
+    ///
+    /// Only where the whole app is dark. Darkening the band above the arc while
+    /// the ground below it stayed paper — the half-screen night — is what the
+    /// Sun mode replaced: it produced a ~19:1 step across the horizon and two
+    /// halves that read as different apps, and every attempt to reconcile them
+    /// cost more than flipping the palette outright.
+    private var showsNightSky: Bool { effectiveScheme == .dark }
+
+    /// What the status bar is told. Only the Sun mode has anything to say:
+    /// every other mode's palette already agrees with the window's.
+    private var preferredScheme: ColorScheme? {
+        if appearance == .sun { return sunIsNight ? .dark : .light }
+        return appearance.colorScheme
     }
 
     /// What the sky is doing at the hour the wheel is on: the mark, the word
@@ -449,28 +473,10 @@ struct ContentView: View {
                                     numberFormatStyle: .number.precision(.fractionLength(0))))
     }
 
-    /// Whether the system's own furniture should be dressed for night. Fires on
-    /// the same crossing the header's type uses, so the glyphs turn when the
-    /// title does.
-    /// Deliberately independent of the current scheme.
-    ///
-    /// It used to read `effectiveScheme`, which closed a loop: the override
-    /// makes the app dark, dark makes the condition false, false asks for
-    /// light, light makes it true. It ran at roughly 230 trait updates a second
-    /// and nothing on screen gave it away, because the app draws correctly the
-    /// whole time it spins.
-    ///
-    /// Asking for dark when the app is ALREADY dark costs nothing, so the
-    /// scheme term bought nothing and cost the cycle. `deviceScheme` gates it
-    /// only so the first pass runs with no override, which is the one moment
-    /// the environment can be read honestly.
-    private var statusBarNight: Bool {
-        deviceScheme != nil && typeNight > 0.5
-    }
-
     /// How dark the sky is at the hour the wheel is on.
     private var nightness: Double {
-        SkyDepth.nightness(elevationDegrees: model.elevationDegrees(atAbsoluteHour: model.focusHour))
+        guard showsNightSky else { return 0 }
+        return SkyDepth.nightness(elevationDegrees: model.elevationDegrees(atAbsoluteHour: model.focusHour))
     }
 
     /// Held against the ground by day, and taken over by the sky at night.
@@ -490,6 +496,12 @@ struct ContentView: View {
     /// white's 3.5:1, so the hold kept choosing dark — and it was wrong: by
     /// then the screen reads as evening and evening type is light.
     private var typeNight: Double {
+        showsNightSky ? nightTurn : 0
+    }
+
+    /// The crossing itself, ungated: 0 above the horizon, 1 below, over about
+    /// two degrees.
+    private var nightTurn: Double {
         let t = ((1 - focusElevation) / 2).clamped(to: 0...1)
         return t * t * (3 - 2 * t)
     }
@@ -532,9 +544,11 @@ struct ContentView: View {
             lightning: sky.lightning,
             twilight: (TwilightBackground.lightTopColor(isMorning: isMorning), twilight),
             night: (TwilightBackground.nightTopComponents,
-                    TwilightBackground.nightOpacity(
-                        elevationDegrees: elevation,
-                        suppressedBy: washAmount / WeatherWash.stormPeak))
+                    showsNightSky
+                        ? TwilightBackground.nightOpacity(
+                            elevationDegrees: elevation,
+                            suppressedBy: washAmount / WeatherWash.stormPeak)
+                        : 0)
         )
     }
 
@@ -710,7 +724,7 @@ struct ContentView: View {
     /// decided for you, so it lands on the opposite of what is on screen. The
     /// menu is where system is chosen again.
     private func flipAppearance() {
-        let showingDark = appearance == .dark || (appearance == .system && deviceScheme == .dark)
+        let showingDark = appearance == .dark || (appearance == .sun && sunIsNight)
         withAnimation(.easeInOut(duration: 0.25)) {
             appearance = showingDark ? .light : .dark
         }

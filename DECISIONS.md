@@ -1120,3 +1120,43 @@ The price: everything else the window governs — sheets, the keyboard, the
 EventKit editors — follows the outer one, so at night they arrive dark while the
 app stays light. Taken knowingly, over inverting the palette or ending the sky
 below the status bar.
+
+### The whole app turns at the horizon (2026-09-09)
+
+Night used to be half the screen: dark above the arc, paper below. That produced
+a step of about nineteen to one across the horizon and two halves that read as
+different apps, and three separate attempts to reconcile them all cost more than
+the thing they were avoiding.
+
+**The app now flips its whole palette at the crossing, as a cut.** No travel, no
+tween. The parked `palette-experiment` was built on the opposite premise — "the
+wheel turns through sunset under a thumb, so the change has to be continuous or
+it is a jump" — and spent a bespoke `Palette`, staged per-role turns and a custom
+ground path trying to survive the crossing. There is no crossing to survive if
+nothing travels through it. The replacement is about twenty lines.
+
+The flip is set inside a `Transaction` with `disablesAnimations`, which is
+load-bearing: the wheel scrubs through sunset inside an animated transaction, and
+everything in a transaction animates whether or not it was asked to.
+
+It turns on the header's crossing, not the sky's 0° to −12°. That schedule was
+already rejected for the header for leaving type dark on a dimming ground for
+most of an hour, and it would do the same to a whole palette.
+
+**"Follow the system" is gone.** Sun replaced it: "decide for me" now means the
+sun decides rather than the phone's switch, which is what the app is about. The
+cost is taken knowingly — someone who schedules their phone's appearance can no
+longer make Sphere agree with it. A stored `"system"` no longer decodes and falls
+back to the new default, `sun`.
+
+Two things went with it. The half-screen night is not drawn in light mode at all,
+so `nightness`, the header's night measurement and the type's turn are gated on
+the app actually being dark. And `statusBarNight` is **deleted**: it existed only
+for a light app under a dark sky, and that arrangement no longer exists. The
+device-scheme sampling went too, since only "follow the system" ever read it —
+which retired the whole `preferredColorScheme` feedback loop rather than fixing
+it again.
+
+The widget does not follow the mode in 1.0. It reads the asset catalog, so on a
+light-mode phone at night the app is dark beside a light widget. Narrow, visible,
+and accepted for a first submission.
