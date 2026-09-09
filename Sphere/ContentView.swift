@@ -282,6 +282,14 @@ struct ContentView: View {
                 .monospacedDigit()
                 .scaleEffect(captionScale, anchor: .leading)
 
+            weatherLine
+                .padding(.top, 7)
+
+            // LAST in the header, after the weather, because it is the one row
+            // that is often empty. Reserved space between the caption and the
+            // weather read as a hole in the middle of the text; the same space
+            // below all of it reads as the gap before the arc.
+            //
             // The row is always reserved, present or not. Letting it appear
             // and vanish shifted the whole arc down and back as you scrubbed
             // across a day with a birthday on it, and squeezed the title.
@@ -312,10 +320,7 @@ struct ContentView: View {
             }
             .frame(height: 16, alignment: .leading)
             .scaleEffect(allDayScale, anchor: .leading)
-            .padding(.top, 7)
-
-            weatherLine
-                .padding(.top, 5)
+            .padding(.top, 5)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)
