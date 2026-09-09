@@ -19,7 +19,7 @@ struct ContentView: View {
     /// model, so the row's appearance and disappearance always happen inside
     /// a transaction we control.
     @State private var allDayCount = 0
-    @AppStorage("appearance") private var appearance: Appearance = .sun
+    @AppStorage("appearance") private var appearance: Appearance = .sky
     /// Observed rather than read once: the bottom button's printed word changes
     /// with it, and a label that does not follow its setting is worse than no
     /// setting at all.
@@ -37,18 +37,22 @@ struct ContentView: View {
     /// Fetched when the sheet opens, not on every keystroke.
     @State private var searchable: [EKEvent] = []
     @State private var pickedDay: Date = .now
-    /// Which side of the horizon the Sun mode is on.
+    /// Which side of the horizon the Sky mode is on.
     ///
     /// Held in state rather than read from `typeNight` so the flip can be made
     /// with animations explicitly off. The wheel scrubs through sunset inside
     /// an animated transaction, and everything in a transaction animates
     /// whether or not you asked — a palette crossfade is precisely what this
     /// mode exists not to do.
-    @State private var sunIsNight = false
+    @State private var skyIsNight = false
 
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
+
+            ClearBlue(clearness: model.clearness(atAbsoluteHour: model.focusHour),
+                      elevationDegrees: focusElevation,
+                      suppressedBy: washAmount / WeatherWash.stormPeak)
 
             let sky = model.weather(atAbsoluteHour: model.focusHour)
 
@@ -319,11 +323,11 @@ struct ContentView: View {
         // jump — and it spent a bespoke Palette, staged per-mark turns and a
         // custom ground path trying to survive the crossing. There is no
         // crossing to survive if nothing travels through it.
-        .task { sunIsNight = sunNight }
-        .onChange(of: sunNight) { _, isNight in
+        .task { skyIsNight = skyNight }
+        .onChange(of: skyNight) { _, isNight in
             var cut = Transaction()
             cut.disablesAnimations = true
-            withTransaction(cut) { sunIsNight = isNight }
+            withTransaction(cut) { skyIsNight = isNight }
         }
         // The row appears and disappears from HERE, never from the model
         // directly.
@@ -399,32 +403,65 @@ struct ContentView: View {
     }
 
     private var effectiveScheme: ColorScheme {
-        if appearance == .sun { return sunIsNight ? .dark : .light }
+        if appearance == .sky { return skyIsNight ? .dark : .light }
         return appearance.colorScheme ?? .light
     }
 
-    /// The same crossing the header's type turns on. The Sun mode reads the
+    /// The same crossing the header's type turns on. The Sky mode reads the
     /// RAW turn rather than the gated one below — gated, it would read 0 in
     /// light mode and the mode could never leave day.
     ///
     /// It is not the sky's own 0° to −12°: that schedule was rejected for the
     /// header for leaving type dark on a dimming ground for the best part of an
     /// hour, and it would do the same to a whole palette.
-    private var sunNight: Bool { nightTurn > 0.5 }
+    private var skyNight: Bool { nightTurn > 0.5 }
+
+    /// How much blue is on the screen right now, 0 to `ClearBlue.peakOpacity`.
+    private var blueStrength: Double {
+        ClearBlue.strength(clearness: model.clearness(atAbsoluteHour: model.focusHour),
+                           elevationDegrees: focusElevation,
+                           suppressedBy: washAmount / WeatherWash.stormPeak)
+            * ClearBlue.peakOpacity
+    }
+
+    /// Whether the header is sitting on sky rather than on paper.
+    ///
+    /// A clear midday sky is a DARK ground — about a third of paper's luminance
+    /// — and light type is what belongs on it. NOT decided on the contrast
+    /// ratio: at that ground pure black scores 7.9:1 against white's 2.7:1, so
+    /// the arithmetic prefers dark ink the whole way and keeps preferring it
+    /// well past the point the screen reads as sky. Same fault as dusk, same
+    /// answer: turn on the cause, not on the measurement.
+    ///
+    /// A cut, like the horizon's. The sky visibly filling with blue is the
+    /// author of the change, which is what a discontinuity needs in order to
+    /// read as intent rather than as a glitch.
+    ///
+    /// **Only the system's furniture turns.** The app's own type stays dark and
+    /// lets `ContrastHold` drive it against the blue, which is both the chosen
+    /// look and the more legible one: on that ground black measures about 4.8:1
+    /// against white's 3.1:1. The status bar cannot be given a colour, only a
+    /// scheme, so it gets the one that reads on the deepest part of the
+    /// gradient — which is where it happens to sit.
+    private var onBlue: Bool { blueStrength > 0.55 }
 
     /// Whether a night sky is drawn at all.
     ///
     /// Only where the whole app is dark. Darkening the band above the arc while
     /// the ground below it stayed paper — the half-screen night — is what the
-    /// Sun mode replaced: it produced a ~19:1 step across the horizon and two
+    /// Sky mode replaced: it produced a ~19:1 step across the horizon and two
     /// halves that read as different apps, and every attempt to reconcile them
     /// cost more than flipping the palette outright.
     private var showsNightSky: Bool { effectiveScheme == .dark }
 
-    /// What the status bar is told. Only the Sun mode has anything to say:
+    /// What the status bar is told. Only the Sky mode has anything to say:
     /// every other mode's palette already agrees with the window's.
     private var preferredScheme: ColorScheme? {
-        if appearance == .sun { return sunIsNight ? .dark : .light }
+        // The system's glyphs sit on the same blue the title does. The app's
+        // own palette is pinned straight back underneath by the `colorScheme`
+        // environment, so only the furniture follows this.
+        if onBlue { return .dark }
+        if appearance == .sky { return skyIsNight ? .dark : .light }
         return appearance.colorScheme
     }
 
@@ -512,12 +549,23 @@ struct ContentView: View {
 
     private var titleColor: Color {
         guard effectiveScheme == .light else { return Theme.ink }
+        // On blue, hold nothing — take the whole range.
+        //
+        // `ContrastHold`'s targets are tuned against paper, where 9:1 leaves the
+        // title short of black on purpose. A clear sky compresses the range so
+        // far that even pure black reaches only about 6.8:1, so holding a ratio
+        // there spends contrast the ground does not have and lands on grey.
+        if onBlue { return .black }
         let held = ContrastHold.color(ContrastHold.ink, target: Self.titleContrast, on: headerLuminance)
         return held.mix(with: Theme.skyInk(nightness: 1), by: typeNight)
     }
 
     private var captionColor: Color {
         guard effectiveScheme == .light else { return Theme.muted }
+        // A step back from the title's black rather than a held ratio, for the
+        // same reason: 3.5:1 against a sky lands on mid-grey. Near-black keeps
+        // the pair's order without either of them reading as washed out.
+        if onBlue { return Color(white: 0.13) }
         let held = ContrastHold.color(ContrastHold.muted, target: Self.captionContrast, on: headerLuminance)
         // A step back from the title's white, so the pair keeps the distance it
         // has at every other hour.
@@ -548,7 +596,8 @@ struct ContentView: View {
                         ? TwilightBackground.nightOpacity(
                             elevationDegrees: elevation,
                             suppressedBy: washAmount / WeatherWash.stormPeak)
-                        : 0)
+                        : 0),
+            blue: (ClearBlue.topComponents, blueStrength)
         )
     }
 
@@ -724,7 +773,7 @@ struct ContentView: View {
     /// decided for you, so it lands on the opposite of what is on screen. The
     /// menu is where system is chosen again.
     private func flipAppearance() {
-        let showingDark = appearance == .dark || (appearance == .sun && sunIsNight)
+        let showingDark = appearance == .dark || (appearance == .sky && skyIsNight)
         withAnimation(.easeInOut(duration: 0.25)) {
             appearance = showingDark ? .light : .dark
         }

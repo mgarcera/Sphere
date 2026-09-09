@@ -257,6 +257,29 @@ final class DayModel {
         return skyByDay[index]?.first { $0.hour == inDay }
     }
 
+    /// How much blue is getting through: 0 overcast, 1 cloudless.
+    ///
+    /// Weighted by deck, because that is what makes two overcast hours
+    /// different — low cloud closes the sky, cirrus barely touches it.
+    /// Interpolated for the same reason the washes are: the wheel turns
+    /// continuously and a sky that snapped at hour boundaries would read as a
+    /// fault rather than as weather.
+    ///
+    /// No reading at all means no blue. Absent data is not a clear sky.
+    func clearness(atAbsoluteHour hour: Double) -> Double {
+        let lower = floor(hour)
+        let a = skyHour(atAbsoluteHour: lower)
+        let b = skyHour(atAbsoluteHour: lower + 1)
+        guard a != nil || b != nil else { return 0 }
+
+        func cover(_ s: SkyHour?) -> Double {
+            guard let s else { return 1 }
+            return min(s.cloudLow * 0.7 + s.cloudMid * 0.4 + s.cloudHigh * 0.15, 1)
+        }
+        let t = hour - lower
+        return 1 - (cover(a) + (cover(b) - cover(a)) * t)
+    }
+
     /// Weather at any fractional hour, interpolated between the two readings
     /// either side. The readings are hourly, so without this a wash would snap
     /// on and off at hour boundaries while the wheel turns.

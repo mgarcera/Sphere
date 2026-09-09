@@ -43,6 +43,8 @@ struct WeatherWash: View {
     static func topLuminance(precipitation: Double, lightning: Double,
                              twilight: (color: (r: Double, g: Double, b: Double), opacity: Double),
                              night: (color: (r: Double, g: Double, b: Double), opacity: Double)
+                                 = ((0, 0, 0), 0),
+                             blue: (color: (r: Double, g: Double, b: Double), opacity: Double)
                                  = ((0, 0, 0), 0)) -> Double {
         var c = (r: 1.0, g: 1.0, b: 1.0)
         func over(_ top: (r: Double, g: Double, b: Double), _ alpha: Double) {
@@ -50,8 +52,12 @@ struct WeatherWash: View {
                  c.g * (1 - alpha) + top.g * alpha,
                  c.b * (1 - alpha) + top.b * alpha)
         }
-        // Night goes on before everything: it is the sky itself, and dusk is a
-        // tint over it rather than beside it.
+        // Blue first: on a clear day it IS the paper, as far as anything above
+        // it is concerned. Night and blue never overlap in practice — the blue
+        // is gone by fifteen degrees — but the order is the drawing's order.
+        over(blue.color, blue.opacity)
+        // Night next: it is the sky itself, and dusk is a tint over it rather
+        // than beside it.
         over(night.color, night.opacity)
         // Twilight next, since it sits under the weather.
         over(twilight.color, twilight.opacity)

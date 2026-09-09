@@ -1160,3 +1160,43 @@ it again.
 The widget does not follow the mode in 1.0. It reads the asset catalog, so on a
 light-mode phone at night the app is dark beside a light widget. Narrow, visible,
 and accepted for a first submission.
+
+### A clear day has a blue in it (2026-09-09)
+
+The sky band was paper until weather or dusk put something in it, so a
+cloudless noon looked identical to an overcast one. `ClearBlue` fills it, in the
+same vertical band every other wash uses.
+
+**The colour is measured, not picked**: `65A2E4`, read off a photograph of real
+sky. It sits at the band's first stop, with the zenith deepened above it and the
+horizon paled below, which is the direction sky runs.
+
+Read off the file rather than the upload. The same photograph arrived as a
+97 x 173 JPEG and sampled `A9BDE1` — a washed periwinkle about 35% short on
+saturation. The measurement was clean, confident and wrong, which is the worst
+kind: a colour that has been through a resize and a lossy encode is not the
+colour.
+
+It answers to three things so it never fights what is already drawn. Cloud,
+weighted by deck — low cloud closes the sky, cirrus barely touches it, and
+overcast at thirty thousand feet is still a blue day from underneath. The sun's
+HEIGHT rather than the clock, full at 15° and gone at the horizon, so the
+twilight wash gets the band to itself at dawn and dusk. And weather, which
+suppresses it the way it suppresses the night.
+
+**The header is told about it.** It composites into `topLuminance` as a fourth
+layer, because a new ground the type does not know about is the whole failure
+this app keeps rediscovering.
+
+Two consequences of the blue being DARK — about a third of paper's luminance:
+
+- **The status bar turns white over it**, on the blue's own strength rather than
+  on any contrast measurement. It can only be given a scheme, never a colour, so
+  it gets the polarity that reads on the deepest part of the gradient, which is
+  where it sits. The app's palette is pinned back underneath as ever.
+- **The header stops holding a ratio and takes the whole range.** `ContrastHold`
+  caps as well as raises, so on paper the title deliberately stops short of black
+  at 9:1. A clear sky compresses the range so far that even pure black reaches
+  only about 6.8:1 — holding any ratio there spends contrast the ground does not
+  have and lands on grey. On blue the title is black and the caption a near-black
+  step behind it. The hold is right on paper and wrong on sky.

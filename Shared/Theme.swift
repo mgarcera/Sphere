@@ -57,7 +57,7 @@ extension Font {
 
 /// Light, dark, or follow the device. Every colour is an asset-catalog pair,
 /// so overriding the scheme is all this has to do.
-/// Sun, light, or dark. In that order — it is the picker's order too.
+/// Sky, light, or dark. In that order — it is the picker's order too.
 ///
 /// **There is no "follow the system".** The sun replaced it: "decide for me"
 /// now means the sun decides rather than the phone's own switch, which is the
@@ -69,14 +69,14 @@ extension Font {
 /// back to the default, which is `sun`. That is the intended migration.
 enum Appearance: String, CaseIterable, Identifiable {
     /// Light by day, dark at night, cutting between them at the horizon.
-    case sun
+    case sky
     case light, dark
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .sun: "Sun"
+        case .sky: "Sky"
         case .light: "Light"
         case .dark: "Dark"
         }
@@ -86,7 +86,7 @@ enum Appearance: String, CaseIterable, Identifiable {
         switch self {
         // The sun's own answer depends on the hour, so the view works it out;
         // this is only the day half.
-        case .sun: .light
+        case .sky: .light
         case .light: .light
         case .dark: .dark
         }
