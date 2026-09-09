@@ -8,7 +8,18 @@ struct ContentView: View {
     @State private var location = LocationService()
     @State private var weather = WeatherService()
     @State private var editorTarget: EventTarget?
-    @Environment(\.colorScheme) private var systemScheme
+    /// A TRIGGER, not a source of truth. `preferredColorScheme` writes this
+    /// value, so anything that decides the override by reading it closes a loop.
+    @Environment(\.colorScheme) private var schemeDidChange
+    /// The device's own light/dark setting. Nil until read once.
+    ///
+    /// Sampled from the environment only on a pass where nothing is overriding
+    /// it. Reading `UIWindowScene.traitCollection` instead does NOT work:
+    /// `preferredColorScheme` reaches the scene's traits too, so it reports the
+    /// override straight back and the app latches into the wrong palette.
+    /// Verified against the simulator's own home screen, which stayed light
+    /// while the scene reported dark.
+    @State private var deviceScheme: ColorScheme?
     @State private var isMenuOpen = false
     @State private var titleScale: CGFloat = 1
     @State private var captionScale: CGFloat = 1
@@ -88,6 +99,16 @@ struct ContentView: View {
         // built to avoid doing.
         .preferredColorScheme(statusBarNight ? .dark : appearance.colorScheme)
         .environment(\.colorScheme, effectiveScheme)
+        // The first pass runs with no override, so this reading is the real
+        // device setting. Every reading after it is gated.
+        .task { if deviceScheme == nil { deviceScheme = schemeDidChange } }
+        .onChange(of: schemeDidChange) { _, new in
+            // While the status bar is overridden this value is our own doing,
+            // so it is not evidence of anything. The cost: a phone switched to
+            // dark mid-night is not picked up until the override lifts at dawn.
+            guard !statusBarNight else { return }
+            deviceScheme = new
+        }
         .sheet(isPresented: $isDayPickerOpen) {
             VStack(spacing: 0) {
                 DatePicker("", selection: $pickedDay, displayedComponents: .date)
@@ -375,7 +396,7 @@ struct ContentView: View {
     }
 
     private var effectiveScheme: ColorScheme {
-        appearance.colorScheme ?? systemScheme
+        appearance.colorScheme ?? deviceScheme ?? .light
     }
 
     /// What the sky is doing at the hour the wheel is on: the mark, the word
@@ -426,8 +447,20 @@ struct ContentView: View {
     /// Whether the system's own furniture should be dressed for night. Fires on
     /// the same crossing the header's type uses, so the glyphs turn when the
     /// title does.
+    /// Deliberately independent of the current scheme.
+    ///
+    /// It used to read `effectiveScheme`, which closed a loop: the override
+    /// makes the app dark, dark makes the condition false, false asks for
+    /// light, light makes it true. It ran at roughly 230 trait updates a second
+    /// and nothing on screen gave it away, because the app draws correctly the
+    /// whole time it spins.
+    ///
+    /// Asking for dark when the app is ALREADY dark costs nothing, so the
+    /// scheme term bought nothing and cost the cycle. `deviceScheme` gates it
+    /// only so the first pass runs with no override, which is the one moment
+    /// the environment can be read honestly.
     private var statusBarNight: Bool {
-        typeNight > 0.5 && effectiveScheme == .light
+        deviceScheme != nil && typeNight > 0.5
     }
 
     /// How dark the sky is at the hour the wheel is on.
@@ -672,7 +705,7 @@ struct ContentView: View {
     /// decided for you, so it lands on the opposite of what is on screen. The
     /// menu is where system is chosen again.
     private func flipAppearance() {
-        let showingDark = appearance == .dark || (appearance == .system && systemScheme == .dark)
+        let showingDark = appearance == .dark || (appearance == .system && deviceScheme == .dark)
         withAnimation(.easeInOut(duration: 0.25)) {
             appearance = showingDark ? .light : .dark
         }
