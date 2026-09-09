@@ -108,9 +108,12 @@ func icon(dark: Bool) -> CGImage {
     let arc = Arc()
 
     // Below the curve: the lit part of the sky.
+    // The bottom band is hazed rather than saturated. At full gold it read as
+    // ground — a lit dune under the ridge — which is the one thing this icon
+    // must not be, since the whole image is sky.
     vertical(c, gradient(dark
-        ? [(0x2B2138, 0, 1), (0x5E3A44, 0.42, 1), (0x8A5236, 0.78, 1), (0xB06B34, 1, 1)]
-        : [(0x6A4A63, 0, 1), (0x9E5A57, 0.40, 1), (0xE2894C, 0.80, 1), (0xF2C55C, 1, 1)]),
+        ? [(0x2B2138, 0, 1), (0x5E3A44, 0.42, 1), (0x87593F, 0.78, 1), (0xA37B55, 1, 1)]
+        : [(0x6A4A63, 0, 1), (0x9E5A57, 0.40, 1), (0xDE9463, 0.80, 1), (0xEBCB94, 1, 1)]),
         from: 0.52 * S, to: S)
 
     // Above it: the night, filled once, bounded by the sun's own path.
