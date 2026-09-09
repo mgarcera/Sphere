@@ -263,7 +263,13 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.plain)
-            .disabled(model.activeEvent == nil)
+            // NOT `.disabled`. A disabled button dims its label, so the time
+            // was drawn at reduced opacity whenever the dot was not inside an
+            // event — which is most of the day. On paper `ContrastHold` already
+            // held the title short of black and the dimming hid inside that; on
+            // a clear sky, where the title runs to pure black, it showed up as
+            // the one grey thing in a black header.
+            .allowsHitTesting(model.activeEvent != nil)
 
             Text(subtitle)
                 .contentTransition(.identity)
