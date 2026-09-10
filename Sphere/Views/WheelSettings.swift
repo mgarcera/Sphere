@@ -11,7 +11,10 @@ struct WheelSettings: View {
     @Binding var bottomPrimary: WheelAction
     /// Bumped on every write, so the printed mappings re-read UserDefaults.
     @State private var revision = 0
-    @State private var selected: WheelPosition = .bottom
+    /// Opens on the centre. It is the wheel's own subject — the button whose
+    /// two gestures are the least guessable — and starting on the bottom made
+    /// the panel look like it was about the NOW/CAL choice.
+    @State private var selected: WheelPosition = .centre
     @AppStorage(Haptics.key) private var hapticsEnabled = true
 
     private static let diameter: CGFloat = 168
@@ -71,8 +74,6 @@ struct WheelSettings: View {
     /// a section of its own.
     private var switches: some View {
         VStack(spacing: 0) {
-            Rectangle().fill(Theme.hairline).frame(height: 1)
-
             Toggle(isOn: $hapticsEnabled) {
                 Text("Haptics")
                     .font(.subheadline)

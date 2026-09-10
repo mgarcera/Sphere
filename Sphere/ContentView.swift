@@ -773,15 +773,15 @@ struct ContentView: View {
         }
     }
 
-    /// Always to an explicit setting, never back to system.
+    /// With two settings there is nothing to be clever about: it swaps them.
     ///
-    /// Reaching for the toggle is already a statement that you do not want it
-    /// decided for you, so it lands on the opposite of what is on screen. The
-    /// menu is where system is chosen again.
+    /// It used to land on the opposite of what was ON SCREEN, which mattered
+    /// when a third option could be showing either. Natural Sky at night and
+    /// Dark look the same, so "opposite of what is showing" would have made the
+    /// toggle a no-op after sunset.
     private func flipAppearance() {
-        let showingDark = appearance == .dark || (appearance == .sky && skyIsNight)
         withAnimation(.easeInOut(duration: 0.25)) {
-            appearance = showingDark ? .light : .dark
+            appearance = appearance == .dark ? .sky : .dark
         }
     }
 

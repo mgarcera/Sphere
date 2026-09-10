@@ -64,16 +64,7 @@ struct DayMenu: View {
                 }
 
                 divider
-                section("Feedback", trailing: {
-                    // Upper right of the section, on the header's own line: the
-                    // same two addresses App Store Connect points at.
-                    HStack(spacing: 14) {
-                        Link("Privacy", destination: SphereLinks.privacyPolicy)
-                        Link("Support", destination: SphereLinks.support)
-                    }
-                    .font(.footnote)
-                    .foregroundStyle(Theme.mutedLight)
-                }) {
+                section("Feedback") {
                     Button {
                         isFeedbackOpen = true
                     } label: {
@@ -90,6 +81,20 @@ struct DayMenu: View {
                     }
                     .buttonStyle(.plain)
                     .padding(.vertical, 2)
+                }
+
+                // Their own sections rather than links tucked in the Feedback
+                // header. These are the two addresses App Store Connect points
+                // at, so they are destinations in their own right, not
+                // furniture on something else's line.
+                divider
+                section("Privacy") {
+                    linkRow("View privacy policy", to: SphereLinks.privacyPolicy)
+                }
+
+                divider
+                section("Support") {
+                    linkRow("Get support", to: SphereLinks.support)
                 }
             }
             .padding(.horizontal, 24)
@@ -135,7 +140,7 @@ struct DayMenu: View {
                     .font(.display(12))
                     .tracking(1.1)
                     .textCase(.uppercase)
-                    .foregroundStyle(Theme.mutedLight)
+                    .foregroundStyle(Theme.ink)
 
                 Spacer(minLength: 8)
                 nowCorner
@@ -328,6 +333,25 @@ struct DayMenu: View {
         .padding(.vertical, 6)
     }
 
+    /// Reads as the feedback button does, because it does the same kind of
+    /// thing: a row that leaves the sheet.
+    private func linkRow(_ title: String, to url: URL) -> some View {
+        Link(destination: url) {
+            HStack(spacing: 8) {
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.ink)
+                Spacer(minLength: 8)
+                Image(systemName: "arrow.up.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Theme.mutedLight)
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .padding(.vertical, 2)
+    }
+
     private var divider: some View {
         Rectangle().fill(Theme.hairline).frame(height: 1)
     }
@@ -347,11 +371,14 @@ struct DayMenu: View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(alignment: .firstTextBaseline) {
                 Text(title)
-                    // The app's own display face, the one the clock is set in.
+                    // The app's own display face, the one the clock is set in,
+                    // in the primary ink. Held back in grey they read as
+                    // captions on the rows below rather than as the thing that
+                    // divides the sheet.
                     .font(.display(12))
                     .tracking(1.1)
                     .textCase(.uppercase)
-                    .foregroundStyle(Theme.mutedLight)
+                    .foregroundStyle(Theme.ink)
                 Spacer(minLength: 8)
                 trailing()
             }

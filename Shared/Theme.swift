@@ -57,27 +57,29 @@ extension Font {
 
 /// Light, dark, or follow the device. Every colour is an asset-catalog pair,
 /// so overriding the scheme is all this has to do.
-/// Sky, light, or dark. In that order — it is the picker's order too.
+/// Natural Sky or Dark. Two settings, and that is the whole list.
 ///
-/// **There is no "follow the system".** The sun replaced it: "decide for me"
-/// now means the sun decides rather than the phone's own switch, which is the
-/// thing this app is actually about. The cost is real and taken knowingly —
-/// people who deliberately schedule their phone's appearance no longer have a
-/// way to make Sphere agree with it.
+/// **There is no "follow the system", and no plain Light.** Natural Sky
+/// replaced both: "decide for me" means the sun decides rather than the phone's
+/// switch, and a fixed Light is a day that never ends, which is the opposite of
+/// what this app draws. Dark stays because a dark app at noon is a real thing
+/// people want and the sun cannot give it to them.
 ///
-/// A stored `"system"` from before this change no longer decodes, so it falls
-/// back to the default, which is `sun`. That is the intended migration.
+/// The cost is taken knowingly: someone who wants Sphere light at midnight, or
+/// who schedules their phone's appearance and wants Sphere to agree, no longer
+/// has a way to ask. Any stored value other than `"dark"` falls back to the
+/// default, which is `sky` — the intended migration from both `"system"` and
+/// `"light"`.
 enum Appearance: String, CaseIterable, Identifiable {
     /// Light by day, dark at night, cutting between them at the horizon.
     case sky
-    case light, dark
+    case dark
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .sky: "Sky"
-        case .light: "Light"
+        case .sky: "Natural Sky"
         case .dark: "Dark"
         }
     }
@@ -87,7 +89,6 @@ enum Appearance: String, CaseIterable, Identifiable {
         // The sun's own answer depends on the hour, so the view works it out;
         // this is only the day half.
         case .sky: .light
-        case .light: .light
         case .dark: .dark
         }
     }
