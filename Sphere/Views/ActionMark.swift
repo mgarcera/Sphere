@@ -143,8 +143,19 @@ struct ActionMark: View {
 
         let bounds = CGRect(x: centre.x - radius, y: centre.y - radius,
                             width: radius * 2, height: radius * 2)
-        // Widths as multiples of the drawn line, so the family holds at any size.
-        let thin = stroke * 2.4 / scale
+        // The event's width is a proportion of the DRAWING, not a multiple of
+        // the line weight.
+        //
+        // It used to be `stroke * 2.4`, and `stroke` is deliberately
+        // size-invariant — so the event rendered the same width at every size
+        // while the lens around it shrank. At 96 points the magnified copy was
+        // 18% of the lens; at 18 it was 62%, which is why the small one read as
+        // a blob rather than as glass.
+        //
+        // Floored against the line weight so it can never come out thinner than
+        // the day it sits on. The fat-inside-against-thin-outside comparison is
+        // the whole mark, and it does not survive an event finer than the arc.
+        let thin = max(1.0, stroke * 1.45 / scale)
 
         var arc = Path()
         arc.move(to: day(0))
