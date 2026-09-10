@@ -108,8 +108,12 @@ enum WheelPosition: String, CaseIterable, Identifiable {
             [.nextDay]
         case .menu:
             [.appearance, .openCalendarApp, .muteHaptics]
+        // The event position, so its hold is the other thing you do with the
+        // day's events: make one that has no hour, or go and look at them in
+        // the app that owns them. Both are about the events, which is what
+        // keeps this position from becoming a drawer.
         case .centre:
-            [.newAllDay]
+            [.newAllDay, .openCalendarApp]
         // The bottom's secondary is whichever of the pair its primary is not.
         case .bottom:
             []
