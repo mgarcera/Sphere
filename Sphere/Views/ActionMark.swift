@@ -20,7 +20,7 @@ import SwiftUI
 /// in the pool of things a hold can be set to.
 enum Mark {
     case none, now, calendar, previousDay, nextDay, newAllDay
-    case appearance, search, openCalendarApp, muteHaptics
+    case appearance, openCalendarApp, muteHaptics
     case menu, openEvent, newEvent, previousEvent, nextEvent
 }
 
@@ -34,7 +34,6 @@ extension WheelAction {
         case .nextDay: .nextDay
         case .newAllDay: .newAllDay
         case .appearance: .appearance
-        case .search: .search
         case .openCalendarApp: .openCalendarApp
         case .muteHaptics: .muteHaptics
         }
@@ -307,11 +306,6 @@ struct ActionMark: View {
                          startAngle: .degrees(-90), endAngle: .degrees(90),
                          clockwise: false)
             solid.closeSubpath()
-
-        case .search:
-            line.addEllipse(in: CGRect(x: 3, y: 3, width: 11, height: 11))
-            line.move(to: CGPoint(x: 12.8, y: 12.8))
-            line.addLine(to: CGPoint(x: 17, y: 17))
 
         case .openCalendarApp:
             // A day, and an arrow leaving it.

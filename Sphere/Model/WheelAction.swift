@@ -13,7 +13,6 @@ enum WheelAction: String, CaseIterable, Identifiable {
     case nextDay
     case newAllDay
     case appearance
-    case search
     case openCalendarApp
     case muteHaptics
 
@@ -28,7 +27,6 @@ enum WheelAction: String, CaseIterable, Identifiable {
         case .nextDay: "Next day"
         case .newAllDay: "New all-day event"
         case .appearance: "Light / dark"
-        case .search: "Search"
         case .openCalendarApp: "Open in Calendar"
         case .muteHaptics: "Mute haptics"
         }
@@ -109,7 +107,7 @@ enum WheelPosition: String, CaseIterable, Identifiable {
         case .next:
             [.nextDay]
         case .menu:
-            [.appearance, .search, .openCalendarApp, .muteHaptics]
+            [.appearance, .openCalendarApp, .muteHaptics]
         case .centre:
             [.newAllDay]
         // The bottom's secondary is whichever of the pair its primary is not.

@@ -28,14 +28,11 @@ struct ContentView: View {
     @State private var eventsHidden = false
     @State private var isAllDayOpen = false
     @State private var isDayPickerOpen = false
-    @State private var isSearchOpen = false
     @State private var isEventChoiceOpen = false
     /// Acted on after the chooser closes, never while it is closing: presenting
     /// the editor into a sheet still dismissing is the refusal that cost ten
     /// seconds once already.
     @State private var pendingChoice: EventChoice?
-    /// Fetched when the sheet opens, not on every keystroke.
-    @State private var searchable: [EKEvent] = []
     @State private var pickedDay: Date = .now
     /// Which side of the horizon the Sky mode is on.
     ///
@@ -138,14 +135,6 @@ struct ContentView: View {
                 isEventChoiceOpen = false
             }
             .presentationDetents([.height(EventChoiceSheet.height)])
-            .presentationDragIndicator(.hidden)
-        }
-        .sheet(isPresented: $isSearchOpen) {
-            EventSearch(events: searchable, timeZone: model.timeZone) { event in
-                isSearchOpen = false
-                travel { model.focusHour = event.startDate.timeIntervalSince(model.anchor) / 3600 }
-            }
-            .presentationDetents([.large])
             .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $isAllDayOpen) {
@@ -765,9 +754,6 @@ struct ContentView: View {
         case .nextDay: travel { model.focusHour += 24 }
         case .newAllDay: editorTarget = .newAllDay(model.focusDate)
         case .appearance: flipAppearance()
-        case .search:
-            searchable = calendar.eventsForSearch(around: model.focusDate)
-            isSearchOpen = true
         case .openCalendarApp: openCalendarApp()
         case .muteHaptics: hapticsEnabled.toggle()
         }
