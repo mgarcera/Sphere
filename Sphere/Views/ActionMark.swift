@@ -6,7 +6,9 @@ import SwiftUI
 /// Days are arcs here, the way they are everywhere else in the app: a whole arc
 /// is a day, half of one is a point in it. The exceptions borrow universal
 /// shapes where those read faster than restating the app's would — a grid of
-/// dots for the calendar, a lens for looking at one moment closely.
+/// dots for the calendar, a lens for looking at one moment closely — and one,
+/// leaving for the Calendar app, is Apple's own glyph, because that action is
+/// about the phone rather than about the day.
 ///
 /// The four directional marks share one construction: arrows, then a straight
 /// line, then that line rising into a day. One arrow steps an event and two
@@ -53,6 +55,17 @@ extension WheelPosition {
 }
 
 struct ActionMark: View {
+    /// The one mark that is Apple's rather than this app's.
+    ///
+    /// Leaving for the Calendar app is about the phone, not about the day, so
+    /// there is nothing in the app's vocabulary to say it with — and the system
+    /// glyph for "opens in another app" is one every reader already knows. It
+    /// was drawn here as a day with an arrow leaving it, and the drawing lost a
+    /// side-by-side against the glyph at the 18 points it actually ships at.
+    private var symbolName: String? {
+        mark == .openCalendarApp ? "arrow.up.forward.app" : nil
+    }
+
     let mark: Mark
     var size: CGFloat = 20
     var color: Color = Theme.ink
@@ -63,6 +76,18 @@ struct ActionMark: View {
     private static let box: CGFloat = 20
 
     var body: some View {
+        if let symbolName {
+            // Sized so the glyph's optical height lands near the drawn marks'.
+            Image(systemName: symbolName)
+                .font(.system(size: size * 0.82, weight: .regular))
+                .foregroundStyle(color)
+                .frame(width: size, height: size)
+        } else {
+            canvas
+        }
+    }
+
+    private var canvas: some View {
         Canvas { context, _ in
             // Scaled, not merely framed. Without this the paths drew at their
             // literal 20-point coordinates inside whatever frame they were
@@ -298,14 +323,16 @@ struct ActionMark: View {
             line.addLine(to: CGPoint(x: 17, y: 10.5))
 
         case .muteHaptics:
-            solid.addEllipse(in: CGRect(x: 4, y: 8, width: 4, height: 4))
-            for radius in [5.0, 8.0] {
-                line.addArc(center: CGPoint(x: 6, y: 10), radius: radius,
-                            startAngle: .degrees(-52), endAngle: .degrees(52),
-                            clockwise: false)
-            }
-            line.move(to: CGPoint(x: 3, y: 17))
-            line.addLine(to: CGPoint(x: 17, y: 3))
+            // The wheel, not clicking.
+            //
+            // Haptics in this app IS the wheel's click, so the thing being
+            // switched off is the wheel itself. It replaced the universal
+            // vibration glyph — a dot, two arcs and a slash — which was four
+            // levels of detail inside the 10-point box this mark actually gets,
+            // and read as noise there.
+            line.addEllipse(in: CGRect(x: 3.5, y: 3.5, width: 13, height: 13))
+            line.move(to: CGPoint(x: 4.4, y: 15.6))
+            line.addLine(to: CGPoint(x: 15.6, y: 4.4))
 
         case .menu:
             for y in [6.0, 10.0, 14.0] {
