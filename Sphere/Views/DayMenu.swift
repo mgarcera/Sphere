@@ -83,18 +83,15 @@ struct DayMenu: View {
                     .padding(.vertical, 2)
                 }
 
-                // Their own sections rather than links tucked in the Feedback
-                // header. These are the two addresses App Store Connect points
-                // at, so they are destinations in their own right, not
-                // furniture on something else's line.
+                // Rows rather than links tucked in the Feedback header: these
+                // are the two addresses App Store Connect points at, so they
+                // are destinations in their own right. One heading over both,
+                // because six headings on a single-screen menu is a lot and
+                // these two carried one row each.
                 divider
-                section("Privacy") {
+                section("About") {
                     linkRow("View privacy policy", to: SphereLinks.privacyPolicy)
-                }
-
-                divider
-                section("Support") {
-                    linkRow("Get support", to: SphereLinks.support)
+                    linkRow("Questions and contact", to: SphereLinks.support)
                 }
             }
             .padding(.horizontal, 24)

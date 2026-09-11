@@ -1,0 +1,9 @@
+{
+  "_": "Strings Mason has read as copy and kept. Never offer these again. See the `proof` skill.",
+  "reviewed": [
+    { "string": "Natural Sky",         "file": "Shared/Theme.swift",       "date": "2026-09-11" },
+    { "string": "View privacy policy", "file": "Sphere/Views/DayMenu.swift", "date": "2026-09-11" },
+    { "string": "Questions and contact", "file": "Sphere/Views/DayMenu.swift", "date": "2026-09-11", "note": "replaced \"Get support\", which promised a support function the FAQ page does not have" },
+    { "string": "About",               "file": "Sphere/Views/DayMenu.swift", "date": "2026-09-11", "note": "one heading replacing separate Privacy and Support headings" }
+  ]
+}
