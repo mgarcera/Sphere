@@ -128,7 +128,7 @@ struct ContentView: View {
                     editorTarget = .existing(event)
                 }
             case .create:
-                newEvent(.new(model.focusDate))
+                editorTarget = .new(model.focusDate)
             }
         }) {
             EventChoiceSheet { choice in
@@ -691,24 +691,20 @@ struct ContentView: View {
     /// In empty time the centre button just creates. Inside an event there are
     /// two things it could mean, so it asks rather than picking one: a day
     /// nests, and opening the outer event was the only thing on offer.
+    /// The centre press, and the one place the editor bell rings.
+    ///
+    /// It sits here rather than on the event actually being created, so the two
+    /// branches sound the same: the choice sheet and the straight-to-new-event
+    /// path are one press to the thumb, and only this level knows that. Ringing
+    /// deeper meant the same press rang or not depending on whether something
+    /// happened to be under the dot.
     private func openEditor() {
+        Sounds.ring(.editor)
         if model.activeEvent.flatMap({ calendar.occurrence(for: $0.id) }) != nil {
             isEventChoiceOpen = true
         } else {
-            newEvent(.new(model.focusDate))
+            editorTarget = .new(model.focusDate)
         }
-    }
-
-    /// Starting a new event, from any of the three ways in — the centre press
-    /// with nothing under the dot, the choice sheet's Create, and the all-day
-    /// action. One function for the same reason `travel` is one: written at
-    /// three call sites, the third is the one that ends up silent.
-    ///
-    /// Opening an EXISTING event is deliberately not this. The bell marks
-    /// making something, not looking at it.
-    private func newEvent(_ target: EventTarget) {
-        Sounds.ring(.newEvent)
-        editorTarget = target
     }
 
     /// A jump pans EVERY layer, and the distance is set by the gap between
@@ -722,20 +718,18 @@ struct ContentView: View {
     /// store is asked over a much wider range before giving up. Without that,
     /// an event further out than a day was unreachable: the jump did nothing,
     /// the focus stayed put, and nothing triggered a reload to widen the view.
-    @discardableResult
-    private func step(_ direction: CalendarService.Direction) -> Bool {
+    private func step(_ direction: CalendarService.Direction) {
         if let near = direction == .forward ? model.nextEvent : model.previousEvent {
             travel { model.focusHour = near.startHour }
-            return true
+            return
         }
         guard let far = calendar.nearestTimedEvent(direction, from: model.focusDate) else {
             // Forty-five days out and still nothing. The dot cannot move, so
             // the only thing left to report is that there was nowhere to go.
             Haptics.nothingThere()
-            return false
+            return
         }
         travel { model.focusHour = far.startDate.timeIntervalSince(model.anchor) / 3600 }
-        return true
     }
 
     /// Everything the wheel does, in one place.
@@ -748,9 +742,7 @@ struct ContentView: View {
         guard gesture == .tap else { return run(WheelMapping.hold(for: position)) }
         switch position {
         case .previous: step(.back)
-        // Only when it moves. A press that finds nothing already reports itself
-        // with `nothingThere`, and a bell on top of that would say the opposite.
-        case .next: if step(.forward) { Sounds.ring(.forward) }
+        case .next: step(.forward)
         case .menu: Sounds.ring(.menu); isMenuOpen = true
         case .centre: openEditor()
         case .bottom: run(WheelMapping.bottomPrimary)
@@ -769,7 +761,7 @@ struct ContentView: View {
         // on where you already were.
         case .previousDay: travel { model.focusHour -= 24 }
         case .nextDay: travel { model.focusHour += 24 }
-        case .newAllDay: newEvent(.newAllDay(model.focusDate))
+        case .newAllDay: editorTarget = .newAllDay(model.focusDate)
         case .appearance: flipAppearance()
         case .openCalendarApp: openCalendarApp()
         case .muteHaptics: hapticsEnabled.toggle()

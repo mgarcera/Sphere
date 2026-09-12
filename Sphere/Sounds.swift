@@ -25,16 +25,21 @@ enum Sounds {
 
     /// Named for what it marks; the raw value is the file that marks it. The two
     /// were the same thing while these rang on solar crossings and are not any
-    /// more, so the mapping lives here rather than at four call sites.
+    /// more, so the mapping lives here rather than at the call sites.
+    ///
+    /// Three, not four. The chevrons are silent: they are the one pair pressed
+    /// repeatedly, and a bell on a button you press five times in a row is the
+    /// definition of obnoxious. `weather.m4a` stays in the bundle unused — it is
+    /// the fourth of a set Mason made together, and the next thing worth marking
+    /// should sound like its siblings rather than be commissioned alone.
     enum Bell: String, CaseIterable {
-        /// Stepping forward to the next event.
-        case forward = "sunrise"
+        /// Opening the menu.
+        case menu = "sunrise"
         /// Returning to now.
         case now = "sunset"
-        /// Opening the menu.
-        case menu = "midday"
-        /// Starting a new event.
-        case newEvent = "weather"
+        /// Opening the event modal — either the open/create choice or, with
+        /// nothing under the dot, the new-event editor straight away.
+        case editor = "midday"
     }
 
     /// One player each, never a shared one. The strikes run 6.7–7.5s and stay
