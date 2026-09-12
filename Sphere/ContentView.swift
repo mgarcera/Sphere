@@ -26,7 +26,6 @@ struct ContentView: View {
     @AppStorage(WheelMapping.bottomKey) private var bottomPrimary: WheelAction = .now
     @AppStorage(Haptics.key) private var hapticsEnabled = true
     @AppStorage(Sounds.key) private var soundsEnabled = false
-    @State private var moments = MomentWatcher()
     @State private var eventsHidden = false
     @State private var isAllDayOpen = false
     @State private var isDayPickerOpen = false
@@ -129,7 +128,7 @@ struct ContentView: View {
                     editorTarget = .existing(event)
                 }
             case .create:
-                editorTarget = .new(model.focusDate)
+                newEvent(.new(model.focusDate))
             }
         }) {
             EventChoiceSheet { choice in
@@ -214,13 +213,10 @@ struct ContentView: View {
                 onRotate: { rotations in
                     model.scrub(byRotations: rotations)
                     clickPastDetents()
-                    ringPastMoments()
                 },
                 onRotateBegan: {
                     Haptics.warm()
-                    Sounds.warm()
                     lastDetent = (model.focusHour / Haptics.detentHours).rounded(.towardZero)
-                    moments.resync(to: model.focusHour, weatherPresent: isWeather(at: model.focusHour))
                 },
                 onPress: press,
                 bottomLabel: bottomPrimary == .calendar ? "CAL" : "NOW"
@@ -699,8 +695,20 @@ struct ContentView: View {
         if model.activeEvent.flatMap({ calendar.occurrence(for: $0.id) }) != nil {
             isEventChoiceOpen = true
         } else {
-            editorTarget = .new(model.focusDate)
+            newEvent(.new(model.focusDate))
         }
+    }
+
+    /// Starting a new event, from any of the three ways in — the centre press
+    /// with nothing under the dot, the choice sheet's Create, and the all-day
+    /// action. One function for the same reason `travel` is one: written at
+    /// three call sites, the third is the one that ends up silent.
+    ///
+    /// Opening an EXISTING event is deliberately not this. The bell marks
+    /// making something, not looking at it.
+    private func newEvent(_ target: EventTarget) {
+        Sounds.ring(.newEvent)
+        editorTarget = target
     }
 
     /// A jump pans EVERY layer, and the distance is set by the gap between
@@ -714,18 +722,20 @@ struct ContentView: View {
     /// store is asked over a much wider range before giving up. Without that,
     /// an event further out than a day was unreachable: the jump did nothing,
     /// the focus stayed put, and nothing triggered a reload to widen the view.
-    private func step(_ direction: CalendarService.Direction) {
+    @discardableResult
+    private func step(_ direction: CalendarService.Direction) -> Bool {
         if let near = direction == .forward ? model.nextEvent : model.previousEvent {
             travel { model.focusHour = near.startHour }
-            return
+            return true
         }
         guard let far = calendar.nearestTimedEvent(direction, from: model.focusDate) else {
             // Forty-five days out and still nothing. The dot cannot move, so
             // the only thing left to report is that there was nowhere to go.
             Haptics.nothingThere()
-            return
+            return false
         }
         travel { model.focusHour = far.startDate.timeIntervalSince(model.anchor) / 3600 }
+        return true
     }
 
     /// Everything the wheel does, in one place.
@@ -738,8 +748,10 @@ struct ContentView: View {
         guard gesture == .tap else { return run(WheelMapping.hold(for: position)) }
         switch position {
         case .previous: step(.back)
-        case .next: step(.forward)
-        case .menu: isMenuOpen = true
+        // Only when it moves. A press that finds nothing already reports itself
+        // with `nothingThere`, and a bell on top of that would say the opposite.
+        case .next: if step(.forward) { Sounds.ring(.forward) }
+        case .menu: Sounds.ring(.menu); isMenuOpen = true
         case .centre: openEditor()
         case .bottom: run(WheelMapping.bottomPrimary)
         }
@@ -748,7 +760,7 @@ struct ContentView: View {
     private func run(_ action: WheelAction) {
         switch action {
         case .none: break
-        case .now: travel { model.returnToNow() }
+        case .now: Sounds.ring(.now); travel { model.returnToNow() }
         case .calendar:
             pickedDay = model.focusDate
             isDayPickerOpen = true
@@ -757,7 +769,7 @@ struct ContentView: View {
         // on where you already were.
         case .previousDay: travel { model.focusHour -= 24 }
         case .nextDay: travel { model.focusHour += 24 }
-        case .newAllDay: editorTarget = .newAllDay(model.focusDate)
+        case .newAllDay: newEvent(.newAllDay(model.focusDate))
         case .appearance: flipAppearance()
         case .openCalendarApp: openCalendarApp()
         case .muteHaptics: hapticsEnabled.toggle()
@@ -795,40 +807,6 @@ struct ContentView: View {
         guard crossed != lastDetent else { return }
         lastDetent = crossed
         Haptics.detentPassed()
-    }
-
-    /// Is the focus inside weather? The same amount the sky already washes with,
-    /// thresholded — a trace of drizzle colours the arc slightly and should not
-    /// ring a bell, so the edge sits a little above nothing.
-    private func isWeather(at hour: Double) -> Bool {
-        let sky = model.weather(atAbsoluteHour: hour)
-        return WeatherWash.amount(precipitation: sky.precipitation, lightning: sky.lightning)
-            > WeatherWash.stormPeak * 0.2
-    }
-
-    /// Absolute hours of the day's three solar moments, offset by whichever day
-    /// the focus is on. `SolarDay` reports them within its own day; `focusHour`
-    /// counts from day zero, so they only line up once the offset is added.
-    private var solarMomentHours: [Sounds.Moment: Double] {
-        let day = model.focusSolarDay
-        let offset = Double(model.dayIndex) * 24
-        var out: [Sounds.Moment: Double] = [.midday: offset + day.solarNoon]
-        if let sunrise = day.sunrise { out[.sunrise] = offset + sunrise }
-        if let sunset = day.sunset { out[.sunset] = offset + sunset }
-        return out
-    }
-
-    /// One bell per moment of the day crossed. The counterpart to
-    /// `clickPastDetents`, and deliberately unlike it: a click marks every
-    /// quarter hour and is felt, a bell marks four places and is heard, so this
-    /// one is gated on turning slowly enough to still be there when it lands.
-    private func ringPastMoments() {
-        let hour = model.focusHour
-        let ringing = moments.crossings(movingTo: hour,
-                                        at: Date(),
-                                        solarHours: solarMomentHours,
-                                        weatherPresent: isWeather(at: hour))
-        for moment in ringing { Sounds.play(moment) }
     }
 
     /// Every way of moving the dot a long way at once goes through here.

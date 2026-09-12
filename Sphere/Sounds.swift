@@ -1,17 +1,17 @@
 import AVFoundation
 import Foundation
 
-/// The day's four moments, behind one switch.
+/// Four struck bells, one per press worth marking, behind one switch.
 ///
 /// Sphere had no sound on purpose — `Haptics` opens by saying so, and the click
 /// exists because the wheel has no travel and nothing to hear. These are not a
-/// second click. Each is a struck bell that marks a *place on the day*, not a
-/// place on the wheel: you cross sunrise and sunrise rings, once, however fast
-/// or slow you were turning when you got there.
+/// second click: the click is texture under every quarter hour, and a bell is
+/// an event.
 ///
-/// That is the same rule `clickPastDetents` already follows — counted against
-/// the hour rather than the gesture — and it is what keeps this from becoming a
-/// texture. A whole day scrubbed end to end has at most four of these in it.
+/// They ring on **presses**, not on scrubbing. A press is already discrete and
+/// already deliberate, which is what makes the whole question of how fast you
+/// were moving go away — no crossing detection, no re-arm distance, no rate
+/// gate. Turning the wheel stays silent.
 @MainActor
 enum Sounds {
     static let key = "soundsEnabled"
@@ -23,14 +23,24 @@ enum Sounds {
         UserDefaults.standard.object(forKey: key) as? Bool ?? false
     }
 
-    enum Moment: String, CaseIterable {
-        case sunrise, midday, sunset, weather
+    /// Named for what it marks; the raw value is the file that marks it. The two
+    /// were the same thing while these rang on solar crossings and are not any
+    /// more, so the mapping lives here rather than at four call sites.
+    enum Bell: String, CaseIterable {
+        /// Stepping forward to the next event.
+        case forward = "sunrise"
+        /// Returning to now.
+        case now = "sunset"
+        /// Opening the menu.
+        case menu = "midday"
+        /// Starting a new event.
+        case newEvent = "weather"
     }
 
     /// One player each, never a shared one. The strikes run 6.7–7.5s and stay
-    /// audible for about 4.5, so two crossings a few seconds apart overlap —
+    /// audible for about 4.5, so two presses a few seconds apart overlap —
     /// which is what bells do. A single player would cut the first one off.
-    private static var players: [Moment: AVAudioPlayer] = [:]
+    private static var players: [Bell: AVAudioPlayer] = [:]
 
     /// `.ambient` is the whole posture: it obeys the ring/silent switch and
     /// mixes with whatever is already playing rather than ducking it. A
@@ -48,20 +58,20 @@ enum Sounds {
     static func warm() {
         guard isEnabled else { return }
         activate()
-        for moment in Moment.allCases where players[moment] == nil {
-            guard let url = Bundle.main.url(forResource: moment.rawValue, withExtension: "m4a"),
+        for bell in Bell.allCases where players[bell] == nil {
+            guard let url = Bundle.main.url(forResource: bell.rawValue, withExtension: "m4a"),
                   let player = try? AVAudioPlayer(contentsOf: url) else { continue }
             player.prepareToPlay()
-            players[moment] = player
+            players[bell] = player
         }
     }
 
-    static func play(_ moment: Moment) {
+    static func ring(_ bell: Bell) {
         guard isEnabled else { return }
         warm()
-        guard let player = players[moment] else { return }
-        // Restart rather than ignore: a second crossing of the same moment is a
-        // real event, and the re-arm distance has already decided it is wanted.
+        guard let player = players[bell] else { return }
+        // Restart rather than ignore. Two presses of the same button are two
+        // events, and a press is deliberate enough that the second one is meant.
         player.currentTime = 0
         player.play()
     }
