@@ -25,7 +25,6 @@ struct ContentView: View {
     /// setting at all.
     @AppStorage(WheelMapping.bottomKey) private var bottomPrimary: WheelAction = .now
     @AppStorage(Haptics.key) private var hapticsEnabled = true
-    @AppStorage(Sounds.key) private var soundsEnabled = false
     @State private var eventsHidden = false
     @State private var isAllDayOpen = false
     @State private var isDayPickerOpen = false

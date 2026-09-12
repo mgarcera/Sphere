@@ -16,7 +16,6 @@ struct WheelSettings: View {
     /// the panel look like it was about the NOW/CAL choice.
     @State private var selected: WheelPosition = .centre
     @AppStorage(Haptics.key) private var hapticsEnabled = true
-    @AppStorage(Sounds.key) private var soundsEnabled = false
 
     private static let diameter: CGFloat = 168
     private static let buttonRatio: CGFloat = 0.383
@@ -71,12 +70,12 @@ struct WheelSettings: View {
             .animation(.easeOut(duration: 0.16), value: isSelected)
     }
 
-    /// Both belong to the wheel, since neither happens unless it is turning, so
-    /// the switches live with it rather than in a section of their own.
+    /// Haptics belong to the wheel, so the switch lives with it rather than in
+    /// a section of its own.
     ///
-    /// Two switches and not one: a click is felt by one person and a bell is
-    /// heard by the room, so silencing the room is not a reason to give up the
-    /// click. Sound is the one that starts off.
+    /// Sounds used to sit here beside it and moved up to Appearance. The two
+    /// looked like a pair and are not: the click is the wheel reporting its own
+    /// travel, where a bell marks four presses that are not all on the wheel.
     private var switches: some View {
         VStack(spacing: 0) {
             Toggle(isOn: $hapticsEnabled) {
@@ -86,19 +85,6 @@ struct WheelSettings: View {
             }
             .tint(Theme.controlAccent)
             .padding(.vertical, 8)
-
-            Toggle(isOn: $soundsEnabled) {
-                Text("Sounds")
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.ink)
-            }
-            .tint(Theme.controlAccent)
-            .padding(.vertical, 8)
-            .onChange(of: soundsEnabled) { _, on in
-                // Decode on the way in, so the first bell after switching it on
-                // is not the one that lands late.
-                if on { Sounds.warm() }
-            }
         }
         .padding(.top, 4)
     }

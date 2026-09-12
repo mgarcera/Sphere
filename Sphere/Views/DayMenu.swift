@@ -11,6 +11,7 @@ struct DayMenu: View {
     let weather: WeatherService
     @Binding var appearance: Appearance
     @AppStorage(WheelMapping.bottomKey) private var bottomPrimary: WheelAction = .now
+    @AppStorage(Sounds.key) private var soundsEnabled = false
     let onDismiss: () -> Void
 
     @State private var isFeedbackOpen = false
@@ -33,6 +34,23 @@ struct DayMenu: View {
                     }
                     .pickerStyle(.segmented)
                     .padding(.vertical, 4)
+
+                    // Under the appearance picker rather than beside Haptics,
+                    // where it used to be. Both are how Sphere presents itself
+                    // rather than what it does, and a bell marks presses that
+                    // are not all on the wheel.
+                    Toggle(isOn: $soundsEnabled) {
+                        Text("Sounds")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.ink)
+                    }
+                    .tint(Theme.controlAccent)
+                    .padding(.vertical, 3)
+                    .onChange(of: soundsEnabled) { _, on in
+                        // Decode on the way in, so the first bell after
+                        // switching it on is not the one that lands late.
+                        if on { Sounds.warm() }
+                    }
                 }
 
                 if !calendar.sources.isEmpty {
