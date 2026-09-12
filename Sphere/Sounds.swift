@@ -27,11 +27,9 @@ enum Sounds {
     /// were the same thing while these rang on solar crossings and are not any
     /// more, so the mapping lives here rather than at the call sites.
     ///
-    /// Three, not four. The chevrons are silent: they are the one pair pressed
-    /// repeatedly, and a bell on a button you press five times in a row is the
-    /// definition of obnoxious. `weather.m4a` stays in the bundle unused — it is
-    /// the fourth of a set Mason made together, and the next thing worth marking
-    /// should sound like its siblings rather than be commissioned alone.
+    /// Four presses, and the chevrons are not among them: they are the one pair
+    /// pressed repeatedly, and a bell on a button you hit five times in a row is
+    /// the definition of obnoxious.
     enum Bell: String, CaseIterable {
         /// Opening the menu.
         case menu = "sunrise"
@@ -40,6 +38,8 @@ enum Sounds {
         /// Opening the event modal — either the open/create choice or, with
         /// nothing under the dot, the new-event editor straight away.
         case editor = "midday"
+        /// Opening the day picker, the wheel's CAL.
+        case calendar = "weather"
     }
 
     /// One player each, never a shared one. The strikes run 6.7–7.5s and stay

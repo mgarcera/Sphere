@@ -754,6 +754,7 @@ struct ContentView: View {
         case .none: break
         case .now: Sounds.ring(.now); travel { model.returnToNow() }
         case .calendar:
+            Sounds.ring(.calendar)
             pickedDay = model.focusDate
             isDayPickerOpen = true
         // The same clock time a day either side, which is what makes this
