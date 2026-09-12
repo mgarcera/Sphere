@@ -25,6 +25,8 @@ struct ContentView: View {
     /// setting at all.
     @AppStorage(WheelMapping.bottomKey) private var bottomPrimary: WheelAction = .now
     @AppStorage(Haptics.key) private var hapticsEnabled = true
+    @AppStorage(Sounds.key) private var soundsEnabled = false
+    @State private var moments = MomentWatcher()
     @State private var eventsHidden = false
     @State private var isAllDayOpen = false
     @State private var isDayPickerOpen = false
@@ -212,10 +214,13 @@ struct ContentView: View {
                 onRotate: { rotations in
                     model.scrub(byRotations: rotations)
                     clickPastDetents()
+                    ringPastMoments()
                 },
                 onRotateBegan: {
                     Haptics.warm()
+                    Sounds.warm()
                     lastDetent = (model.focusHour / Haptics.detentHours).rounded(.towardZero)
+                    moments.resync(to: model.focusHour, weatherPresent: isWeather(at: model.focusHour))
                 },
                 onPress: press,
                 bottomLabel: bottomPrimary == .calendar ? "CAL" : "NOW"
@@ -790,6 +795,40 @@ struct ContentView: View {
         guard crossed != lastDetent else { return }
         lastDetent = crossed
         Haptics.detentPassed()
+    }
+
+    /// Is the focus inside weather? The same amount the sky already washes with,
+    /// thresholded — a trace of drizzle colours the arc slightly and should not
+    /// ring a bell, so the edge sits a little above nothing.
+    private func isWeather(at hour: Double) -> Bool {
+        let sky = model.weather(atAbsoluteHour: hour)
+        return WeatherWash.amount(precipitation: sky.precipitation, lightning: sky.lightning)
+            > WeatherWash.stormPeak * 0.2
+    }
+
+    /// Absolute hours of the day's three solar moments, offset by whichever day
+    /// the focus is on. `SolarDay` reports them within its own day; `focusHour`
+    /// counts from day zero, so they only line up once the offset is added.
+    private var solarMomentHours: [Sounds.Moment: Double] {
+        let day = model.focusSolarDay
+        let offset = Double(model.dayIndex) * 24
+        var out: [Sounds.Moment: Double] = [.midday: offset + day.solarNoon]
+        if let sunrise = day.sunrise { out[.sunrise] = offset + sunrise }
+        if let sunset = day.sunset { out[.sunset] = offset + sunset }
+        return out
+    }
+
+    /// One bell per moment of the day crossed. The counterpart to
+    /// `clickPastDetents`, and deliberately unlike it: a click marks every
+    /// quarter hour and is felt, a bell marks four places and is heard, so this
+    /// one is gated on turning slowly enough to still be there when it lands.
+    private func ringPastMoments() {
+        let hour = model.focusHour
+        let ringing = moments.crossings(movingTo: hour,
+                                        at: Date(),
+                                        solarHours: solarMomentHours,
+                                        weatherPresent: isWeather(at: hour))
+        for moment in ringing { Sounds.play(moment) }
     }
 
     /// Every way of moving the dot a long way at once goes through here.
