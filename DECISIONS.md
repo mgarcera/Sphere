@@ -1211,3 +1211,22 @@ The entries above about how it was built and what it could redraw stay as they a
 record of a thing that existed, not a description of the shipping app. Everything in the listing
 that promised it is gone too, because a description claiming a surface the binary does not have is
 a rejection rather than a typo.
+
+## The feedback form carries no in-app disclosure (2026-09-14)
+
+Guideline **5.1.2(i)** asks for third-party processing to be disclosed where the user acts, not only
+in the privacy policy, and the form posts the message, sentiment, app version, device model, iOS
+version and an optional email to Formspree. A line under the Send button naming all of that was
+written, shipped in a build, and then cut.
+
+Cut because **Fil ships the identical Formspree form and passed review without one**. That is a
+direct precedent on the same clause, the same processor and the same account.
+
+Two things make Sphere the safer of the two even so: the live policy at `/sphere/privacy` names the
+feedback form, Open-Meteo, the two-decimal rounding and Apple's geocoding by name, which Fil's and
+Weeklite's policies still do not; and the email address is declared in `PrivacyInfo.xcprivacy` and
+in App Privacy, so the three surfaces agree on what is collected even though the form itself is
+silent.
+
+Accepted, narrow and visible. If a reviewer does cite 5.1.2(i), the fix is one `Text` under the
+Send button and the six drafted structures are in the 2026-09-14 session.
