@@ -74,6 +74,19 @@ struct DayMenu: View {
                             .padding(.vertical, 3)
                         }
                     }
+                } else if calendar.access == .denied {
+                    divider
+                    section("Calendars") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Calendar access is off, so the line has no events on it.")
+                                .font(.subheadline)
+                                .foregroundStyle(Theme.muted)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Link("Open Settings", destination: SphereLinks.settings)
+                                .font(.footnote)
+                                .foregroundStyle(Theme.taskActive)
+                        }
+                    }
                 }
 
                 divider
@@ -191,8 +204,14 @@ struct DayMenu: View {
             Button("Use location") { location.clearManual() }
                 .font(.footnote)
                 .foregroundStyle(Theme.taskActive)
+        } else if location.access == .denied {
+            // request() is a no-op once denied — iOS will not ask twice — so the
+            // button has to go somewhere that can still change the answer.
+            Link("Open Settings", destination: SphereLinks.settings)
+                .font(.footnote)
+                .foregroundStyle(Theme.taskActive)
         } else if location.access != .granted {
-            Button("Allow") { location.request() }
+            Button("Use my location") { location.request() }
                 .font(.footnote)
                 .foregroundStyle(Theme.taskActive)
         }

@@ -311,6 +311,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Sphere lays your events along the day's sun arc. Your calendar stays on your device.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Mason Garcera";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Sphere draws the sun's arc for where you are. Your location stays on your device.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -343,6 +344,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Sphere lays your events along the day's sun arc. Your calendar stays on your device.";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Mason Garcera";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Sphere draws the sun's arc for where you are. Your location stays on your device.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -372,7 +374,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "SphereWidget-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Sphere;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Mason Garcera";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"@executable_path/Frameworks",
@@ -400,7 +402,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "SphereWidget-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Sphere;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Mason Garcera";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"@executable_path/Frameworks",

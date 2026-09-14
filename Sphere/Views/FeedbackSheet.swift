@@ -87,6 +87,14 @@ struct FeedbackSheet: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(!canSend || isSending)
+
+                    // 5.1.2(i) wants this where the person acts, not only in the
+                    // policy. The processor is named there and deliberately not
+                    // here: a vendor name means nothing to the person reading it.
+                    Text("Emailed to Mason with your app version, device model and iOS version. Your address only if you type one. Nothing from your calendar or location.")
+                        .font(.caption)
+                        .foregroundStyle(Theme.mutedLight)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(20)
             }
