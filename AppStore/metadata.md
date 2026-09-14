@@ -111,9 +111,8 @@ per-calendar switches), `WeatherProvider.coarse` (two decimals), `FeedbackSheet`
 
 ## What's New (version 1.0)
 ```
-the first Sphere. your day drawn as the sun's own arc, your calendar laid along it, and the hour's
-weather in the sky over the line. turn the wheel to move through the day, hold a button to step a
-whole one. widgets for the home and lock screen.
+the first Sphere. your day drawn as the sun's own arc, your calendar laid along it, and the hour's weather in the sky over the line. turn the wheel to move through the day, hold a button to step a whole one. widgets for the home and lock screen.
+
 free, no account, nothing to buy. tell me what to build next: mason@smidgecraft.com
 ```
 
