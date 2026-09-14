@@ -17,7 +17,10 @@ from PIL import Image
 import numpy as np
 
 HERE = pathlib.Path(__file__).parent
-CAP, OUT = HERE / "captures", HERE / "out"
+# clean/ holds the captures with a unified 9:41 status bar (statusbar.py). Prefer it — otherwise
+# a frame silently ships whatever time and battery the phone happened to show.
+CAP = HERE / "clean" if (HERE / "clean").exists() else HERE / "captures"
+OUT = HERE / "out"
 W, H = 1320, 2868                     # 6.9", the only size App Store Connect now requires
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
