@@ -1200,3 +1200,14 @@ Two consequences of the blue being DARK — about a third of paper's luminance:
   only about 6.8:1 — holding any ratio there spends contrast the ground does not
   have and lands on grey. On blue the title is black and the caption a near-black
   step behind it. The hold is right on paper and wrong on sky.
+
+## The Live Activity is out of 1.0 (2026-09-14)
+
+Removed before submission: `LiveActivity.swift`, `DayActivityAttributes.swift`,
+`DayActivityWidget.swift`, the sync call in `ContentView`, the widget-bundle entry, and
+`INFOPLIST_KEY_NSSupportsLiveActivities` from both configurations.
+
+The entries above about how it was built and what it could redraw stay as they are — they are the
+record of a thing that existed, not a description of the shipping app. Everything in the listing
+that promised it is gone too, because a description claiming a surface the binary does not have is
+a rejection rather than a typo.

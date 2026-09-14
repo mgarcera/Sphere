@@ -122,8 +122,6 @@ nothing else in the category has.
 - **The priming screen.** Good copy, but it only renders on a fresh install before permissions are
   answered, and a first frame that shows a permission wall argues the wrong thing.
 - **The EventKit editor.** It's Apple's UI, not Sphere's. Claiming it in prose is enough.
-- **A Live Activity frame.** It needs an event running at the real current moment, which is a lot of
-  staging for one frame. Optional later.
 
 ---
 
@@ -155,7 +153,6 @@ Three things are pinned to the real clock and cannot be posed by scrubbing:
 - **The widgets.** `publishSnapshot()` writes today and tomorrow from `.now` — the code comment is
   explicit: *"Everything outside the arc is about NOW, never about the wheel."*
 - **The menu's TODAY block** — moon, temperature, and the `MiniArc` — is anchored to real now.
-- **The Live Activity.**
 
 So frames 5 and 6 need the fabricated events sitting on **the real current date**. The seed script
 below handles this by writing the same day onto every date you'll shoot.
@@ -372,3 +369,8 @@ Mechanical only. Each of these has caused a reshoot or a rejection somewhere.
 - **App Preview video** — optional, lifts conversion, not gating. Fil has `docs/video-brief.md` as a
   precedent if this gets picked up.
 - **Custom product pages** — a second set aimed at a different keyword. Not for 1.0.
+
+---
+
+**Note, 2026-09-14:** the Live Activity was removed from 1.0 after this was written. Any reference
+to it above is stale; there is no Dynamic Island frame to shoot and no Live Activity to capture.

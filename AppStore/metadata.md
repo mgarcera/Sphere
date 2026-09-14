@@ -22,7 +22,7 @@ Verify counts in ASC (it's the source of truth).*
 > Fil's: **5.2.5, Intellectual Property**, where the subtitle read `Lock screen & dynamic island`.
 > Apple allows referential use of a feature trademark in a description's prose and not in the **name
 > or subtitle**. Sphere's name and subtitle name no Apple feature at all, which is the cheapest way
-> to stay clear of that clause. "Home Screen", "Lock Screen" and "Live Activity" appear in the
+> to stay clear of that clause. "Home Screen" and "Lock Screen" appear in the
 > description as prose and nowhere in the name, the subtitle or the keyword field.
 
 - **App name** (30): `Sphere: Sky Schedule` — 20 chars. Colon, not an em dash, for the reason Fil's
@@ -87,7 +87,6 @@ Outside the app:
 
 - Home Screen: the day's arc with your events on it, in small and medium.
 - Lock Screen: where the sun is, and what is next.
-- Live Activity: while an event is running, the whole day with that event picked out.
 
 The menu holds the rest: a place to work from, today's arc with sunrise, midday and sunset marked on it, tonight's moon and the temperature right now, and a switch for each calendar you want on the line.
 
@@ -107,15 +106,14 @@ color), `SkyContinuous` and `WeatherProvider` (decks by altitude, occlusion, CAP
 `ClearBlue`/`ClearSky` (the measured `65A2E4`, stars, birds), `ClickWheel` + `Haptics` (four hours a
 rotation, a detent every quarter hour), `WheelSettings`/`WheelAction` (reassignable holds),
 `EventKitSheets` (Apple's editor and detail view), `AllDaySheet`, `Theme.Appearance` (Natural Sky and
-Dark, and no third option), `SphereWidget/` (accessoryRectangular, systemSmall, systemMedium, and the
-Live Activity), `DayMenu`/`MiniArc` (the place field, today's arc, the moon and temperature, the
+Dark, and no third option), `SphereWidget/` (accessoryRectangular, systemSmall, systemMedium), `DayMenu`/`MiniArc` (the place field, today's arc, the moon and temperature, the
 per-calendar switches), `WeatherProvider.coarse` (two decimals), `FeedbackSheet` (the payload).
 
 ## What's New (version 1.0)
 ```
 the first Sphere. your day drawn as the sun's own arc, your calendar laid along it, and the hour's
 weather in the sky over the line. turn the wheel to move through the day, hold a button to step a
-whole one. widgets for the home and lock screen, and a live activity for the event you're in.
+whole one. widgets for the home and lock screen.
 free, no account, nothing to buy. tell me what to build next: mason@smidgecraft.com
 ```
 
@@ -253,3 +251,11 @@ These are not in the repo, or could not be settled from the code. Nothing above 
 8. **Open-Meteo's free tier.** It is the non-commercial tier, which stands only while Sphere is free
    with no purchases. Any future paid version or in-app purchase makes WeatherKit the second
    `WeatherProvider` conformer, which the protocol already anticipates.
+
+---
+
+## Removed before submission (2026-09-14)
+
+The **Live Activity** is out of 1.0 — code, the `NSSupportsLiveActivities` key, and every line of
+this listing that promised it. A description that claims a surface the binary does not have is a
+rejection rather than a typo, which is why this was done before any screenshot was shot against it.

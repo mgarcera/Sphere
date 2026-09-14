@@ -6,6 +6,5 @@ struct SphereWidgetBundle: WidgetBundle {
     var body: some Widget {
         DayArcWidget()
         HomeArcWidget()
-        DayActivityWidget()
     }
 }
