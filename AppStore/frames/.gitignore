@@ -2,3 +2,6 @@
 out/
 canva/
 __pycache__/
+
+# statusbar.py scratch: the simulator captures it lifts the glyph masks from.
+.bar-*.png
