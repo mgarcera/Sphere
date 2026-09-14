@@ -1,9 +1,69 @@
 {
   "_": "Strings Mason has read as copy and kept. Never offer these again. See the `proof` skill.",
   "reviewed": [
-    { "string": "Natural Sky",         "file": "Shared/Theme.swift",       "date": "2026-09-11" },
-    { "string": "View privacy policy", "file": "Sphere/Views/DayMenu.swift", "date": "2026-09-11" },
-    { "string": "Questions and contact", "file": "Sphere/Views/DayMenu.swift", "date": "2026-09-11", "note": "replaced \"Get support\", which promised a support function the FAQ page does not have" },
-    { "string": "About",               "file": "Sphere/Views/DayMenu.swift", "date": "2026-09-11", "note": "one heading replacing separate Privacy and Support headings" }
+    {
+      "string": "Natural Sky",
+      "file": "Shared/Theme.swift",
+      "date": "2026-09-11"
+    },
+    {
+      "string": "View privacy policy",
+      "file": "Sphere/Views/DayMenu.swift",
+      "date": "2026-09-11"
+    },
+    {
+      "string": "Questions and contact",
+      "file": "Sphere/Views/DayMenu.swift",
+      "date": "2026-09-11",
+      "note": "replaced \"Get support\", which promised a support function the FAQ page does not have"
+    },
+    {
+      "string": "About",
+      "file": "Sphere/Views/DayMenu.swift",
+      "date": "2026-09-11",
+      "note": "one heading replacing separate Privacy and Support headings"
+    },
+    {
+      "string": "Sounds",
+      "file": "Sphere/Views/DayMenu.swift",
+      "date": "2026-09-14",
+      "note": "toggle under the appearance picker; kept over \"Sound\" and \"Bells\""
+    },
+    {
+      "string": "See your schedule in the sky's arc.",
+      "file": "AppStore/screenshots.md",
+      "date": "2026-09-14",
+      "note": "screenshot caption 1, the hero frame, written by Mason"
+    },
+    {
+      "string": "Close to the sky at any time.",
+      "file": "AppStore/screenshots.md",
+      "date": "2026-09-14",
+      "note": "screenshot caption 2, night frame, written by Mason"
+    },
+    {
+      "string": "Your very own atmosphere.",
+      "file": "AppStore/screenshots.md",
+      "date": "2026-09-14",
+      "note": "screenshot caption 3, storm frame, written by Mason"
+    },
+    {
+      "string": "Widgets on your Home Screen and Lock Screen.",
+      "file": "AppStore/screenshots.md",
+      "date": "2026-09-14",
+      "note": "screenshot caption 5, written by Mason"
+    },
+    {
+      "string": "Tuned to where you are.",
+      "file": "AppStore/screenshots.md",
+      "date": "2026-09-14",
+      "note": "screenshot caption 6"
+    },
+    {
+      "string": "Turn the wheel. Move the day.",
+      "file": "AppStore/screenshots.md",
+      "date": "2026-09-14",
+      "note": "screenshot caption 4; replaced a Journey lyric riff, which is metadata IP risk under review guideline 5.2"
+    }
   ]
 }
