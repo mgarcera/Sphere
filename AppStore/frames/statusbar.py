@@ -18,7 +18,8 @@ is REPLACED instead. Two things make that exact rather than approximate:
 Each frame keeps the ink it already had — light on the day and night skies, dark on the storm sky.
 That contrast decision is the app's, correctly made, and is not what was inconsistent.
 
-    python3 AppStore/frames/statusbar.py
+    python3 AppStore/frames/statusbar.py              # every capture
+    python3 AppStore/frames/statusbar.py 04-wheel     # just one
 """
 import pathlib, re, subprocess, sys, time
 from PIL import Image
@@ -104,7 +105,9 @@ def main():
     masks = {k: sim_mask(app, HERE / f".bar-{app}.png")
              for k, app in (("dark", "light"), ("light", "dark"))}   # key = the INK it paints
 
+    wanted = [a for a in sys.argv[1:] if not a.startswith("-")]
     for src in sorted(CAP.glob("*.png")):
+        if wanted and src.stem not in wanted: continue
         im = Image.open(src).convert("RGB")
         a = np.array(im).astype(float)
         top, bot = band_rows(a)
