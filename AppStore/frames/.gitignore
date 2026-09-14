@@ -1,0 +1,4 @@
+# Generated. build.py and canva.py rebuild both from captures/ in seconds.
+out/
+canva/
+__pycache__/
