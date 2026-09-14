@@ -78,10 +78,9 @@ struct DayMenu: View {
                     divider
                     section("Calendars") {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Calendar access is off, so the line has no events on it.")
+                            Text("Calendar access is off.")
                                 .font(.subheadline)
                                 .foregroundStyle(Theme.muted)
-                                .fixedSize(horizontal: false, vertical: true)
                             Link("Open Settings", destination: SphereLinks.settings)
                                 .font(.footnote)
                                 .foregroundStyle(Theme.taskActive)

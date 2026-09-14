@@ -64,6 +64,24 @@
       "file": "AppStore/screenshots.md",
       "date": "2026-09-14",
       "note": "screenshot caption 4; replaced a Journey lyric riff, which is metadata IP risk under review guideline 5.2"
+    },
+    {
+      "string": "Use my location",
+      "file": "Sphere/Views/DayMenu.swift",
+      "date": "2026-09-14",
+      "note": "place row while location is undetermined; replaced \"Allow\", which implied the grant happened on our button (5.1.1(iv))"
+    },
+    {
+      "string": "Open Settings",
+      "file": "Sphere/Views/DayMenu.swift",
+      "date": "2026-09-14",
+      "note": "two call sites, the place row and the Calendars section, both once access is denied; Apple's own phrasing for this link"
+    },
+    {
+      "string": "Calendar access is off.",
+      "file": "Sphere/Views/DayMenu.swift",
+      "date": "2026-09-14",
+      "note": "Calendars section empty state; the longer \"so the arc has no events on it\" was cut — the empty arc says it"
     }
   ]
 }
