@@ -109,6 +109,14 @@ rotation, a detent every quarter hour), `WheelSettings`/`WheelAction` (reassigna
 Dark, and no third option), `SphereWidget/` (accessoryRectangular, systemSmall, systemMedium), `DayMenu`/`MiniArc` (the place field, today's arc, the moon and temperature, the
 per-calendar switches), `WeatherProvider.coarse` (two decimals), `FeedbackSheet` (the payload).
 
+## What's New (version 1.0.1) — 2026-09-21
+```
+Calendar
+- Deleting a recurring event, including all future events, now closes the editor and updates the day right away.
+
+Thank you for using Sphere! Feedback: mason@smidgecraft.com
+```
+
 ## What's New (version 1.0)
 ```
 the first Sphere. your day drawn as the sun's own arc, your calendar laid along it, and the hour's weather in the sky over the line. turn the wheel to move through the day, hold a button to step a whole one. widgets for the home and lock screen.
