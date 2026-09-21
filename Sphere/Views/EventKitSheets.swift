@@ -198,11 +198,29 @@ struct EventKitHost: UIViewControllerRepresentable {
         /// that was already gone, and nothing reloaded until the next launch.
         /// The store's own change notification is the only signal it happened.
         private func closeIfEventDeleted() {
-            guard case .existing(let event)? = parent.target,
-                  let identifier = event.eventIdentifier,
-                  parent.store.event(withIdentifier: identifier) == nil
-            else { return }
+            guard case .existing(let event)? = parent.target else { return }
+            guard !Self.occurrenceStillExists(event, in: parent.store) else { return }
             finish()
+        }
+
+        /// Whether the exact occurrence on screen is still in the store.
+        ///
+        /// Asking by identifier is not enough: every occurrence of a recurring
+        /// event shares the series' identifier, so after "delete all future
+        /// events" the series is still there, truncated, and the identifier
+        /// still resolves. The editor sat open over an occurrence that was gone
+        /// and its Cancel had nothing left to cancel. Same hole for "this event
+        /// only" on any occurrence but the first. So the check is for an event
+        /// with this identifier starting at this moment, in this window.
+        static func occurrenceStillExists(_ event: EKEvent, in store: EKEventStore) -> Bool {
+            guard let identifier = event.eventIdentifier else { return true }
+            guard store.event(withIdentifier: identifier) != nil else { return false }
+            let start = event.startDate ?? Date()
+            let end = max(event.endDate ?? start, start.addingTimeInterval(1))
+            let predicate = store.predicateForEvents(withStart: start, end: end, calendars: nil)
+            return store.events(matching: predicate).contains {
+                $0.eventIdentifier == identifier && $0.startDate == start
+            }
         }
 
         /// Editing inside the detail view reports back to that view, not to us,
