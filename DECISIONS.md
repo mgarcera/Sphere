@@ -361,8 +361,18 @@ If a future OS pushes again, the symptom is the two Delete Event rows on one
 screen, and the fix is `allowsEditing = false` plus our own Edit button that
 presents rather than pushes — the variant that was never tried in September.
 
-The leading button on that screen is ours, a `.done`; everything else in the bar
-is Apple's. Calendar.app uses a close glyph there. Left as Done deliberately.
+The leading button on that screen is ours, a `.done`, which iOS 26 draws as a
+checkmark; everything else in the bar is Apple's, including Edit on the trailing
+edge.
+
+**Swapping the two sides was built and rejected the same day.** Edit leading,
+checkmark trailing, done by moving Apple's own bar button item across in a
+`UINavigationController` subclass rather than rebuilding it — the item had to be
+moved rather than made, because a hand-made Edit would need our own editability
+rule back. It worked, and it was reverted: the arrangement is not worth a
+subclass that reaches into a bar we do not own and that fails silently, with an
+empty leading edge, if a future OS populates that bar later than we look. The
+bar stays Apple's.
 
 ## Haptics, behind one setting (2026-09-01)
 
