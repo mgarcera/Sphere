@@ -341,6 +341,29 @@ you. Both signals were confirmed on device — your own all-day event reported n
 organizer and no attendees, the Gmail-created one reported an organizer that is
 not you and one attendee.
 
+### Amended again, and settled: everything goes through the detail view (2026-09-26)
+
+Retested on device. **Edit now presents the editor modally rather than pushing
+it**, so the two Delete Event rows that caused the September revert do not
+appear, and the detail view is back for every existing event — your own included.
+Confirmed on both halves: an event I own showed Edit on the trailing edge, and an
+invitation showed no Edit and its RSVP controls.
+
+`isEditable` went with the branch. Apple's rule has more cases in it than an
+`allowsContentModifications` plus organizer check does, and running our own
+alongside it meant two rules that could disagree. Recover it from `2ea8e89` if
+this ever has to branch again.
+
+The extra tap to edit an event you own is back, and this time it is the point: it
+is the step Calendar.app has, where you read an event before changing it.
+
+If a future OS pushes again, the symptom is the two Delete Event rows on one
+screen, and the fix is `allowsEditing = false` plus our own Edit button that
+presents rather than pushes — the variant that was never tried in September.
+
+The leading button on that screen is ours, a `.done`; everything else in the bar
+is Apple's. Calendar.app uses a close glyph there. Left as Done deliberately.
+
 ## Haptics, behind one setting (2026-09-01)
 
 The wheel has no travel and no sound, so turning it read only as the numbers
