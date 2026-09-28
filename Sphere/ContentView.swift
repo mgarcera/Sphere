@@ -29,6 +29,11 @@ struct ContentView: View {
     @State private var isAllDayOpen = false
     @State private var isDayPickerOpen = false
     @State private var isEventChoiceOpen = false
+    @State private var showsWheelTip = false
+    /// One claim per launch, whichever route gets there first: the tip is gated on calendar
+    /// access being settled, and that settles either before this view appears or after the
+    /// priming screen, never both.
+    @State private var didClaimWheelTip = false
     /// Acted on after the chooser closes, never while it is closing: presenting
     /// the editor into a sheet still dismissing is the refusal that cost ten
     /// seconds once already.
@@ -84,6 +89,8 @@ struct ContentView: View {
             .allowsHitTesting(false)
         }
         .animation(.easeInOut(duration: 0.25), value: calendar.access)
+        .task { considerWheelTip() }
+        .onChange(of: calendar.access) { _, _ in considerWheelTip() }
         // The status bar reads the HOSTING CONTROLLER's style, and
         // `preferredColorScheme` is the only lever SwiftUI gives onto it —
         // `UIStatusBarStyle.default` claims to adapt to the content below it
@@ -220,6 +227,17 @@ struct ContentView: View {
                 onPress: press,
                 bottomLabel: bottomPrimary == .calendar ? "CAL" : "NOW"
             )
+            // An overlay, not a row above the wheel: in the layout it would push the wheel down
+            // and squeeze the arc, and the arc would spring back the moment the card went. The
+            // alignment guide hands the overlay's BOTTOM to the wheel's top, which lifts it clear
+            // without either one knowing the other's height.
+            .overlay(alignment: .top) {
+                if showsWheelTip {
+                    WheelTip { withAnimation(.snappy) { showsWheelTip = false } }
+                        .alignmentGuide(.top) { $0[.bottom] + 18 }
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
             .padding(.top, 16)
             .padding(.bottom, 24)
         }
@@ -728,8 +746,27 @@ struct ContentView: View {
     /// where the printed word changes with the setting. Holds are assignable,
     /// which is only safe because nothing is printed for them: a label that
     /// could come to mean something else stops being readable.
+    /// Show the wheel tip, if it still has a showing left and there is a wheel to point at.
+    ///
+    /// Gated on access being settled rather than granted: a denied calendar still leaves the
+    /// wheel on screen and every hold still works. Undetermined is the one state with no wheel
+    /// in it — `CalendarPriming` covers the screen — and a tip over a permission prompt is two
+    /// asks at once.
+    private func considerWheelTip() {
+        guard !didClaimWheelTip, calendar.access != .undetermined else { return }
+        didClaimWheelTip = true
+        guard WheelTipState.claimLaunch() else { return }
+        withAnimation(.snappy.delay(0.6)) { showsWheelTip = true }
+    }
+
     private func press(_ position: WheelPosition, _ gesture: WheelGesture) {
-        guard gesture == .tap else { return run(WheelMapping.hold(for: position)) }
+        guard gesture == .tap else {
+            // Any hold, anywhere on the wheel, is the tip's job done. It teaches that holds
+            // exist, so the first one proves the message landed — including one found without it.
+            WheelTipState.retire()
+            withAnimation(.snappy) { showsWheelTip = false }
+            return run(WheelMapping.hold(for: position))
+        }
         switch position {
         case .previous: step(.back)
         case .next: step(.forward)
