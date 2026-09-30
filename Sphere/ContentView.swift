@@ -206,12 +206,26 @@ struct ContentView: View {
             // a stack draws on top — so without this the type is behind the sky
             // rather than on it, whatever colour it is.
             header
+                // 12 lower than it sat. The arc follows, since the header sets its start.
+                .padding(.top, 12)
                 .zIndex(1)
 
             ArcWindow(model: model, eventsHidden: eventsHidden,
                       nightness: nightness,
                       nightSuppressedBy: washAmount / WeatherWash.stormPeak)
                 .padding(.top, 8)
+                // The weather line, drawn into the arc box's sky gutter — the 100pt of room
+                // above the curve's ceiling that exists so tall clouds are not clipped. On a
+                // low deck this is the empty band that used to sit between the header and the
+                // clouds; the line lives there now, an overlay, so it costs the column nothing.
+                .overlay(alignment: .topLeading) {
+                    weatherLine
+                        .padding(.top, weatherOffset)
+                        .padding(.leading, 24)
+                        // One property, moved on the same spring the all-day row pops with,
+                        // so crossing onto a birthday reads as the line making room.
+                        .animation(Self.popSpring, value: allDayCount)
+                }
 
             Spacer(minLength: 16)
 
@@ -285,45 +299,64 @@ struct ContentView: View {
                 .monospacedDigit()
                 .scaleEffect(captionScale, anchor: .leading)
 
-            weatherLine
-                .padding(.top, 7)
-
-            // LAST in the header, after the weather, because it is the one row
-            // that is often empty. Reserved space between the caption and the
-            // weather read as a hole in the middle of the text; the same space
-            // below all of it reads as the gap before the arc.
-            //
-            // The row is always reserved, present or not. Letting it appear
-            // and vanish shifted the whole arc down and back as you scrubbed
-            // across a day with a birthday on it, and squeezed the title.
+            // Under the date, in the column, and the weather moved down beneath it so the
+            // header ends in the sky line — closer to the clouds it describes. This puts the
+            // all-day rows back in the flow that sets the arc's position: a day with events is
+            // taller by a line each, and the arc moves with it.
             Group {
                 if allDayCount == 0 {
                     Color.clear.transition(.identity)
                 } else {
                     Button { isAllDayOpen = true } label: {
-                        HStack(spacing: 6) {
-                            ClockFace(hour: hourOfDay)
-                                .stroke(captionColor, style: StrokeStyle(lineWidth: 1.1, lineCap: .round))
-                                .frame(width: 14, height: 14)
-                            Text("\(allDayCount) all day event\(allDayCount == 1 ? "" : "s")")
-                                .contentTransition(.identity)
-                                .font(.footnote)
-                                .foregroundStyle(captionColor)
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack(spacing: 6) {
+                                ClockFace(hour: hourOfDay)
+                                    .stroke(captionColor, style: StrokeStyle(lineWidth: 1.1, lineCap: .round))
+                                    .frame(width: 14, height: 14)
+                                Text("\(allDayCount) all day event\(allDayCount == 1 ? "" : "s")")
+                                    .contentTransition(.identity)
+                                    .font(.footnote)
+                                    .foregroundStyle(captionColor)
+                            }
+                            // The events themselves, under the count, in the sheet's own row:
+                            // a dot in the calendar's colour and the title, one line each,
+                            // flush with the count so the whole block shares one left edge.
+                            ForEach(model.allDayEvents) { event in
+                                HStack(spacing: 6) {
+                                    Circle()
+                                        .fill(event.color)
+                                        .frame(width: 7, height: 7)
+                                    Text(event.title)
+                                        .font(.footnote)
+                                        .foregroundStyle(captionColor)
+                                        .lineLimit(1)
+                                }
+                            }
                         }
                         .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
-                    // Pattern 5 in reverse: the branch gets a transition
-                    // whether or not we ask, so REPLACE the default rather
-                    // than remove it. Scale alone, to nothing and back, so it
-                    // pops in and out instead of fading. A scale that stops
-                    // short of zero would still cut at that size.
+                    // Pattern 5 in reverse: the branch gets a transition whether or not we
+                    // ask, so REPLACE the default rather than remove it. Scale alone, to
+                    // nothing and back, so it pops in and out instead of fading.
                     .transition(.scale(scale: 0.01, anchor: .leading))
                 }
             }
-            .frame(height: 16, alignment: .leading)
+            // Two lines reserved whether or not the day has events: a footnote line, the
+            // 4pt row spacing, and a second line. The arc never moves for an all-day event.
+            // A third event still adds a line — accepted, since the choice was two, not a cap.
+            .frame(minHeight: 36, alignment: .topLeading)
             .scaleEffect(allDayScale, anchor: .leading)
             .padding(.top, 5)
+
+            // The weather's SLOT, kept empty. The line itself is drawn lower, over the arc's
+            // sky gutter (see `ArcWindow` below), because the clouds sit ~100pt beneath the
+            // header's last line and closing the header's own gap could never reach them.
+            // The slot stays so the header keeps its height and nothing else moves.
+            Color.clear
+                .frame(height: 16)
+                .padding(.top, 7)
+
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)
@@ -377,6 +410,27 @@ struct ContentView: View {
 
     private var captionKey: String {
         "\(titleKey)|\(Self.dayLine(model.focusDate, in: model.timeZone))"
+    }
+
+    /// Where the weather line sits, from the arc box's top edge, by how many all-day rows
+    /// there are to make room for. It fills the band between the date and the clouds:
+    ///
+    /// Always directly BELOW the all-day block, however tall it is.
+    ///
+    /// Measured from the arc box's top edge. The block's top is 67 ABOVE the box: the arc's
+    /// 8pt top pad, the weather's empty 23pt slot in the header, and the 36pt two-line
+    /// reservation. Negative padding on an overlay draws there. Below that, the block is a
+    /// footnote line for the count plus one per event, 4 apart; the weather sits 4 under
+    /// the last of them. With no events it sits under the date.
+    ///
+    /// One formula rather than positions per count: an earlier version parked the line on
+    /// the cloud tops from two events up, and the jump from one event to two was 63pt —
+    /// "it goes really far". Following the block keeps every step the same 20.
+    private var weatherOffset: CGFloat {
+        let line: CGFloat = 16, gap: CGFloat = 4, blockTop: CGFloat = -67
+        guard allDayCount > 0 else { return blockTop }
+        let block = line + CGFloat(allDayCount) * (gap + line)
+        return blockTop + block + gap
     }
 
     /// The all-day row changes with the DAY, not with the event under the dot,
