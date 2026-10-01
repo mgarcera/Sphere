@@ -323,9 +323,13 @@ struct ContentView: View {
                             // flush with the count so the whole block shares one left edge.
                             ForEach(model.allDayEvents) { event in
                                 HStack(spacing: 6) {
+                                    // 10pt dot in the same 14pt column the clock glyph and the
+                                    // weather glyph occupy, so all three lines' text shares one
+                                    // left edge. At 7 in a 7 column the rows sat 7pt left.
                                     Circle()
                                         .fill(event.color)
-                                        .frame(width: 7, height: 7)
+                                        .frame(width: 10, height: 10)
+                                        .frame(width: 14, height: 14)
                                     Text(event.title)
                                         .font(.footnote)
                                         .foregroundStyle(captionColor)
