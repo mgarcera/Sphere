@@ -223,7 +223,7 @@ final class DayModel {
     ///
     /// It has no weather service and no location — asking for the second is the point of the
     /// screen it draws on — so the only way to show a real sky there is to hand it one. The
-    /// shipping path is `applySky(from:)` and nothing else should use this.
+    /// shipping path is `applySky(from:)`; this one has exactly one caller, `FirstRunArc`.
     func applySky(_ hours: [SkyHour], forDayIndex index: Int) {
         skyByDay[index] = hours
     }

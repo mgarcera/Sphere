@@ -15,11 +15,6 @@ struct DayMenu: View {
     let onDismiss: () -> Void
 
     @State private var isFeedbackOpen = false
-    #if DEBUG
-    /// Stepping through the first run without reinstalling. See `FirstRunRehearsal` for why a
-    /// reinstall is not enough: a permission prompt fires once per install.
-    @State private var isRehearsalOpen = false
-    #endif
 
     @State private var placeQuery = ""
     @State private var search = PlaceSearch()
@@ -98,23 +93,6 @@ struct DayMenu: View {
                     WheelSettings(bottomPrimary: $bottomPrimary)
                 }
 
-                #if DEBUG
-                divider
-                section("Debug") {
-                    Button {
-                        isRehearsalOpen = true
-                    } label: {
-                        HStack(spacing: 8) {
-                            Text("Replay first run")
-                                .font(.subheadline)
-                                .foregroundStyle(Theme.ink)
-                            Spacer()
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-                #endif
-
                 divider
                 section("Feedback") {
                     Button {
@@ -152,11 +130,6 @@ struct DayMenu: View {
         }
         .background(Theme.background)
         .sheet(isPresented: $isFeedbackOpen) { FeedbackSheet() }
-        #if DEBUG
-        .fullScreenCover(isPresented: $isRehearsalOpen) {
-            FirstRunRehearsal { isRehearsalOpen = false }
-        }
-        #endif
     }
 
     // MARK: - Layouts

@@ -1,16 +1,18 @@
 import SwiftUI
 import SmidgecraftKit
 
-/// Sphere's first run: three screens, each one immediately before the thing it explains.
+/// Sphere's first run: two screens, each one immediately before the thing it explains.
 ///
 /// It replaced `CalendarPriming`, which was a single screen that explained both permissions and
 /// then requested both, back to back. iOS queues the second prompt behind the first, so the
 /// location prompt arrived with its explanation two screens of attention earlier — and a cold
 /// denial is close to permanent. Splitting them is the whole point of this file (2026-10-04).
 ///
-/// Three screens rather than one because Sphere is the only one of the three apps that asks for
-/// anything at launch, and it asks for two things. The third earns its place by deleting code:
-/// teaching the hold layer here is what makes `WheelTip` unnecessary.
+/// Two screens, one per permission, because Sphere is the only one of the three apps that asks
+/// for anything at launch and it asks for two things. A third was planned to teach the hold
+/// layer so `WheelTip` could be deleted, and was cut: the tip appears on the wheel, pointing at
+/// the wheel, and retires itself on the first hold, which is better teaching than a screen shown
+/// before anyone has seen a wheel. `WheelTip` stays.
 ///
 /// Both permission steps are `isSkippable: false`. Apple rejected Fil 1.0 build 4 under guideline
 /// 5.1.1(iv) for offering a way out of a priming screen without reaching the system alert, and
@@ -75,9 +77,11 @@ struct FirstRunFlow: View {
                 body: "Now let’s get your weather\nand nothing more.",
                 isSkippable: false
             ) {
-                // Not awaited: `request()` returns as soon as the prompt is raised and the
-                // delegate answers later, so awaiting would hold the step open on nothing.
-                location.request()
+                // Not awaited beyond the hop: `request()` returns as soon as the prompt is raised
+                // and the delegate answers later, so waiting on it would hold the step open on
+                // nothing. The `MainActor.run` is what the isolation requires — without it this
+                // compiles today under Swift 5 and is an error under Swift 6 (2026-10-04).
+                await MainActor.run { location.request() }
             },
         ]
     }
@@ -163,12 +167,16 @@ struct OnboardingScreen<Demo: View>: View {
         .background(Theme.background)
     }
 
-    /// One word italic, the rest roman. `.display()` is a system serif rather than a custom face,
-    /// so `.italic()` resolves to a real italic instead of a silent fallback.
+    /// One word italic, the rest roman.
+    ///
+    /// An `AttributedString` run rather than concatenated `Text`, which iOS 26 deprecates. Marking
+    /// the run as emphasised rather than setting a font keeps the size and face from the modifier
+    /// outside, so the italic cannot drift from the rest of the line.
     private var styledTitle: Text {
-        guard !emphasis.isEmpty, let r = title.range(of: emphasis) else { return Text(title) }
-        return Text(String(title[title.startIndex..<r.lowerBound]))
-            + Text(emphasis).italic()
-            + Text(String(title[r.upperBound...]))
+        var attributed = AttributedString(title)
+        if !emphasis.isEmpty, let range = attributed.range(of: emphasis) {
+            attributed[range].inlinePresentationIntent = .emphasized
+        }
+        return Text(attributed)
     }
 }

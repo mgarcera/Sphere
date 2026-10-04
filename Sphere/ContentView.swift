@@ -77,8 +77,8 @@ struct ContentView: View {
             // Weather sits over the time of day, being nearer.
             WeatherWash(precipitation: sky.precipitation, lightning: sky.lightning)
 
-            if let gate, gate.state == .new {
-                // Three screens, each immediately before the thing it explains. The screen this
+            if let gate, gate.hasResolved, gate.state == .new {
+                // Two screens, each immediately before the thing it explains. The screen this
                 // replaced explained both permissions and then raised both prompts back to back,
                 // so the location one arrived with its reason two screens of attention earlier
                 // (2026-10-04).
