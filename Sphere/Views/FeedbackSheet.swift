@@ -1,15 +1,17 @@
 import SwiftUI
-#if canImport(UIKit)
-import UIKit
-#endif
+import SmidgecraftKit
 
 /// A calm feedback form: optional sentiment + a message (+ an optional email for
-/// a reply). Posted to Formspree, which emails it to Mason — no account, no
-/// backend, no keys. Auto-attaches app and device context.
+/// a reply). Posted to Formspree via `FeedbackService`, which emails it to Mason — no account,
+/// no backend, no keys.
 ///
-/// The same sheet Fil and Weeklite carry, in Sphere's register: system type on
-/// the app's own ink, fields drawn as hairline rectangles rather than filled
-/// cards, because nothing else in this app is a card.
+/// On `SmidgecraftKit` since 2026-10-04: the submission, the payload and every word come from the
+/// package, and this file is only the drawing. Sphere was the source the package's service was
+/// carried from, so the payload it sends is unchanged.
+///
+/// What deliberately did NOT converge is the layout. Sphere draws its fields as hairline
+/// rectangles because nothing else in this app is a card; Weeklite uses a stock `Form` because
+/// that IS Weeklite's register.
 struct FeedbackSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var message = ""
@@ -20,19 +22,18 @@ struct FeedbackSheet: View {
     @FocusState private var messageFocused: Bool
 
     private enum Outcome { case sent, failed }
-    private let sentiments = ["😍", "☺️", "😡", "😒", "😭", "🐛"]
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Text("How's it going?")
+                    Text(FeedbackCopy.prompt)
                         .font(.system(size: 15))
                         .foregroundStyle(Theme.mutedLight)
                         .fixedSize(horizontal: false, vertical: true)
 
                     HStack(spacing: 14) {
-                        ForEach(sentiments, id: \.self) { emoji in
+                        ForEach(FeedbackCopy.sentiments, id: \.self) { emoji in
                             Button {
                                 sentiment = (sentiment == emoji) ? nil : emoji
                             } label: {
@@ -48,7 +49,7 @@ struct FeedbackSheet: View {
 
                     ZStack(alignment: .topLeading) {
                         if message.isEmpty {
-                            Text("Your thoughts")
+                            Text(FeedbackCopy.messagePlaceholder)
                                 .font(.system(size: 16))
                                 .foregroundStyle(Theme.mutedLighter)
                                 .padding(.top, 8)
@@ -65,7 +66,7 @@ struct FeedbackSheet: View {
                     .padding(12)
                     .background(field)
 
-                    TextField("Your email (optional, for a reply)", text: $email)
+                    TextField(FeedbackCopy.emailPlaceholder, text: $email)
                         .font(.system(size: 15))
                         .foregroundStyle(Theme.ink)
                         .textInputAutocapitalization(.never)
@@ -77,7 +78,7 @@ struct FeedbackSheet: View {
                     Button {
                         Task { await send() }
                     } label: {
-                        Text(isSending ? "Sending…" : "Send")
+                        Text(isSending ? FeedbackCopy.sending : FeedbackCopy.send)
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(Theme.background)
                             .frame(maxWidth: .infinity)
@@ -91,7 +92,7 @@ struct FeedbackSheet: View {
                 .padding(20)
             }
             .scrollIndicators(.hidden)
-            .navigationTitle("Feedback")
+            .navigationTitle(FeedbackCopy.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } }
@@ -100,15 +101,15 @@ struct FeedbackSheet: View {
         .presentationDetents([.large])
         .presentationBackground(Theme.background)
         .onAppear { messageFocused = true }
-        .alert("Thank you!", isPresented: alertBinding(.sent)) {
+        .alert(FeedbackCopy.sentTitle, isPresented: alertBinding(.sent)) {
             Button("OK") { dismiss() }
         } message: {
-            Text("Your feedback has been sent!")
+            Text(FeedbackCopy.sentBody)
         }
-        .alert("Couldn't send", isPresented: alertBinding(.failed)) {
+        .alert(FeedbackCopy.failedTitle, isPresented: alertBinding(.failed)) {
             Button("OK") {}
         } message: {
-            Text("Something went wrong. Please try again, or email \(SphereLinks.contactEmail).")
+            Text(FeedbackCopy.failedBody(replyAddress: SphereFeedback.form.replyAddress))
         }
     }
 
@@ -118,9 +119,7 @@ struct FeedbackSheet: View {
             .strokeBorder(Theme.hairline, lineWidth: 1)
     }
 
-    private var canSend: Bool {
-        !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
+    private var canSend: Bool { FeedbackService.canSend(message) }
 
     private func alertBinding(_ target: Outcome) -> Binding<Bool> {
         Binding(get: { outcome == target }, set: { if !$0 { outcome = nil } })
@@ -129,7 +128,7 @@ struct FeedbackSheet: View {
     private func send() async {
         isSending = true
         do {
-            try await FeedbackService.submit(message: message, email: email, sentiment: sentiment)
+            try await FeedbackService.submit(SphereFeedback.form, message: message, email: email, sentiment: sentiment)
             outcome = .sent
         } catch {
             outcome = .failed
@@ -138,52 +137,14 @@ struct FeedbackSheet: View {
     }
 }
 
-/// Posts feedback to Formspree (form-to-email; no account or key needed).
-enum FeedbackService {
-    /// Sphere's own Formspree form — each app has its own. Manage at formspree.io.
-    private static let endpoint = URL(string: "https://formspree.io/f/xnpqzgeb")!
-
-    enum FeedbackError: Error { case server }
-
-    static func submit(message: String, email: String, sentiment: String?) async throws {
-        var payload: [String: String] = [
-            "message": message.trimmingCharacters(in: .whitespacesAndNewlines),
-            "sentiment": sentiment ?? "",
-            "appVersion": appVersion,
-            "device": deviceModel,
-            "iOS": systemVersion,
-            "timestamp": ISO8601DateFormatter().string(from: Date()),
-        ]
-        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmedEmail.isEmpty { payload["email"] = trimmedEmail }   // Formspree uses this as reply-to
-
-        var request = URLRequest(url: endpoint)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
-
-        let (_, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw FeedbackError.server
-        }
-    }
-
-    private static var appVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
-    }
-    private static var deviceModel: String {
-        #if canImport(UIKit)
-        UIDevice.current.model
-        #else
-        "unknown"
-        #endif
-    }
-    private static var systemVersion: String {
-        #if canImport(UIKit)
-        UIDevice.current.systemVersion
-        #else
-        "unknown"
-        #endif
-    }
+/// Sphere's feedback form, which is now only its three facts. The submission, the payload and the
+/// words all come from `SmidgecraftKit` (2026-10-04).
+///
+/// Each app has its own Formspree form; manage them at formspree.io. The form id is the only
+/// thing here that cannot be derived, which is why these three lines did not move into the
+/// package with everything else.
+enum SphereFeedback {
+    static let form = FeedbackForm(formID: "xnpqzgeb",
+                                   appName: "Sphere",
+                                   replyAddress: SphereLinks.contactEmail)
 }

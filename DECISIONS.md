@@ -1295,3 +1295,33 @@ Three things learned the hard way, all in the drawing:
 - "Opposite on the arc" is a mirror about solar noon, not twelve hours. Twelve is the clock's
   opposite and lands past sunset here, giving a night sky under a line about a cloudy afternoon.
   It is computed from the day so it stays right if the sample date moves.
+
+## 2026-10-04 — 1.1, and feedback moves to the package
+
+This release ships as **1.1 (2)**, not 1.0.6. 1.0.5 is live, and a patch number would say a
+defect was fixed; what changed is the first thing every new user sees. 2.0 was rejected because
+the arc, the day menu and the model are untouched. Build 2 was already required: 1.0.5 build 1
+exists on the store, and a build number is unique per marketing version, so the collision would
+have been found at upload.
+
+**The feedback form is now `SmidgecraftKit`'s** (`Sphere/Views/FeedbackSheet.swift`). The
+submission, the payload and every word come from the package; this file keeps the drawing and
+`SphereFeedback`, which is the form id, the app name and the reply address. The payload is
+unchanged — the package's service was carried from Sphere's copy in the first place — so nothing
+a user reads or a reviewer sees moved. What the layout does NOT share is deliberate: Sphere draws
+hairline fields because nothing in this app is a card, and Weeklite uses a stock `Form` because
+that is Weeklite's register.
+
+Three audit findings were declined, each with a reason:
+
+- **The policy page keeps "No third-party SDKs."** Linking SmidgecraftKit makes the sentence
+  literally wrong and factually harmless: the package is our own code, it links nothing, and it
+  collects nothing on its own. Rewriting it to explain a first-party package would make the policy
+  longer to say the same thing a reader already assumes.
+- **No 5.1.2(i) disclosure line at the form.** Same call as Weeklite's, recorded above, and made
+  the same way: the data leaves only on a deliberate Send, the live policy at `/sphere/privacy`
+  names the form, and the drafted line is one `Text` away if a reviewer ever cites the clause.
+- **`PrivacyInfo.xcprivacy` keeps its empty collected-data list.** The three facts the form sends
+  with a message ride a user-initiated support submission, not collection by the app. This is the
+  surface most likely to need revisiting: if App Privacy ever declares the feedback data, the
+  manifest has to say the same thing on the same day.
