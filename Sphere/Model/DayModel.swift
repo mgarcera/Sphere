@@ -219,6 +219,15 @@ final class DayModel {
 
     func sky(forDayIndex index: Int) -> [SkyHour] { skyByDay[index] ?? [] }
 
+    /// Supply sky hours directly, for the first-run demo (2026-10-04).
+    ///
+    /// It has no weather service and no location — asking for the second is the point of the
+    /// screen it draws on — so the only way to show a real sky there is to hand it one. The
+    /// shipping path is `applySky(from:)` and nothing else should use this.
+    func applySky(_ hours: [SkyHour], forDayIndex index: Int) {
+        skyByDay[index] = hours
+    }
+
     func applySky(from weather: WeatherService) {
         var result: [Int: [SkyHour]] = [:]
         for index in (dayIndex - 1)...(dayIndex + 1) {

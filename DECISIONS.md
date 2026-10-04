@@ -1263,3 +1263,35 @@ silent.
 
 Accepted, narrow and visible. If a reviewer does cite 5.1.2(i), the fix is one `Text` under the
 Send button and the six drafted structures are in the 2026-09-14 session.
+
+## 2026-10-04 — the first run is two screens, and the sky is the argument
+
+`CalendarPriming` explained both permissions on one screen and then raised both prompts back to
+back. iOS queues the second, so the location prompt arrived with its reason two screens of
+attention earlier, and a cold denial is close to permanent. Each screen now stands immediately
+before the thing it explains.
+
+Two screens, not three. A third was planned to teach the hold layer so `WheelTip` could be
+deleted, and that was wrong: the tip appears on the wheel, pointing at the wheel, when there is a
+wheel to point at, and it retires itself on the first hold. A screen before anyone has seen a
+wheel is worse teaching, so the tip stays and the third screen was cut.
+
+**The composition is the website's, not a new one.** One line set in sky, the arc beneath it, and
+nothing else — the site tried four explanatory sections under its hero, kept them for one commit,
+and cut them because the drawing already says what Sphere does. The first screen's line is the
+site's own tagline. Both sky blues are read from `Theme.taskActive` and `ClearBlue.topComponents`
+rather than retyped, so the app and the site cannot drift on what the brand blue is.
+
+**The demo is the real `ArcWindow` on sample data.** No weather service, no location, no network:
+the second screen is the one asking for location, so it cannot have any. `DayModel.applySky(_:forDayIndex:)`
+exists only to hand it a sky. A bundled image was rejected because it becomes a lie the first time
+the arc changes.
+
+Three things learned the hard way, all in the drawing:
+- Cloud is counted in DRAWN WIDTH, not in hours. A cover applied to every hour is one long wedge
+  across a three-hour window; one cloudy hour in three gives separate puffs.
+- The arc must not be rebuilt between the screens. Keying the screen remounted it and the dot
+  snapped back; the words carry the identity instead, and cross-fade over it.
+- "Opposite on the arc" is a mirror about solar noon, not twelve hours. Twelve is the clock's
+  opposite and lands past sunset here, giving a night sky under a line about a cloudy afternoon.
+  It is computed from the day so it stays right if the sample date moves.

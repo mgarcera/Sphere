@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		000000000000000160000000 /* SphereWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 000000000000000000000121 /* SphereWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		C1000003000000000000003 /* SmidgecraftKit in Frameworks */ = {isa = PBXBuildFile; productRef = C1000002000000000000002 /* SmidgecraftKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -60,6 +61,7 @@
 		000000000000000130000000 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
+				C1000003000000000000003 /* SmidgecraftKit in Frameworks */,
 			);
 		};
 		000000000000000230000000 /* Frameworks */ = {
@@ -112,6 +114,9 @@
 				000000000000000000000011 /* Shared */,
 			);
 			name = Sphere;
+			packageProductDependencies = (
+				C1000002000000000000002 /* SmidgecraftKit */,
+			);
 			productName = Sphere;
 			productReference = 000000000000000000000120 /* Sphere.app */;
 			productType = "com.apple.product-type.application";
@@ -162,6 +167,9 @@
 			);
 			mainGroup = 000000000000000000000001;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				C1000001000000000000001 /* XCRemoteSwiftPackageReference "SmidgecraftKit" */,
+			);
 			preferredProjectObjectVersion = 90;
 			productRefGroup = 000000000000000000000020 /* Products */;
 			projectDirPath = "";
@@ -449,6 +457,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		C1000001000000000000001 /* XCRemoteSwiftPackageReference "SmidgecraftKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mgarcera/SmidgecraftKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		C1000002000000000000002 /* SmidgecraftKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C1000001000000000000001 /* XCRemoteSwiftPackageReference "SmidgecraftKit" */;
+			productName = SmidgecraftKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 000000000000000000000000 /* Project object */;
 }

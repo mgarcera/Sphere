@@ -1,0 +1,15 @@
+{
+  "originHash" : "f267b68023f2c3fec23fc5884102fb2e3f6afda6386757b3c0dba2a16217d369",
+  "pins" : [
+    {
+      "identity" : "smidgecraftkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mgarcera/SmidgecraftKit.git",
+      "state" : {
+        "revision" : "06836c8a27022ba691008d7dc65062d63f18910c",
+        "version" : "1.0.0"
+      }
+    }
+  ],
+  "version" : 3
+}

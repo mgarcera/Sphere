@@ -1,4 +1,5 @@
 import EventKit
+import SmidgecraftKit
 import SwiftUI
 import WidgetKit
 
@@ -6,6 +7,15 @@ struct ContentView: View {
     @State private var model = DayModel()
     @State private var calendar = CalendarService()
     @State private var location = LocationService()
+
+    /// Which of two situations the reader is in. Sphere has no iCloud, so the gate needs no cloud
+    /// probe: there is nothing that could arrive, the answer is immediate, and the waiting line,
+    /// the escape and the late-arrival screen are all unreachable here by construction.
+    ///
+    /// `localCount` reports calendar access rather than a row count, because that is what "this
+    /// reader has used Sphere before" means in an app with no store. Anyone who already granted
+    /// or denied calendar predates the completed flag and must not be shown onboarding again.
+    @State private var gate: FirstRunGate?
     @State private var weather = WeatherService()
     @State private var editorTarget: EventTarget?
     @State private var isMenuOpen = false
@@ -67,13 +77,14 @@ struct ContentView: View {
             // Weather sits over the time of day, being nearer.
             WeatherWash(precipitation: sky.precipitation, lightning: sky.lightning)
 
-            if calendar.access == .undetermined {
-                CalendarPriming {
-                    location.request()
-                    Task {
-                        await calendar.requestAccess()
-                        reload()
-                    }
+            if let gate, gate.state == .new {
+                // Three screens, each immediately before the thing it explains. The screen this
+                // replaced explained both permissions and then raised both prompts back to back,
+                // so the location one arrived with its reason two screens of attention earlier
+                // (2026-10-04).
+                FirstRunFlow(calendar: calendar, location: location) {
+                    gate.markOnboardingComplete()
+                    reload()
                 }
                 .transition(.opacity)
             } else {
@@ -89,6 +100,16 @@ struct ContentView: View {
             .allowsHitTesting(false)
         }
         .animation(.easeInOut(duration: 0.25), value: calendar.access)
+        .task {
+            guard gate == nil else { return }
+            let calendarService = calendar
+            let g = FirstRunGate(
+                localCount: { await MainActor.run { calendarService.access == .undetermined ? 0 : 1 } },
+                cloud: nil
+            )
+            gate = g
+            await g.resolve()
+        }
         .task { considerWheelTip() }
         .onChange(of: calendar.access) { _, _ in considerWheelTip() }
         // The status bar reads the HOSTING CONTROLLER's style, and
@@ -808,7 +829,7 @@ struct ContentView: View {
     ///
     /// Gated on access being settled rather than granted: a denied calendar still leaves the
     /// wheel on screen and every hold still works. Undetermined is the one state with no wheel
-    /// in it — `CalendarPriming` covers the screen — and a tip over a permission prompt is two
+    /// in it — `FirstRunFlow` covers the screen — and a tip over a permission prompt is two
     /// asks at once.
     private func considerWheelTip() {
         guard !didClaimWheelTip, calendar.access != .undetermined else { return }
