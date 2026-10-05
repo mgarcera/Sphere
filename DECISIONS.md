@@ -1279,7 +1279,9 @@ wheel is worse teaching, so the tip stays and the third screen was cut.
 **The composition is the website's, not a new one.** One line set in sky, the arc beneath it, and
 nothing else — the site tried four explanatory sections under its hero, kept them for one commit,
 and cut them because the drawing already says what Sphere does. The first screen's line is the
-site's own tagline. Both sky blues are read from `Theme.taskActive` and `ClearBlue.topComponents`
+site's tagline with one word changed: the site reads "Your schedule ON the sky's arc"
+(`Smidgecraft/src/lib/sphere.ts`), the app reads IN. Mason chose `in` on 2026-10-04; the site was
+not changed to match. Both sky blues are read from `Theme.taskActive` and `ClearBlue.topComponents`
 rather than retyped, so the app and the site cannot drift on what the brand blue is.
 
 **The demo is the real `ArcWindow` on sample data.** No weather service, no location, no network:
@@ -1321,7 +1323,12 @@ Three audit findings were declined, each with a reason:
 - **No 5.1.2(i) disclosure line at the form.** Same call as Weeklite's, recorded above, and made
   the same way: the data leaves only on a deliberate Send, the live policy at `/sphere/privacy`
   names the form, and the drafted line is one `Text` away if a reviewer ever cites the clause.
-- **`PrivacyInfo.xcprivacy` keeps its empty collected-data list.** The three facts the form sends
-  with a message ride a user-initiated support submission, not collection by the app. This is the
-  surface most likely to need revisiting: if App Privacy ever declares the feedback data, the
-  manifest has to say the same thing on the same day.
+- **`PrivacyInfo.xcprivacy` is unchanged, and it was never empty.** This finding was put to Mason
+  as "the manifest declares no collected data at all", and that reading was wrong: the empty
+  `<array/>` is the WIDGET's manifest, `SphereWidget/PrivacyInfo.xcprivacy`. The app's manifest has
+  declared coarse location, other user content and email address since 7a637fa (2026-09-11), each
+  App Functionality, unlinked, untracked, which is exactly what the feedback form sends and what
+  the entry at the top of this file already said. Nothing needed declaring, so nothing was
+  declared. The lesson is the cheap one: a repo with two manifests needs the path named before a
+  claim about "the manifest" is made, and a cat of the file would have caught it before the card
+  went out.

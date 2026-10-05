@@ -94,7 +94,8 @@ struct FirstRunFlow: View {
     }
 }
 
-/// One first-run screen. The layout is `CalendarPriming`'s, kept because it was already right:
+/// One first-run screen. The layout is the one `CalendarPriming` had before 3bb02e1 deleted it
+/// (`git show 3bb02e1^:Sphere/Views/CalendarPriming.swift`), kept because it was already right:
 /// the reason above the fold, one full-width control, nothing else to press.
 struct OnboardingScreen<Demo: View>: View {
     let title: String

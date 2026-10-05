@@ -71,8 +71,8 @@ enum WheelTipState {
     static var isRetired: Bool { UserDefaults.standard.bool(forKey: retiredKey) }
 
     /// Spends one of the three showings, if there is one to spend. Called once per launch, and
-    /// only once the wheel is actually on screen — during the calendar priming there is no wheel
-    /// to point at, and a tip over a permission prompt is two asks at once.
+    /// only once the wheel is actually on screen — during the first run there is no wheel to
+    /// point at, and a tip over a permission prompt is two asks at once.
     static func claimLaunch() -> Bool {
         guard !isRetired else { return false }
         let shown = UserDefaults.standard.integer(forKey: shownKey)

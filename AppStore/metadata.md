@@ -27,8 +27,11 @@ Verify counts in ASC (it's the source of truth).*
 
 - **App name** (30): `Sphere: Sky Schedule` — 20 chars. Colon, not an em dash, for the reason Fil's
   carries one: the dash renders cramped at App Store card sizes and the colon reads as a label.
-- **Subtitle** (30): `Your day on the sun's arc` — 25 chars. This is already the app's line in two
-  other places, the site's hero and the priming screen's title, so the listing agrees with both.
+- **Subtitle** (30): `Your day on the sun's arc` — 25 chars. Written when it was also the site's
+  hero and the priming screen's title. The site still carries it (`Smidgecraft/src/lib/brand.ts`);
+  the app does not, as of 1.1 — the first run reads "Your schedule in the sky's arc." and the
+  priming screen it was quoting is deleted. So the "three surfaces agree" argument below now rests
+  on two.
   `Calendar on the sun's arc` (also 25) was the ASO-stronger alternative: subtitle carries the
   second-highest search weight and "calendar" is the app's one head term. Rejected because the
   keyword field can carry "calendar" for 9 of its 100 characters, and the tagline cannot be bought
@@ -163,7 +166,11 @@ they say now:
   device model, iOS version, a timestamp, and an email address only if they supply one. It carries
   nothing from the calendar and nothing from the location. Declare it under the categories ASC
   offers for user content and contact info, both **App Functionality**, both **not** used for
-  tracking. It is not in `PrivacyInfo.xcprivacy` today; the manifest declares only coarse location.
+  tracking. It IS in the app's `PrivacyInfo.xcprivacy`, and has been since 7a637fa (2026-09-11):
+  other user content and email address alongside coarse location, all three App Functionality,
+  unlinked and untracked. The empty collected-data list belongs to `SphereWidget`, which collects
+  nothing; name the path, because this repo has two manifests and the wrong one was read on
+  2026-10-04.
 - **Calendar** data never leaves the device, so it is not a collected type. The access is still full
   read and write, because events are created and edited in the app.
 - `UserDefaults` is declared with `CA92.1` (the app's own settings) and `1C8F.1` (the app-group
@@ -185,8 +192,8 @@ policies that does mention the feedback form; Fil's and Weeklite's still do not.
 No account is required. Open the app and it works immediately.
 
 PERMISSIONS
-Sphere asks for two things on first launch, both behind one explanation screen shown before the
-system prompts.
+Sphere asks for two things on first launch, on two screens. Each screen explains one permission
+and is shown immediately before that permission's system prompt: calendar first, then location.
 
 Full calendar access: the app lays the reviewer's events along the sun's arc as capsules, and the
 center button of the wheel creates events and opens Apple's own EKEventEditViewController to edit
@@ -237,13 +244,13 @@ These are not in the repo, or could not be settled from the code. Nothing above 
 2. **App name availability.** `Sphere: Sky Schedule` is unique across the entire App Store or it is
    not, and that is only discovered at record creation. Have a second choice ready before opening
    the form.
-3. **The priming screen has no way past it.** `CalendarPriming` renders while
-   `calendar.access == .undetermined` and offers one button, Continue, which fires the system
-   prompts. There is no skip, so a reviewer who does not tap Continue never reaches the app. This is
-   the exact shape of **5.1.1(iv)**, the clause Fil was rejected under for a priming sheet with no
-   dismissal path. Refusing at the system prompt is fine (access becomes `.denied` and the app
-   proceeds); never tapping Continue is the stuck state. Decide before submitting whether Continue
-   alone is enough or the screen needs a second way out.
+3. **5.1.1(iv) — settled 2026-10-04, read this before re-litigating it.** `CalendarPriming` is
+   gone (deleted in 3bb02e1); `FirstRunFlow` renders two steps from `ContentView.swift:84`, each
+   `isSkippable: false`, each with one Continue that fires its own system prompt. The release audit
+   checked every sub-check of the clause Fil was rejected under: one button, no dismissal path, the
+   word Continue rather than Allow, nothing imitating the system alert, and `OnboardingRun.skip()`
+   verified to REFUSE an unskippable step rather than trusted to. Refusing at the system prompt
+   leaves `.denied` and the app proceeds. Not an open question.
 4. **Age rating questionnaire.** Expected 4+, but the answers are Mason's to give.
 5. **Screenshots.** None exist in the repo. Required: iPhone 6.9" at 1320 × 2868. No iPad set is
    needed, since the app is iPhone-only.
@@ -251,10 +258,11 @@ These are not in the repo, or could not be settled from the code. Nothing above 
    phone at night the app is dark beside a light widget. Recorded in DECISIONS as narrow, visible
    and accepted. It is not mentioned in the description; confirm that is the right call rather than
    a line in What's New.
-7. **Feedback-form data types in the ASC questionnaire.** The privacy manifest declares only coarse
-   location. Whether Formspree feedback needs its own entry in `PrivacyInfo.xcprivacy` as well as in
-   the ASC labels is a judgment call about a user-initiated message, and it is worth settling once
-   for all three apps rather than per app.
+7. **Feedback-form data types in the ASC questionnaire — already settled in the manifest.** The
+   app's `PrivacyInfo.xcprivacy` declares other user content and email address next to coarse
+   location, so the manifest half of this question was answered on 2026-09-11. What remains is the
+   ASC labels saying the same three things, which is a browser check, and doing the same for
+   Weeklite and Perzine, where it has not been checked.
 8. **Open-Meteo's free tier.** It is the non-commercial tier, which stands only while Sphere is free
    with no purchases. Any future paid version or in-app purchase makes WeatherKit the second
    `WeatherProvider` conformer, which the protocol already anticipates.

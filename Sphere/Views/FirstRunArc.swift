@@ -17,7 +17,11 @@ struct FirstRunArc: View {
     @State private var started = false
     @State private var clouding = false
 
-    /// A clear August Monday in Chicago, the day the store assets are set on.
+    /// Chicago, **Sunday 2025-08-03 at 07:00 CDT** (12:00 UTC). Not noon, and not the Monday in
+    /// 2026 the store captures are set on, whatever the name says — it is an early-morning start
+    /// so the 1.5-hour pan below has somewhere to climb to. The date only feeds sunrise and sunset;
+    /// no weekday or date is drawn on this screen, which is why it went three weeks unnoticed.
+    /// Changing it changes where the arc sits at launch, so it is a look decision, not a fix.
     private static let sampleNoon = Date(timeIntervalSince1970: 1_754_222_400)
 
     var body: some View {

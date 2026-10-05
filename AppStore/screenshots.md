@@ -215,8 +215,9 @@ xcrun simctl clone "iPhone 17 Pro Max" "Sphere Shots"
 xcrun simctl boot "Sphere Shots" && xcrun simctl bootstatus "Sphere Shots" -b
 ```
 
-Granting calendar access up front is what stops `CalendarPriming` rendering — it draws only while
-`calendar.access == .undetermined`, and it covers the whole screen.
+Granting calendar access up front is what stops the first-run flow rendering. Since 3bb02e1 the
+mechanism is `FirstRunGate`, not the deleted `CalendarPriming`: `ContentView` draws `FirstRunFlow`
+while the gate reports `.new`, and a settled calendar permission is what moves it off `.new`.
 
 ```bash
 xcrun simctl privacy "Sphere Shots" grant calendar com.smidgecraft.Sphere
@@ -227,8 +228,8 @@ xcrun simctl privacy "Sphere Shots" grant location com.smidgecraft.Sphere
 ```
 
 > **UNVERIFIED:** whether `privacy grant calendar` yields EventKit **full** access or write-only.
-> Not tested against the app. You'll know within a second of launching: if the priming screen
-> appears anyway, the grant didn't take — tap Continue and accept the system prompts by hand, once.
+> Not tested against the app. You'll know within a second of launching: if the first-run screens
+> appear anyway, the grant didn't take — tap Continue and accept the system prompts by hand, once.
 > The cloned device keeps the answer.
 
 **3 — Pin the place.** Sphere falls back to Chicago and labels it `default` in the menu, which you

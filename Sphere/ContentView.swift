@@ -42,7 +42,7 @@ struct ContentView: View {
     @State private var showsWheelTip = false
     /// One claim per launch, whichever route gets there first: the tip is gated on calendar
     /// access being settled, and that settles either before this view appears or after the
-    /// priming screen, never both.
+    /// first-run flow, never both.
     @State private var didClaimWheelTip = false
     /// Acted on after the chooser closes, never while it is closing: presenting
     /// the editor into a sheet still dismissing is the refusal that cost ten
