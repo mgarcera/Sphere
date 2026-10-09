@@ -87,9 +87,15 @@ struct WeatherWash: View {
         LinearGradient(
             stops: [
                 .init(color: colors[0], location: 0),
-                .init(color: colors[1], location: TwilightBackground.Fall.first),
-                .init(color: colors[2], location: TwilightBackground.Fall.second),
-                .init(color: Theme.background.opacity(0), location: TwilightBackground.Fall.out),
+                // Full height (Mason, 2026-10-09). These used to be Fall.first / .second / .out —
+                // 0.20, 0.40, 0.52 — the same stops the old banded sky used, so the rain quit
+                // exactly where the blue did and the seam was invisible. The field runs edge to
+                // edge now, so a wash stopping at 0.52 drew a horizontal line across the middle
+                // of the screen every time it rained. The nine hand-tuned greys stay: rain is a
+                // material with its own colour, not ink on a ground.
+                .init(color: colors[1], location: 0.38),
+                .init(color: colors[2], location: 0.76),
+                .init(color: Theme.background.opacity(0), location: 1.0),
             ],
             startPoint: .top,
             endPoint: .bottom

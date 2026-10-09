@@ -1467,3 +1467,23 @@ saturated the sky could ever get so that one fixed grey kept working.
 Still open, and deliberately not solved here: the hour labels are drawn inside `ArcContent`'s
 canvas rather than as views, so they do not yet read the derived ink. And `windowHours` is still
 3, which is why the curve renders as a shallow diagonal rather than an arc.
+
+### Reversed the same evening: gradients came back, full screen
+
+Flat lasted about an hour of review. Rain was the evidence — its nine hand-tuned greys give the
+storm depth, and next to that a clear sky reading as one unbroken colour looked thinner than it
+had in isolation. The deciding case was dusk: a real one is warm at the horizon and cool
+overhead, and **a single colour cannot say that at all**.
+
+So each anchor became a PAIR — overhead and horizon — and the field is a nine-stop gradient
+across the whole screen. Everything else from the flat decision survives unchanged: the four
+anchors, the interpolation, overcast pulling toward grey (now each end toward its own), and the
+rain running full height.
+
+What was NOT reverted is the thing worth keeping separate in your head. **Full screen** was never
+the part that was wrong; the band dying at 0.52 is still gone. Flat was a narrower claim than it
+looked, and only that claim failed.
+
+The black-and-white system survives the change, checked rather than assumed: top and bottom agree
+on polarity at all seven anchors, and the worst contrast anywhere is 5.84:1 — better than the
+4.58:1 worst case flat had. The polarity reads the gradient's midpoint.

@@ -8,6 +8,9 @@ import SwiftUI
 /// and are longest at solar noon. There is no threshold to tune and the dot can
 /// never contradict the curve.
 struct TimeDot: View {
+    /// Black or white, from `SkyField.mark` — the sun is the subject of the screen, so it takes
+    /// the same polarity as the type rather than a colour of its own.
+    var mark: Color = .black
     let elevationDegrees: Double
     let moon: MoonPhase
     /// Elevation at which the rays reach full length, roughly the year's peak
@@ -24,11 +27,11 @@ struct TimeDot: View {
             // A ring of background keeps the dot legible wherever a capsule
             // runs beneath it.
             Circle()
-                .fill(Theme.background)
+                .fill(Color.clear)
                 .frame(width: 22, height: 22)
 
             SunRays(reach: rayReach)
-                .stroke(Theme.ink, style: StrokeStyle(lineWidth: 1.6, lineCap: .round))
+                .stroke(mark, style: StrokeStyle(lineWidth: 1.6, lineCap: .round))
                 .frame(width: Self.rayOuter * 2, height: Self.rayOuter * 2)
 
             // One shape for both, always present. There used to be an
@@ -39,8 +42,8 @@ struct TimeDot: View {
             //
             // A full moon is a disc, so the sun is simply this shape fully lit.
             MoonShape(illuminated: litFraction, isWaxing: moon.isWaxing)
-                .fill(Theme.ink)
-                .overlay(Circle().strokeBorder(Theme.ink.opacity(0.32), lineWidth: 1))
+                .fill(mark)
+                .overlay(Circle().strokeBorder(mark.opacity(0.32), lineWidth: 1))
                 .frame(width: Self.discDiameter, height: Self.discDiameter)
         }
         .frame(width: Self.rayOuter * 2, height: Self.rayOuter * 2)

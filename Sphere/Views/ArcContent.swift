@@ -8,11 +8,16 @@ struct ArcContent: View, Equatable {
     let day: SolarDay
     let width: CGFloat
     let height: CGFloat
+    /// Black or white, from `SkyField.mark`. Three fixed greys used to live here — ink for the
+    /// curve, hairline for the ticks, mutedLighter for the labels — all chosen against white
+    /// paper. There is no paper now, and no greys: hierarchy is size and weight
+    /// (Mason, 2026-10-09).
+    var mark: Color = .black
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             Rectangle()
-                .fill(Theme.hairline)
+                .fill(mark)
                 .frame(width: width, height: 1)
                 .position(x: width / 2, y: ArcGeometry.baseline(height))
 
@@ -28,7 +33,7 @@ struct ArcContent: View, Equatable {
 
             Text(Self.hourLabel(0))
                 .font(.footnote)
-                .foregroundStyle(Theme.mutedLighter)
+                .foregroundStyle(mark)
                 .fixedSize()
                 .position(x: 0, y: ArcGeometry.baseline(height) + 20)
 
@@ -36,19 +41,19 @@ struct ArcContent: View, Equatable {
                 let x = width * (Double(hour) / 24)
 
                 Rectangle()
-                    .fill(Theme.hairline)
+                    .fill(mark)
                     .frame(width: 1, height: 5)
                     .position(x: x, y: ArcGeometry.baseline(height) + 3)
 
                 Text(Self.hourLabel(Double(hour)))
                     .font(.footnote)
-                    .foregroundStyle(Theme.mutedLighter)
+                    .foregroundStyle(mark)
                     .fixedSize()
                     .position(x: x, y: ArcGeometry.baseline(height) + 20)
             }
 
             DayArcShape(day: day, arcHeight: height)
-                .stroke(Theme.ink, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
+                .stroke(mark, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
                 .frame(width: width, height: ArcGeometry.totalHeight(height))
 
         }
@@ -70,7 +75,7 @@ struct ArcContent: View, Equatable {
                 path.closeSubpath()
             }
         }
-        .fill(Theme.ink)
+        .fill(mark)
         .frame(width: width, height: ArcGeometry.totalHeight(height), alignment: .topLeading)
     }
 

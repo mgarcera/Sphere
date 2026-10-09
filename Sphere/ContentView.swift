@@ -267,7 +267,7 @@ struct ContentView: View {
                 Text("MENU")
                     .font(.system(size: 12, weight: .semibold))
                     .tracking(1.1)
-                    .foregroundStyle(SkyField.ink(on: fieldColour, dark: effectiveScheme == .dark, muted: true))
+                    .foregroundStyle(markColour)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .contentShape(.rect)
@@ -294,6 +294,7 @@ struct ContentView: View {
                       // parameter rather than torn out of ArcWindow in the same pass.
                       nightness: 0,
                       nightSuppressedBy: washAmount / WeatherWash.stormPeak,
+                      mark: markColour,
                       // STUDY: the same two callbacks the wheel reports through, so the drag and
                       // the rotation land on one code path and feel identical past the touch.
                       onScrub: { hours in
@@ -693,6 +694,10 @@ struct ContentView: View {
         model.elevationDegrees(atAbsoluteHour: model.focusHour)
     }
 
+    /// Pure black or pure white, whichever the field can carry. Everything drawn ON the field
+    /// reads this: title, caption, weather, the curve, the sun, the labels, the ticks.
+    private var markColour: Color { SkyField.mark(on: fieldColour) }
+
     /// The field's colour right now, for anything that has to sit on it.
     private var fieldColour: Color {
         SkyField.colour(elevationDegrees: focusElevation,
@@ -701,32 +706,16 @@ struct ContentView: View {
                         dark: effectiveScheme == .dark)
     }
 
-    private var titleColor: Color {
-        // Computed from the field rather than tuned against paper, which is the whole reason a
-        // uniform colour is affordable.
-        return SkyField.ink(on: fieldColour, dark: effectiveScheme == .dark)
-        // On blue, hold nothing — take the whole range.
-        //
-        // `ContrastHold`'s targets are tuned against paper, where 9:1 leaves the
-        // title short of black on purpose. A clear sky compresses the range so
-        // far that even pure black reaches only about 6.8:1, so holding a ratio
-        // there spends contrast the ground does not have and lands on grey.
-        if onBlue { return .black }
-        let held = ContrastHold.color(ContrastHold.ink, target: Self.titleContrast, on: headerLuminance)
-        return held.mix(with: Theme.skyInk(nightness: 1), by: typeNight)
-    }
+    /// Black or white, never between. `ContrastHold` used to hold 9:1 against a computed header
+    /// luminance, with an `onBlue` escape hatch because a clear sky compresses the range so far
+    /// that holding a ratio lands on grey. A two-colour system has no ratio to hold and no
+    /// escape hatch to need: see `SkyField.mark`.
+    private var titleColor: Color { markColour }
 
-    private var captionColor: Color {
-        guard effectiveScheme == .light else { return Theme.muted }
-        // A step back from the title's black rather than a held ratio, for the
-        // same reason: 3.5:1 against a sky lands on mid-grey. Near-black keeps
-        // the pair's order without either of them reading as washed out.
-        if onBlue { return Color(white: 0.13) }
-        let held = ContrastHold.color(ContrastHold.muted, target: Self.captionContrast, on: headerLuminance)
-        // A step back from the title's white, so the pair keeps the distance it
-        // has at every other hour.
-        return held.mix(with: Theme.skyInk(nightness: 1).opacity(0.72), by: typeNight)
-    }
+    /// The same black or white as the title. The caption used to be a step back in grey, and
+    /// there are no greys now — the pair's order comes from 30pt against a footnote, which is
+    /// what "size and weight, not colour" means in practice (Mason, 2026-10-09).
+    private var captionColor: Color { markColour }
 
 
     private var isMorning: Bool {

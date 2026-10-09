@@ -15,6 +15,8 @@ struct ArcWindow: View {
     var nightness: Double = 0
     /// Weather takes precedence over night, the way it does over dusk.
     var nightSuppressedBy: Double = 0
+    /// Black or white, decided by the field and passed down to everything drawn on it.
+    var mark: Color = .black
 
     /// STUDY (2026-10-09): drag the arc to scrub time, the direct version of what the wheel does
     /// by rotation. Reported upward in HOURS rather than applied here, the same shape
@@ -58,7 +60,7 @@ struct ArcWindow: View {
                 // re-samples a path.
                 HStack(alignment: .top, spacing: 0) {
                     ForEach(firstDay...(firstDay + 2), id: \.self) { index in
-                        ArcContent(day: model.solarDay(index), width: dayWidth, height: arcHeight)
+                        ArcContent(day: model.solarDay(index), width: dayWidth, height: arcHeight, mark: mark)
                             .equatable()
                     }
                 }
@@ -163,6 +165,7 @@ struct ArcWindow: View {
                     .position(x: centreX, y: (ArcGeometry.baseline(arcHeight) + dotY) / 2)
 
                 TimeDot(
+                    mark: mark,
                     elevationDegrees: model.elevationDegrees(atAbsoluteHour: model.focusHour),
                     moon: model.focusMoonPhase,
                     ceilingDegrees: model.focusSolarDay.seasonalCeiling
