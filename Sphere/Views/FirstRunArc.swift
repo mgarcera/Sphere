@@ -25,8 +25,15 @@ struct FirstRunArc: View {
     private static let sampleNoon = Date(timeIntervalSince1970: 1_754_222_400)
 
     var body: some View {
+        // No `.frame(height:)` here, and that is the fix for a bug that shipped unseen
+        // (2026-10-09). `ArcWindow` sizes itself to `ArcGeometry.totalHeight(arcHeight)` — the
+        // arc plus the 100pt sky gutter that keeps tall clouds unclipped, about 290 for a 190
+        // arc. This used to pin it to 190, a hundred points under its minimum. On every iPhone
+        // Sphere had ever run on the enclosing column had slack and the squeeze resolved
+        // quietly; on an iPhone Duo's 678-tall outer display it did not, and the ENTIRE
+        // onboarding screen rendered nothing — no title, no button, just the sky behind it.
+        // A child crushed below its minimum can take its whole parent down with it.
         ArcWindow(model: model, arcHeight: 190)
-            .frame(height: 190)
             .allowsHitTesting(false)
             .task { await run() }
             // The view is not rebuilt between screens — that is the point — so the weather build
