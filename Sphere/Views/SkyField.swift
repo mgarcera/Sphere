@@ -9,9 +9,9 @@ import SwiftUI
 /// the screen. A flat field has no places. `WeatherWash` stays, because rain and lightning are
 /// content rather than ground.
 ///
-/// `TwilightBackground.Fall` retires with them: its own comment calls it "where every wash on
-/// this screen sits, vertically", and a flat field has no vertical. The bake-off that chose this
-/// over a gradient and over the shipped band is recorded in DECISIONS, 2026-10-09.
+/// All three were deleted on 2026-10-09 once nothing rendered them, along with
+/// `TwilightBackground.Fall` — "where every wash on this screen sits, vertically", which a
+/// full-screen field has no use for. The bake-offs are recorded in DECISIONS.
 /// One colour for the whole screen, from where the sun is.
 ///
 /// Four anchors, because that is how many distinct things the sky does: night, the deep edge
@@ -74,8 +74,7 @@ struct SkyField: View {
         // Noon is the pair ClearBlue always used: zenith to horizon.
         let day: (RGB, RGB) = dark
             ? (RGB(0.098, 0.180, 0.302), RGB(0.161, 0.267, 0.427))
-            : (RGB(ClearBlue.topComponents.r, ClearBlue.topComponents.g, ClearBlue.topComponents.b),
-               RGB(0.639, 0.780, 0.937))
+            : (Self.zenith, RGB(0.639, 0.780, 0.937))
 
         let base: (RGB, RGB)
         switch e {
@@ -104,6 +103,11 @@ struct SkyField: View {
     static func mark(on field: Color) -> Color {
         RGB(field).relativeLuminance >= Self.flipPoint ? .black : .white
     }
+
+    /// The measured zenith blue, 4A8CD8. It outlived `ClearBlue`, which was deleted on
+    /// 2026-10-09 once nothing rendered it; the first-run title's gradient reads this too, so
+    /// the app and the website cannot drift on what the brand blue is.
+    static let zenith = RGB(0.290, 0.549, 0.847)
 
     /// Where black and white are equally legible: sqrt(0.05 × 1.05) − 0.05.
     static let flipPoint: Double = 0.1791

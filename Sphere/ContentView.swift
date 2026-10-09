@@ -247,15 +247,18 @@ struct ContentView: View {
         // the tip's overlay lived on the wheel. Kept rather than deleted because the gesture set
         // replacing the wheel has the same problem the tip was built for — a hold, and now a
         // drag, that nothing on screen admits exists — so this is the teacher it will reuse.
-        VStack(spacing: 0) {
-            // Centred rather than top-anchored (Mason, 2026-10-09). The wheel used to hold the
-            // bottom ~475 points; with it gone the block was pinned to the top of the screen and
-            // all the vacancy pooled under the hour labels. A Spacer either side splits it.
-            Spacer(minLength: 0)
-            arcBlock
-            Spacer(minLength: 0)
-        }
-        .padding(.vertical, 24)
+        // One arrangement at every size (Mason, 2026-10-09: an overlay is fine in landscape).
+        // The arc centres in the WHOLE space and the header sits over it, rather than above it
+        // in the flow — in the flow, the header's height was subtracted from the space the arc
+        // centred in, so gaining an all-day event grew the header and pushed the arc down by
+        // half that growth. The drawing moved because a list did.
+        arcBlock
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .overlay(alignment: .topLeading) {
+                header
+                    .padding(.top, 12)
+            }
+            .padding(.vertical, 24)
         // PROVISIONAL (2026-10-09): the wheel is gone and MENU went with it, which took the only
         // route to settings, calendars and feedback. This button exists so the app is not
         // stranded while the abstract layer is designed. It is placed, not designed.
@@ -278,18 +281,10 @@ struct ContentView: View {
         }
     }
 
+    /// The drawing alone. The header and the weather line left for the top of the screen, so
+    /// this is free to sit wherever the space allows.
     private var arcBlock: some View {
-        VStack(spacing: 0) {
-            // Above the arc block, not below it. The night is drawn inside the
-            // block and reaches up over this whole area, and a later sibling in
-            // a stack draws on top — so without this the type is behind the sky
-            // rather than on it, whatever colour it is.
-            header
-                // 12 lower than it sat. The arc follows, since the header sets its start.
-                .padding(.top, 12)
-                .zIndex(1)
-
-            ArcWindow(model: model, eventsHidden: eventsHidden,
+        ArcWindow(model: model, eventsHidden: eventsHidden,
                       // A flat field has no shaped night, so NightSky never draws. Kept as a
                       // parameter rather than torn out of ArcWindow in the same pass.
                       nightness: 0,
@@ -305,29 +300,14 @@ struct ContentView: View {
                           Haptics.warm()
                           lastDetent = (model.focusHour / Haptics.detentHours).rounded(.towardZero)
                       },
-                      onTapTime: openAtTappedHour,
-                      // STUDY: hold to return to now. Same landing the wheel's NOW button used,
-                      // so the jump animates identically and only the way in has changed.
-                      onHold: {
+                      // Tap is the common move, so it gets the cheap gesture.
+                      onTap: {
                           guard !model.isFocusedOnNow else { return }
                           Haptics.warm()
                           Sounds.ring(.now)
                           travel { model.returnToNow() }
-                      })
-                .padding(.top, 8)
-                // The weather line, drawn into the arc box's sky gutter — the 100pt of room
-                // above the curve's ceiling that exists so tall clouds are not clipped. On a
-                // low deck this is the empty band that used to sit between the header and the
-                // clouds; the line lives there now, an overlay, so it costs the column nothing.
-                .overlay(alignment: .topLeading) {
-                    weatherLine
-                        .padding(.top, weatherOffset)
-                        .padding(.leading, 24)
-                        // One property, moved on the same spring the all-day row pops with,
-                        // so crossing onto a birthday reads as the line making room.
-                        .animation(Self.popSpring, value: allDayCount)
-                }
-        }
+                      },
+                      onHoldTime: openAtTappedHour)
     }
 
     private var header: some View {
@@ -358,7 +338,7 @@ struct ContentView: View {
             .buttonStyle(.plain)
             // NOT `.disabled`. A disabled button dims its label, so the time
             // was drawn at reduced opacity whenever the dot was not inside an
-            // event — which is most of the day. On paper `ContrastHold` already
+            // event — which is most of the day. On paper the old contrast system already
             // held the title short of black and the dimming hid inside that; on
             // a clear sky, where the title runs to pure black, it showed up as
             // the one grey thing in a black header.
@@ -370,6 +350,12 @@ struct ContentView: View {
                 .foregroundStyle(captionColor)
                 .monospacedDigit()
                 .scaleEffect(captionScale, anchor: .leading)
+
+            // Above the all-day events, not below them (Mason, 2026-10-09). The sky is a
+            // property of the hour and the all-day rows are a list, so the reading belongs with
+            // the date it qualifies rather than under a list whose length changes.
+            weatherLine
+                .padding(.top, 6)
 
             // Under the date, in the column, and the weather moved down beneath it so the
             // header ends in the sky line — closer to the clouds it describes. This puts the
@@ -492,27 +478,6 @@ struct ContentView: View {
         "\(titleKey)|\(Self.dayLine(model.focusDate, in: model.timeZone))"
     }
 
-    /// Where the weather line sits, from the arc box's top edge, by how many all-day rows
-    /// there are to make room for. It fills the band between the date and the clouds:
-    ///
-    /// Always directly BELOW the all-day block, however tall it is.
-    ///
-    /// Measured from the arc box's top edge. The block's top is 67 ABOVE the box: the arc's
-    /// 8pt top pad, the weather's empty 23pt slot in the header, and the 36pt two-line
-    /// reservation. Negative padding on an overlay draws there. Below that, the block is a
-    /// footnote line for the count plus one per event, 4 apart; the weather sits 4 under
-    /// the last of them. With no events it sits under the date.
-    ///
-    /// One formula rather than positions per count: an earlier version parked the line on
-    /// the cloud tops from two events up, and the jump from one event to two was 63pt —
-    /// "it goes really far". Following the block keeps every step the same 20.
-    private var weatherOffset: CGFloat {
-        let line: CGFloat = 16, gap: CGFloat = 4, blockTop: CGFloat = -67
-        guard allDayCount > 0 else { return blockTop }
-        let block = line + CGFloat(allDayCount) * (gap + line)
-        return blockTop + block + gap
-    }
-
     /// The all-day row changes with the DAY, not with the event under the dot,
     /// so moving between two timed events leaves it still.
     private var allDayKey: String {
@@ -563,13 +528,6 @@ struct ContentView: View {
     /// hour, and it would do the same to a whole palette.
     private var skyNight: Bool { nightTurn > 0.5 }
 
-    /// How much blue is on the screen right now, 0 to `ClearBlue.peakOpacity`.
-    private var blueStrength: Double {
-        ClearBlue.strength(clearness: model.clearness(atAbsoluteHour: model.focusHour),
-                           elevationDegrees: focusElevation,
-                           suppressedBy: washAmount / WeatherWash.stormPeak)
-            * ClearBlue.peakOpacity
-    }
 
     /// Whether the header is sitting on sky rather than on paper.
     ///
@@ -590,7 +548,10 @@ struct ContentView: View {
     /// against white's 3.1:1. The status bar cannot be given a colour, only a
     /// scheme, so it gets the one that reads on the deepest part of the
     /// gradient — which is where it happens to sit.
-    private var onBlue: Bool { blueStrength > 0.55 }
+    /// Whether the field is light enough to carry black marks. This used to ask how much blue
+    /// was on screen via `ClearBlue.strength`; with one field and a two-colour ink system the
+    /// same question is just which way the polarity fell.
+    private var onBlue: Bool { markColour == .black }
 
     /// Whether a night sky is drawn at all.
     ///
@@ -663,26 +624,6 @@ struct ContentView: View {
         return SkyDepth.nightness(elevationDegrees: model.elevationDegrees(atAbsoluteHour: model.focusHour))
     }
 
-    /// Held against the ground by day, and taken over by the sky at night.
-    ///
-    /// The hold both raises and CAPS, which is what it is for — the title comes
-    /// down to its target on a clear day so the caption cannot catch it. On a
-    /// night sky the cap is the wrong instinct: it lifts the ink to nine to one
-    /// and stops there, which is a light grey. Above the horizon the header is
-    /// sky, so it ends on the sky's own ink like every other mark up there.
-    /// When the header's type turns over: at the horizon, across two degrees,
-    /// which is a few minutes either side of sunset.
-    ///
-    /// NOT on the sky's own schedule. The sky keeps darkening for another
-    /// twelve degrees after that, and waiting for it left the type dark on a
-    /// dimming ground for the best part of an hour. The contrast arithmetic
-    /// agreed with the wait — at a ground of 0.25 a dark ink scores 6:1 against
-    /// white's 3.5:1, so the hold kept choosing dark — and it was wrong: by
-    /// then the screen reads as evening and evening type is light.
-    private var typeNight: Double {
-        showsNightSky ? nightTurn : 0
-    }
-
     /// The crossing itself, ungated: 0 above the horizon, 1 below, over about
     /// two degrees.
     private var nightTurn: Double {
@@ -722,31 +663,7 @@ struct ContentView: View {
         model.focusHour - Double(model.dayIndex) * 24 < model.focusSolarDay.solarNoon
     }
 
-    /// Everything painted over the background at the top of the screen, in the
-    /// order it is drawn. Leaving twilight out of this was a real bug: at full
-    /// dusk the ground is 0.386 while this reported 1.000, so the caption was
-    /// left at plain grey and measured 1.4:1.
-    private var headerLuminance: Double {
-        let sky = model.weather(atAbsoluteHour: model.focusHour)
-        let elevation = model.elevationDegrees(atAbsoluteHour: model.focusHour)
-        let twilight = TwilightBackground.strength(elevationDegrees: elevation)
-            * TwilightBackground.peakOpacity
-            * (1 - min(washAmount / WeatherWash.stormPeak, 1))
-        return WeatherWash.topLuminance(
-            precipitation: sky.precipitation,
-            lightning: sky.lightning,
-            twilight: (TwilightBackground.lightTopColor(isMorning: isMorning), twilight),
-            night: (TwilightBackground.nightTopComponents,
-                    showsNightSky
-                        ? TwilightBackground.nightOpacity(
-                            elevationDegrees: elevation,
-                            suppressedBy: washAmount / WeatherWash.stormPeak)
-                        : 0),
-            blue: (ClearBlue.topComponents, blueStrength)
-        )
-    }
 
-    /// Both roles hold a fixed contrast against the measured ground, so the
     /// gap between them is the same in every condition. Capping the title as
     /// well as raising it is the point: letting it run to 15:1 on a clear day
     /// while the caption is pinned is what let them meet at dusk.
@@ -850,9 +767,9 @@ struct ContentView: View {
     /// path are one press to the thumb, and only this level knows that. Ringing
     /// deeper meant the same press rang or not depending on whether something
     /// happened to be under the dot.
-    /// STUDY (2026-10-09): what is under the finger decides the action. An event opens; empty
-    /// time creates AT THAT TIME rather than at the focus, which is the thing the wheel's centre
-    /// button could not say. All-day events are skipped — they have no hour to be tapped on.
+    /// What is under the finger decides the action. An event opens; empty time creates AT THAT
+    /// TIME rather than at the focus, which is the thing the wheel's centre button could not say.
+    /// All-day events are skipped — they have no hour to be held on.
     private func openAtTappedHour(_ hour: Double) {
         Sounds.ring(.editor)
         let hit = model.events.first { !$0.isAllDay && $0.contains(hour) }

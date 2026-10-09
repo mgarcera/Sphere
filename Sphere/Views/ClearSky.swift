@@ -216,7 +216,7 @@ struct ClearSky: View, Equatable {
         let offset = Int(SkyMarks.jitter(daySeed, mark.salt &+ 809) * Double(period))
         let dimmed = (blinkStep &+ offset) % period == 0
 
-        let radius: CGFloat = 2.4
+        let radius: CGFloat = 2.4 * SkyMarks.markScale
         var path = Path()
         path.move(to: CGPoint(x: mark.point.x - radius, y: mark.point.y))
         path.addQuadCurve(to: CGPoint(x: mark.point.x, y: mark.point.y - radius), control: mark.point)
@@ -238,7 +238,7 @@ struct ClearSky: View, Equatable {
     private func bird(_ mark: Mark, in context: inout GraphicsContext) {
         let stage = CGFloat(SkyMarks.jitter(daySeed, mark.salt &+ 1_301))
         let lean = CGFloat(SkyMarks.jitter(daySeed, mark.salt &+ 907) - 0.5) * 0.7
-        let wing = 4.4 + CGFloat(SkyMarks.jitter(daySeed, mark.salt &+ 1_607)) * 1.8
+        let wing = (4.4 + CGFloat(SkyMarks.jitter(daySeed, mark.salt &+ 1_607)) * 1.8) * SkyMarks.markScale
         let drop = wing * (0.05 + stage * 0.8)
         let bow = wing * (0.62 - stage * 0.5)
 

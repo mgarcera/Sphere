@@ -29,11 +29,16 @@ struct ArcWindow: View {
     /// actions because what is under the finger decides which: an event opens, empty time
     /// creates. The wheel's centre button could never express this — it had to infer a time from
     /// the focus, where a tap carries one.
-    var onTapTime: ((Double) -> Void)?
+    /// Tap anywhere on the arc returns to now; hold creates an event at the hour held
+    /// (Mason, 2026-10-09, swapping the two). The cheap gesture went to the action taken most.
+    var onTap: (() -> Void)?
+    /// Reported as the ABSOLUTE HOUR under the finger, which is the thing a wheel could never
+    /// say: the centre button had to infer a time, a held point carries one.
+    var onHoldTime: ((Double) -> Void)?
 
-    /// STUDY: hold the arc to return to now. Candidate two is a two-finger tap, which SwiftUI has
-    /// no gesture for and which would need a UIKit recogniser sharing this surface with the drag.
-    var onHold: (() -> Void)?
+    /// Where the finger went down. A `LongPressGesture` reports no location, so a zero-distance
+    /// drag runs alongside purely to record one; it has no `onEnded` and consumes nothing.
+    @State private var touchX: CGFloat?
 
     /// Live drag state, kept local on purpose. The parent learns hour deltas, never the finger's
     /// position, and `translation` is cumulative so each callback sends only what is new.
@@ -75,17 +80,6 @@ struct ArcWindow: View {
                 // fill's edge IS the curve, so covering the line it is drawn
                 // from is what makes it read as an edge of the world rather
                 // than a shape laid over one.
-                if nightness > 0 {
-                    NightSky(nightness: nightness,
-                             arcHeight: arcHeight,
-                             focusHour: model.focusHour,
-                             normalizedElevation: { model.normalizedElevation(atAbsoluteHour: $0) },
-                             suppressedBy: nightSuppressedBy)
-                        .frame(width: proxy.size.width,
-                               height: NightSky.reach + ArcGeometry.totalHeight(arcHeight))
-                        .offset(y: -NightSky.reach)
-                }
-
                 ZStack(alignment: .topLeading) {
                 // Each deck is its own layer so it can trail the arc by its own
                 // amount. Further decks lag more, which is the parallax; they
@@ -182,20 +176,26 @@ struct ArcWindow: View {
             // still get their touch. A zero-distance drag would swallow all three.
             .contentShape(.rect)
             .gesture(scrubGesture(pointsPerHour: pointsPerHour), isEnabled: onScrub != nil)
-            // Inverse of the pan above: at centreX this returns exactly `focusHour`.
-            .onTapGesture { location in
-                guard pointsPerHour > 0 else { return }
-                onTapTime?(originHour + (location.x - pan) / pointsPerHour)
-            }
-            // Simultaneous, and guarded on the drag: a long drag is not a long press. Holding
-            // still for 0.45s returns to now; moving first makes it a scrub and nothing fires.
+            .onTapGesture { _ in onTap?() }
+            // Records the touch point for the long press. Zero distance so it fires on contact,
+            // and deliberately inert otherwise — the 8-point scrub above still owns movement.
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in if touchX == nil { touchX = value.location.x } }
+                    .onEnded { _ in touchX = nil },
+                isEnabled: onHoldTime != nil
+            )
+            // Guarded on the drag: a long drag is not a long press. Holding still for 0.45s
+            // creates at the hour under the finger; moving first makes it a scrub.
             .simultaneousGesture(
                 LongPressGesture(minimumDuration: 0.45)
                     .onEnded { _ in
-                        guard !isScrubbing, lastTranslation == 0 else { return }
-                        onHold?()
+                        guard !isScrubbing, lastTranslation == 0, pointsPerHour > 0,
+                              let x = touchX else { return }
+                        // Inverse of the pan above: at centreX this is exactly `focusHour`.
+                        onHoldTime?(originHour + (x - pan) / pointsPerHour)
                     },
-                isEnabled: onHold != nil
+                isEnabled: onHoldTime != nil
             )
         }
         .frame(height: ArcGeometry.totalHeight(arcHeight))
@@ -225,11 +225,17 @@ struct ArcWindow: View {
 
     /// One pair for the whole window: it is three hours wide, so the difference
     /// between its edges is not worth redrawing three cached layers for.
-    private var skyInk: Color { Theme.skyInk(nightness: nightness) }
+    /// Clouds, birds and stars are marks like any other: black or white, never between. This
+    /// read `Theme.skyInk(nightness:)` and `nightness` is hard-zero since the shaped night went,
+    /// so at night it would have drawn near-black outlines on a near-black field (2026-10-09).
+    private var skyInk: Color { mark }
 
     /// What a cloud fills with to cut a hole in the deck behind it — the sky's
     /// own colour, not the paper's, or the clouds punch white holes in a night.
-    private var skyGround: Color {
-        Theme.background.mix(with: NightSky.colour, by: nightness)
-    }
+    /// A cloud's BODY, and the thing a nearer deck cuts a hole in a farther one with. It must
+    /// contrast with the field or the cloud vanishes: filling it with `sky` made every cloud
+    /// invisible by construction, since that is exactly the colour behind it (2026-10-09).
+    /// The opposite pole from the marks — white clouds under black outlines by day, black
+    /// clouds under white outlines at night.
+    private var skyGround: Color { mark == .black ? .white : .black }
 }

@@ -122,9 +122,7 @@ struct OnboardingScreen<Demo: View>: View {
                 // 1.75:1 on paper and the last words become a suggestion.
                 .foregroundStyle(
                     LinearGradient(colors: [Theme.taskActive,
-                                            Color(red: ClearBlue.topComponents.r,
-                                                  green: ClearBlue.topComponents.g,
-                                                  blue: ClearBlue.topComponents.b)],
+                                            SkyField.zenith.color],
                                    startPoint: .leading, endPoint: .trailing)
                 )
                     .multilineTextAlignment(.leading)

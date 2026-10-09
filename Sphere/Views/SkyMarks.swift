@@ -15,6 +15,11 @@ enum SkyMarks {
     /// being quieter.
     static let inkOpacity: Double = 0.8
 
+    /// How much bigger the sky's marks are than they were drawn at
+    /// (Mason, 2026-10-09: "the clouds, birds, and stars should all be bigger").
+    /// One number, applied at every drawing site, so the three stay in proportion to each other.
+    static let markScale: CGFloat = 1.6
+
     /// Distance out along the arc's normal for each cloud deck. Altitude reads
     /// as height, which is why coverage is split by layer at all.
     /// Absolute distance from the curve. These used to have a further 34pt

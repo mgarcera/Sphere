@@ -29,7 +29,7 @@ struct SkyContinuous: View, Equatable {
 
     /// Roughly a third of an hour per lobe, which is a cloud-sized bump at the
     /// three-hour zoom.
-    private static let lobeHours = 0.40
+    private static let lobeHours = 0.40 * SkyMarks.markScale
 
     var body: some View {
         Canvas { context, _ in
@@ -122,9 +122,9 @@ struct SkyContinuous: View, Equatable {
         /// mid one is what the background fill is there to handle.
         var amplitude: CGFloat {
             switch self {
-            case .high: 7
-            case .mid: 10
-            case .low: 14
+            case .high: 7 * SkyMarks.markScale
+            case .mid: 10 * SkyMarks.markScale
+            case .low: 14 * SkyMarks.markScale
             }
         }
 
@@ -132,9 +132,9 @@ struct SkyContinuous: View, Equatable {
         /// which is what makes a storm read as heavy rather than as tall.
         var stormAmplitude: CGFloat {
             switch self {
-            case .high: 14
-            case .mid: 20
-            case .low: 28
+            case .high: 14 * SkyMarks.markScale
+            case .mid: 20 * SkyMarks.markScale
+            case .low: 28 * SkyMarks.markScale
             }
         }
 
