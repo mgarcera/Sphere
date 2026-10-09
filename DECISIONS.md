@@ -1387,3 +1387,32 @@ Calendars placement was abandoned because it rendered only when `calendar.source
 so the control vanished on an account with no calendars. In the same pass Sounds left Appearance
 for the wheel, and both wheel switches took the scope into their names: **Wheel haptics** and
 **Wheel sounds**.
+
+## 2026-10-09 — iPhone Duo: the main view is fine, the first run is not
+
+Sphere's whole screen came up as sky and nothing else on an iPhone Duo simulator (iOS 27.1,
+outer display 466 × 678). The main view was never the problem. Forcing the first-run branch off
+rendered everything immediately — arc, sun dot, hour labels, wheel, and the header reading
+"8:03 AM / Friday, October 9 / Cloudy 54°" — in all four device poses. **`FirstRunFlow` is what
+renders nothing on that device, and a fresh install sits in exactly that state.**
+
+That cost six hypotheses, every one aimed at the main view and every one killed by experiment:
+content laid out off-screen (all frames equal the root frame); a stuck gate
+(`markOnboardingComplete()` sets `.ready`, and the probe showed `nil → waiting → new` in 140 ms);
+multiple scenes unsupported (`UIApplicationSupportsMultipleScenes` was already true); a missing
+iPad device family (built `1,2`, byte-identical); the implicit `.animation` and `.transition` on
+the root `ZStack` (disabled, no change); and a column taller than the screen (wheel 280 → 180 and
+arc 190 → 120, no change). The lesson is recorded in the `diagnosing-bugs` skill: name the view on
+screen before hypothesising about it.
+
+**It is Sphere, not Apple.** On the same device, same SDK, same toolchain, Weeklite rendered 28
+nodes with 16 strings and Perzine 39 nodes with 25, both in the same 466 × 678 window. Sphere
+rendered 6 nodes and no text. No Feedback Assistant report was filed, because the premise would
+have been false.
+
+**Orientations are now portrait plus both landscapes** (`INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone`),
+where the app had been portrait-only. This is necessary for the Duo and not yet sufficient for
+anything: the main column has a minimum height near 681 points — header 87, arc block 298, spacer
+16, `ClickWheel.diameter` 280 — and landscape on an iPhone 17 Pro offers 402. **Landscape is a
+composition problem, not a rotation switch**, and the wheel has to move beside the arc rather than
+under it. Until that exists, do not claim iPhone Duo support in an App Store featuring nomination.
