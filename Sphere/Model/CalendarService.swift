@@ -156,6 +156,36 @@ final class CalendarService {
             }
     }
 
+    /// Everything a notification could be scheduled for in the given window, titles included.
+    ///
+    /// Separate from `timedOccurrences` because that one feeds the widget and deliberately drops
+    /// titles — a `SnapshotEvent` carries geometry and colour, and the widget never names an event.
+    /// A notification is nothing but the name, so it needs its own query.
+    ///
+    /// All-day events are kept rather than filtered, because they notify at sunrise rather than
+    /// never (DECISIONS, 2026-10-09), and the caller splits them.
+    ///
+    /// The hidden-calendar filter is the point of putting this here: a calendar switched off in the
+    /// day menu is absent from the arc, so it must be absent from notifications too, and
+    /// `visibleCalendars` is private to this type.
+    func scheduleCandidates(from start: Date, to end: Date) -> [ScheduleCandidate] {
+        guard access == .granted else { return [] }
+        if hiddenSourceIDs.isEmpty == false, visibleCalendars?.isEmpty == true { return [] }
+
+        let predicate = store.predicateForEvents(withStart: start, end: end, calendars: visibleCalendars)
+        return store.events(matching: predicate)
+            .sorted { $0.startDate < $1.startDate }
+            .map { event in
+                // Same identity rule as `CalendarEvent`: a weekly meeting shares one
+                // `eventIdentifier` across every occurrence, so the start has to be part of the id
+                // or fifty-two occurrences collapse into one notification.
+                ScheduleCandidate(id: "\(event.eventIdentifier ?? UUID().uuidString)@\(event.startDate.timeIntervalSince1970)",
+                                  title: event.title ?? "",
+                                  start: event.startDate,
+                                  isAllDay: event.isAllDay)
+            }
+    }
+
     /// The nearest timed event outside the drawn window.
     ///
     /// The arc only loads a day either side, so the chevrons could not see an

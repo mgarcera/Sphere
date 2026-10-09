@@ -9,9 +9,9 @@ struct DayMenu: View {
     let calendar: CalendarService
     let location: LocationService
     let weather: WeatherService
+    let notifications: EventNotifications
     @Binding var appearance: Appearance
     @AppStorage(WheelMapping.bottomKey) private var bottomPrimary: WheelAction = .now
-    @AppStorage(Sounds.key) private var soundsEnabled = false
     let onDismiss: () -> Void
 
     @State private var isFeedbackOpen = false
@@ -34,23 +34,6 @@ struct DayMenu: View {
                     }
                     .pickerStyle(.segmented)
                     .padding(.vertical, 4)
-
-                    // Under the appearance picker rather than beside Haptics,
-                    // where it used to be. Both are how Sphere presents itself
-                    // rather than what it does, and a bell marks presses that
-                    // are not all on the wheel.
-                    Toggle(isOn: $soundsEnabled) {
-                        Text("Sounds")
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.ink)
-                    }
-                    .tint(Theme.controlAccent)
-                    .padding(.vertical, 3)
-                    .onChange(of: soundsEnabled) { _, on in
-                        // Decode on the way in, so the first bell after
-                        // switching it on is not the one that lands late.
-                        if on { Sounds.warm() }
-                    }
                 }
 
                 if !calendar.sources.isEmpty {
@@ -73,6 +56,7 @@ struct DayMenu: View {
                             .tint(Theme.controlAccent)
                             .padding(.vertical, 3)
                         }
+
                     }
                 } else if calendar.access == .denied {
                     divider
@@ -85,6 +69,21 @@ struct DayMenu: View {
                                 .font(.footnote)
                                 .foregroundStyle(Theme.taskActive)
                         }
+                    }
+                }
+
+                // Its own section (Mason, 2026-10-09), after Calendars because that is what it
+                // notifies about: a calendar switched off above does not notify either.
+                // "Alerts" in sentence case like every other header here; `section` applies
+                // .textCase(.uppercase), so it renders as ALERTS.
+                //
+                // Shown unless access is denied, rather than only when calendars exist. The
+                // previous placement inside Calendars made the control vanish for an account with
+                // no calendars at all, which was reachable on a fresh phone.
+                if calendar.access != .denied {
+                    divider
+                    section("Alerts") {
+                        notificationRows
                     }
                 }
 
@@ -387,6 +386,70 @@ struct DayMenu: View {
 
     private var divider: some View {
         Rectangle().fill(Theme.hairline).frame(height: 1)
+    }
+
+    /// A toggle and a lead time, and a way out when iOS has the answer instead of us.
+    ///
+    /// Sphere must work fully with notifications denied (guidelines 4.5.4 and 5.1.2(i)), so the
+    /// denied state is a link to Settings rather than a prompt — the system prompt is offered
+    /// once and never again, so re-asking here would do nothing but look broken.
+    @ViewBuilder
+    private var notificationRows: some View {
+        switch notifications.permission {
+        case .denied:
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Notifications are off.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.muted)
+                Link("Open Settings", destination: SphereLinks.settings)
+                    .font(.footnote)
+                    .foregroundStyle(Theme.taskActive)
+            }
+        default:
+            Toggle(isOn: Binding(
+                get: { notifications.isEnabled },
+                set: { on in
+                    notifications.isEnabled = on
+                    // The prompt is raised by the toggle rather than by a screen before it. A
+                    // priming screen is not required here: 5.1.1(iv) is about data access and
+                    // never mentions notifications, and the HIG's one-button rule is scoped to
+                    // camera, microphone, location, contacts, calendar and tracking.
+                    if on { Task { await notifications.requestPermission() } }
+                }
+            )) {
+                Text("Push notifications")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.ink)
+            }
+            .tint(Theme.controlAccent)
+            .padding(.vertical, 3)
+
+            if notifications.isEnabled {
+                Picker("Lead time", selection: Binding(
+                    get: { notifications.leadMinutes },
+                    set: { notifications.leadMinutes = $0 }
+                )) {
+                    ForEach(EventNotifications.leadChoices, id: \.self) { minutes in
+                        Text(Self.leadLabel(minutes)).tag(minutes)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.vertical, 4)
+
+                Text("All-day events arrive at sunrise.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.mutedLight)
+            }
+        }
+    }
+
+    /// Short enough for a segment. The notification body spells it out in full.
+    private static func leadLabel(_ minutes: Int) -> String {
+        switch minutes {
+        case ..<1: "At start"
+        case 60: "1 hr"
+        default: "\(minutes) min"
+        }
     }
 
     private func section<Content: View>(_ title: String,

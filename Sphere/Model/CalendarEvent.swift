@@ -21,3 +21,13 @@ struct CalendarEvent: Identifiable, Equatable {
         hour >= startHour && hour < endHour
     }
 }
+
+/// One event as the notification scheduler needs it: a name, a moment, and whether it has a time
+/// at all. Deliberately not `CalendarEvent`, which is already flattened into the arc's hour space
+/// and has lost the absolute date a notification trigger needs.
+struct ScheduleCandidate: Identifiable, Equatable {
+    let id: String
+    let title: String
+    let start: Date
+    let isAllDay: Bool
+}

@@ -16,6 +16,7 @@ struct WheelSettings: View {
     /// the panel look like it was about the NOW/CAL choice.
     @State private var selected: WheelPosition = .centre
     @AppStorage(Haptics.key) private var hapticsEnabled = true
+    @AppStorage(Sounds.key) private var soundsEnabled = false
 
     private static let diameter: CGFloat = 168
     private static let buttonRatio: CGFloat = 0.383
@@ -70,21 +71,36 @@ struct WheelSettings: View {
             .animation(.easeOut(duration: 0.16), value: isSelected)
     }
 
-    /// Haptics belong to the wheel, so the switch lives with it rather than in
-    /// a section of its own.
+    /// Both switches belong to the wheel, so they live with it rather than in a section of their
+    /// own, and both say so in their names (Mason, 2026-10-09).
     ///
-    /// Sounds used to sit here beside it and moved up to Appearance. The two
-    /// looked like a pair and are not: the click is the wheel reporting its own
-    /// travel, where a bell marks four presses that are not all on the wheel.
+    /// Sounds moved up to Appearance for one era and came back here. The earlier note said the two
+    /// were not a pair, because the click reports the wheel's own travel where a bell marks four
+    /// presses that are not all on the wheel. Naming them "Wheel haptics" and "Wheel sounds"
+    /// settles that differently: they are both the wheel's feedback, and the name carries the
+    /// scope rather than the placement having to imply it.
     private var switches: some View {
         VStack(spacing: 0) {
             Toggle(isOn: $hapticsEnabled) {
-                Text("Haptics")
+                Text("Wheel haptics")
                     .font(.subheadline)
                     .foregroundStyle(Theme.ink)
             }
             .tint(Theme.controlAccent)
             .padding(.vertical, 8)
+
+            Toggle(isOn: $soundsEnabled) {
+                Text("Wheel sounds")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.ink)
+            }
+            .tint(Theme.controlAccent)
+            .padding(.vertical, 8)
+            .onChange(of: soundsEnabled) { _, on in
+                // Decode on the way in, so the first bell after switching it on is not the one
+                // that lands late. Carried over from the Appearance section with the toggle.
+                if on { Sounds.warm() }
+            }
         }
         .padding(.top, 4)
     }

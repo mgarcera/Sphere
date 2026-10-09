@@ -17,6 +17,8 @@ struct ContentView: View {
     /// or denied calendar predates the completed flag and must not be shown onboarding again.
     @State private var gate: FirstRunGate?
     @State private var weather = WeatherService()
+    @State private var notifications = EventNotifications()
+    @Environment(\.scenePhase) private var scenePhase
     @State private var editorTarget: EventTarget?
     @State private var isMenuOpen = false
     @State private var titleScale: CGFloat = 1
@@ -178,7 +180,7 @@ struct ContentView: View {
             .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $isMenuOpen) {
-            DayMenu(model: model, calendar: calendar, location: location, weather: weather, appearance: $appearance) { isMenuOpen = false }
+            DayMenu(model: model, calendar: calendar, location: location, weather: weather, notifications: notifications, appearance: $appearance) { isMenuOpen = false }
                 .presentationDetents([.large])
                 .presentationDragIndicator(.hidden)
         }
@@ -191,22 +193,44 @@ struct ContentView: View {
             await weather.load(coordinate: location.coordinate)
             model.applySky(from: weather)
             reload()
+            await notifications.refreshPermission()
+            await rescheduleNotifications()
             model.tick()
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(30))
                 model.tick()
             }
         }
-        // Someone editing in Calendar.app would otherwise leave the arc stale.
+        // Someone editing in Calendar.app would otherwise leave the arc stale. It is also the only
+        // signal a notification schedule can be rebuilt from: EKEventStoreChanged is an
+        // NSNotification on the default center, so it arrives only while Sphere is running.
         .task {
             for await _ in NotificationCenter.default.notifications(named: .EKEventStoreChanged) {
                 reload()
+                await rescheduleNotifications()
             }
         }
         .onChange(of: model.dayIndex) { _, _ in
             reload()
             model.applySky(from: weather)
         }
+        // Three separate triggers because each is a different event, and the schedule is torn
+        // down and rebuilt either way: the toggle, the lead time, and the system prompt's answer
+        // arriving (which is asynchronous, so the toggle flipping on cannot schedule by itself).
+        // Returning to the foreground is its own trigger. EKEventStoreChanged is posted inside a
+        // running process, so an event created in Calendar.app while Sphere was suspended is never
+        // heard, and before this the schedule was only rebuilt at launch.
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            Task {
+                await notifications.refreshPermission()
+                reload()
+                await rescheduleNotifications()
+            }
+        }
+        .onChange(of: notifications.isEnabled) { _, _ in Task { await rescheduleNotifications() } }
+        .onChange(of: notifications.leadMinutes) { _, _ in Task { await rescheduleNotifications() } }
+        .onChange(of: notifications.permission) { _, _ in Task { await rescheduleNotifications() } }
         // A fix moves the whole arc, since the curve is the sun's elevation
         // where you actually are.
         .onChange(of: location.timeZone) { _, _ in relocate() }
@@ -773,6 +797,18 @@ struct ContentView: View {
         calendar.load(from: range.start, to: range.end, anchor: model.anchor)
         model.events = calendar.events
         publishSnapshot()
+    }
+
+    /// Rebuilt rather than patched, on launch and on every calendar change. The schedule is a
+    /// rolling week capped well under the only documented pending ceiling, so a tear-down costs
+    /// nothing and a missed edit cannot accumulate.
+    ///
+    /// Not driven off `reload()` itself: `reload()` also runs when the focused day changes, which
+    /// is a pan of the arc and has nothing to do with what is scheduled.
+    private func rescheduleNotifications() async {
+        await notifications.reschedule(using: calendar,
+                                       coordinate: location.coordinate,
+                                       timeZone: location.timeZone)
     }
 
     /// In empty time the centre button just creates. Inside an event there are

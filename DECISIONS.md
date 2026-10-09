@@ -1332,3 +1332,58 @@ Three audit findings were declined, each with a reason:
   declared. The lesson is the cheap one: a repo with two manifests needs the path named before a
   claim about "the manifest" is made, and a cat of the file would have caught it before the card
   went out.
+
+## 2026-10-09 — notifications, decided before any code was written
+
+Sphere gets local notifications for calendar events. Weather is **out of v1**: a local
+notification's body is written when it is scheduled rather than when it fires, so a forecast line
+would be as old as the last time the app ran, and a stale forecast is worse than none. Sun position
+and sunrise are a different thing entirely, computed from date and coordinate in `Shared/SolarDay.swift`
+with no fetch, so anything the notifications say about light is exact.
+
+**Every timed event gets one, not only the ones without an Apple alarm.** The alternative was
+notifying only for events carrying no `EKAlarm`, which never double-buzzes and, for anyone who sets
+alerts in Calendar, also never fires. Mason took the version that always works and accepted the
+duplicate. The duplicate is real and worth remembering if a reviewer or a user ever asks: an event
+with a 10-minute Apple alert and Sphere's default 10-minute lead produces two notifications at the
+same minute, and the adjustable lead time is the only thing separating them.
+
+**The body is the time alone**: title is the event's own name, body is "In 10 minutes." Three bodies
+were drafted and spread on a real case — the time alone, the arc position ("High on the arc."), and
+the light remaining ("Four hours of light left."). The last two say what Apple's alert cannot, and
+Mason cut both. The consequence is deliberate and should not be quietly reversed later: Sphere's
+notification is now identical in content to Apple's, and its value is that it exists for events
+Apple is silent about.
+
+**Lead time is 10 minutes, adjustable**, in a new Notifications section of the day menu next to
+Calendars. Fixed was the cheaper build; it loses anyone who needs thirty minutes, who turns the
+feature off rather than tuning it.
+
+**All-day events notify at sunrise**, not at midnight — Sphere's own clock rather than the
+calendar's. `SolarDay.sunrise` is an optional, because a high-enough latitude has no sunrise, so
+that path needs a fallback hour rather than a force-unwrap. Grouping: several all-day events on one
+day become ONE notification, since the alternative is three simultaneous buzzes at dawn.
+
+**Shipped as 1.2 (1), 2026-10-09.** Three wiring defects were found by Mason's first real test and
+fixed before the release, and all three were in the plumbing rather than in the schedule:
+
+- **No `UNUserNotificationCenterDelegate`.** iOS delivers a notification while the app is frontmost
+  and displays nothing unless a delegate asks it to. Testing the feature means watching the app,
+  so the first thing anyone sees is "it didn't fire". `ForegroundPresenter` returns
+  `[.banner, .sound]`.
+- **No reschedule on returning to the foreground.** `EKEventStoreChanged` is an `NSNotification`
+  posted inside a running process, so an event created in Calendar.app while Sphere is suspended is
+  never heard and is never replayed. The schedule was rebuilt only at launch. Now also on
+  `scenePhase == .active`.
+- **Remove-all-then-add put a teardown and an add in flight together.** Replaced with a diff
+  against `pendingNotificationRequests()`, which needed the fire time inside the identifier
+  (`timed-<lead>-<event>`, `allday-<day>-<minute>`) or a changed lead time would leave the old
+  trigger in place while its identifier still matched.
+
+The control's placement moved four times in one session and landed in its own `ALERTS` section
+between Calendars and Wheel, shown unless calendar access is denied. The route there is worth
+keeping: inside Appearance above Sounds, then last inside Calendars, then its own section. The
+Calendars placement was abandoned because it rendered only when `calendar.sources` was non-empty,
+so the control vanished on an account with no calendars. In the same pass Sounds left Appearance
+for the wheel, and both wheel switches took the scope into their names: **Wheel haptics** and
+**Wheel sounds**.
