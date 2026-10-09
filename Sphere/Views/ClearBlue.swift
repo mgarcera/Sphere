@@ -26,6 +26,9 @@ struct ClearBlue: View {
     let clearness: Double
     let elevationDegrees: Double
     var suppressedBy: Double = 0
+    /// STUDY (2026-10-09): variant A. The wash runs to the bottom edge instead of dying at
+    /// `Fall.out`, so the screen is one field and that stop stops meaning anything.
+    var reachesBottom = false
 
     /// Where the blue reaches full strength. Below this the sun is low enough
     /// that the sky is turning warm and the twilight wash owns the band.
@@ -34,6 +37,35 @@ struct ClearBlue: View {
 
     /// The measured colour, kept as components so the header can composite it.
     static let topComponents  = (r: 0.290, g: 0.549, b: 0.847)  // 4A8CD8, zenith
+
+    private var gradientStops: [Gradient.Stop] {
+        let band: [Gradient.Stop] = [
+            .init(color: colors[0], location: 0),
+            .init(color: colors[1], location: TwilightBackground.Fall.first),
+            .init(color: colors[2], location: TwilightBackground.Fall.second),
+        ]
+        guard reachesBottom else {
+            return band + [.init(color: Theme.background.opacity(0), location: TwilightBackground.Fall.out)]
+        }
+        // Carry the horizon colour the rest of the way rather than fading out. Stepped rather
+        // than a single long ramp: one stop across 400-odd points of near-identical blue bands
+        // on an OLED, and that would read as a property of the option.
+        let tail = (1...6).map { step -> Gradient.Stop in
+            let t = Double(step) / 6
+            let location = TwilightBackground.Fall.second
+                + (1 - TwilightBackground.Fall.second) * t
+            return .init(color: colors[2].mix(with: horizonFloor, by: t), location: location)
+        }
+        return band + tail
+    }
+
+    /// Where the full-field version lands at the bottom edge: the horizon blue, carried down and
+    /// slightly deepened so the screen has a direction rather than a flat wash.
+    private var horizonFloor: Color {
+        colorScheme == .dark
+            ? Color(red: 0.090, green: 0.145, blue: 0.231)
+            : Color(red: 0.737, green: 0.847, blue: 0.957)
+    }
 
     static func strength(clearness: Double, elevationDegrees: Double, suppressedBy: Double) -> Double {
         let height = min(max(elevationDegrees / fullSunDegrees, 0), 1)
@@ -53,16 +85,7 @@ struct ClearBlue: View {
     }
 
     var body: some View {
-        LinearGradient(
-            stops: [
-                .init(color: colors[0], location: 0),
-                .init(color: colors[1], location: TwilightBackground.Fall.first),
-                .init(color: colors[2], location: TwilightBackground.Fall.second),
-                .init(color: Theme.background.opacity(0), location: TwilightBackground.Fall.out),
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
+        LinearGradient(stops: gradientStops, startPoint: .top, endPoint: .bottom)
         .opacity(Self.strength(clearness: clearness,
                                elevationDegrees: elevationDegrees,
                                suppressedBy: suppressedBy) * Self.peakOpacity)

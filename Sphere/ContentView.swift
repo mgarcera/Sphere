@@ -64,17 +64,15 @@ struct ContentView: View {
         ZStack {
             Theme.background.ignoresSafeArea()
 
-            ClearBlue(clearness: model.clearness(atAbsoluteHour: model.focusHour),
-                      elevationDegrees: focusElevation,
-                      suppressedBy: washAmount / WeatherWash.stormPeak)
+            // One colour, edge to edge, from where the sun is. It replaced ClearBlue's ramp,
+            // TwilightBackground's wash and NightSky's shaped fill in one pass (DECISIONS,
+            // 2026-10-09).
+            SkyField(elevationDegrees: focusElevation,
+                     clearness: model.clearness(atAbsoluteHour: model.focusHour),
+                     suppressedBy: washAmount / WeatherWash.stormPeak)
 
             let sky = model.weather(atAbsoluteHour: model.focusHour)
 
-            TwilightBackground(
-                elevationDegrees: model.elevationDegrees(atAbsoluteHour: model.focusHour),
-                isMorning: isMorning,
-                suppressedBy: washAmount / WeatherWash.stormPeak
-            )
 
             // Weather sits over the time of day, being nearer.
             WeatherWash(precipitation: sky.precipitation, lightning: sky.lightning)
@@ -245,6 +243,42 @@ struct ContentView: View {
     }
 
     private var day: some View {
+        // `showsWheelTip` and its machinery are still live below but nothing renders them now:
+        // the tip's overlay lived on the wheel. Kept rather than deleted because the gesture set
+        // replacing the wheel has the same problem the tip was built for — a hold, and now a
+        // drag, that nothing on screen admits exists — so this is the teacher it will reuse.
+        VStack(spacing: 0) {
+            // Centred rather than top-anchored (Mason, 2026-10-09). The wheel used to hold the
+            // bottom ~475 points; with it gone the block was pinned to the top of the screen and
+            // all the vacancy pooled under the hour labels. A Spacer either side splits it.
+            Spacer(minLength: 0)
+            arcBlock
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, 24)
+        // PROVISIONAL (2026-10-09): the wheel is gone and MENU went with it, which took the only
+        // route to settings, calendars and feedback. This button exists so the app is not
+        // stranded while the abstract layer is designed. It is placed, not designed.
+        .overlay(alignment: .bottomTrailing) {
+            Button {
+                Sounds.ring(.menu)
+                isMenuOpen = true
+            } label: {
+                Text("MENU")
+                    .font(.system(size: 12, weight: .semibold))
+                    .tracking(1.1)
+                    .foregroundStyle(SkyField.ink(on: fieldColour, dark: effectiveScheme == .dark, muted: true))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .padding(.trailing, 20)
+            .padding(.bottom, 16)
+        }
+    }
+
+    private var arcBlock: some View {
         VStack(spacing: 0) {
             // Above the arc block, not below it. The night is drawn inside the
             // block and reaches up over this whole area, and a later sibling in
@@ -256,8 +290,29 @@ struct ContentView: View {
                 .zIndex(1)
 
             ArcWindow(model: model, eventsHidden: eventsHidden,
-                      nightness: nightness,
-                      nightSuppressedBy: washAmount / WeatherWash.stormPeak)
+                      // A flat field has no shaped night, so NightSky never draws. Kept as a
+                      // parameter rather than torn out of ArcWindow in the same pass.
+                      nightness: 0,
+                      nightSuppressedBy: washAmount / WeatherWash.stormPeak,
+                      // STUDY: the same two callbacks the wheel reports through, so the drag and
+                      // the rotation land on one code path and feel identical past the touch.
+                      onScrub: { hours in
+                          model.focusHour += hours
+                          clickPastDetents()
+                      },
+                      onScrubBegan: {
+                          Haptics.warm()
+                          lastDetent = (model.focusHour / Haptics.detentHours).rounded(.towardZero)
+                      },
+                      onTapTime: openAtTappedHour,
+                      // STUDY: hold to return to now. Same landing the wheel's NOW button used,
+                      // so the jump animates identically and only the way in has changed.
+                      onHold: {
+                          guard !model.isFocusedOnNow else { return }
+                          Haptics.warm()
+                          Sounds.ring(.now)
+                          travel { model.returnToNow() }
+                      })
                 .padding(.top, 8)
                 // The weather line, drawn into the arc box's sky gutter — the 100pt of room
                 // above the curve's ceiling that exists so tall clouds are not clipped. On a
@@ -271,36 +326,7 @@ struct ContentView: View {
                         // so crossing onto a birthday reads as the line making room.
                         .animation(Self.popSpring, value: allDayCount)
                 }
-
-            Spacer(minLength: 16)
-
-            ClickWheel(
-                onRotate: { rotations in
-                    model.scrub(byRotations: rotations)
-                    clickPastDetents()
-                },
-                onRotateBegan: {
-                    Haptics.warm()
-                    lastDetent = (model.focusHour / Haptics.detentHours).rounded(.towardZero)
-                },
-                onPress: press,
-                bottomLabel: bottomPrimary == .calendar ? "CAL" : "NOW"
-            )
-            // An overlay, not a row above the wheel: in the layout it would push the wheel down
-            // and squeeze the arc, and the arc would spring back the moment the card went. The
-            // alignment guide hands the overlay's BOTTOM to the wheel's top, which lifts it clear
-            // without either one knowing the other's height.
-            .overlay(alignment: .top) {
-                if showsWheelTip {
-                    WheelTip { withAnimation(.snappy) { showsWheelTip = false } }
-                        .alignmentGuide(.top) { $0[.bottom] + 18 }
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
-            .padding(.top, 16)
-            .padding(.bottom, 24)
         }
-        .padding(.vertical, 24)
     }
 
     private var header: some View {
@@ -350,7 +376,11 @@ struct ContentView: View {
             // taller by a line each, and the arc moves with it.
             Group {
                 if allDayCount == 0 {
-                    Color.clear.transition(.identity)
+                    // Zero height, explicitly. A bare `Color.clear` is FLEXIBLE: with the block
+                    // centred it claimed a third of the slack and pushed the weather line ~390
+                    // points below the date (Mason, 2026-10-09). It exists only so the
+                    // transition has something to cross-fade against.
+                    Color.clear.frame(height: 0).transition(.identity)
                 } else {
                     Button { isAllDayOpen = true } label: {
                         VStack(alignment: .leading, spacing: 4) {
@@ -663,8 +693,18 @@ struct ContentView: View {
         model.elevationDegrees(atAbsoluteHour: model.focusHour)
     }
 
+    /// The field's colour right now, for anything that has to sit on it.
+    private var fieldColour: Color {
+        SkyField.colour(elevationDegrees: focusElevation,
+                        clearness: model.clearness(atAbsoluteHour: model.focusHour),
+                        suppressedBy: washAmount / WeatherWash.stormPeak,
+                        dark: effectiveScheme == .dark)
+    }
+
     private var titleColor: Color {
-        guard effectiveScheme == .light else { return Theme.ink }
+        // Computed from the field rather than tuned against paper, which is the whole reason a
+        // uniform colour is affordable.
+        return SkyField.ink(on: fieldColour, dark: effectiveScheme == .dark)
         // On blue, hold nothing — take the whole range.
         //
         // `ContrastHold`'s targets are tuned against paper, where 9:1 leaves the
@@ -821,6 +861,19 @@ struct ContentView: View {
     /// path are one press to the thumb, and only this level knows that. Ringing
     /// deeper meant the same press rang or not depending on whether something
     /// happened to be under the dot.
+    /// STUDY (2026-10-09): what is under the finger decides the action. An event opens; empty
+    /// time creates AT THAT TIME rather than at the focus, which is the thing the wheel's centre
+    /// button could not say. All-day events are skipped — they have no hour to be tapped on.
+    private func openAtTappedHour(_ hour: Double) {
+        Sounds.ring(.editor)
+        let hit = model.events.first { !$0.isAllDay && $0.contains(hour) }
+        if let hit, let occurrence = calendar.occurrence(for: hit.id) {
+            editorTarget = .existing(occurrence)
+        } else {
+            editorTarget = .new(model.anchor.addingTimeInterval(hour * 3600))
+        }
+    }
+
     private func openEditor() {
         Sounds.ring(.editor)
         if model.activeEvent.flatMap({ calendar.occurrence(for: $0.id) }) != nil {

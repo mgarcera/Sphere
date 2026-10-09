@@ -16,6 +16,28 @@ struct ArcWindow: View {
     /// Weather takes precedence over night, the way it does over dusk.
     var nightSuppressedBy: Double = 0
 
+    /// STUDY (2026-10-09): drag the arc to scrub time, the direct version of what the wheel does
+    /// by rotation. Reported upward in HOURS rather than applied here, the same shape
+    /// `ClickWheel` uses for `onRotate`, so the model write and the detent haptics stay in one
+    /// place. Nil leaves the arc inert, which is what the onboarding demo wants.
+    var onScrub: ((Double) -> Void)?
+    var onScrubBegan: (() -> Void)?
+
+    /// STUDY: a tap, reported as the ABSOLUTE HOUR under the finger. One callback covers two
+    /// actions because what is under the finger decides which: an event opens, empty time
+    /// creates. The wheel's centre button could never express this — it had to infer a time from
+    /// the focus, where a tap carries one.
+    var onTapTime: ((Double) -> Void)?
+
+    /// STUDY: hold the arc to return to now. Candidate two is a two-finger tap, which SwiftUI has
+    /// no gesture for and which would need a UIKit recogniser sharing this surface with the drag.
+    var onHold: (() -> Void)?
+
+    /// Live drag state, kept local on purpose. The parent learns hour deltas, never the finger's
+    /// position, and `translation` is cumulative so each callback sends only what is new.
+    @State private var lastTranslation: CGFloat = 0
+    @State private var isScrubbing = false
+
     var body: some View {
         GeometryReader { proxy in
             let pointsPerHour = proxy.size.width / DayModel.windowHours
@@ -152,8 +174,50 @@ struct ArcWindow: View {
                 .clipped()
             }
             .frame(width: proxy.size.width, height: ArcGeometry.totalHeight(arcHeight), alignment: .topLeading)
+            // STUDY: scrub by dragging the arc. `minimumDistance` is 8 rather than 0 so the taps
+            // this surface is about to carry — create at a time, open a capsule, return to now —
+            // still get their touch. A zero-distance drag would swallow all three.
+            .contentShape(.rect)
+            .gesture(scrubGesture(pointsPerHour: pointsPerHour), isEnabled: onScrub != nil)
+            // Inverse of the pan above: at centreX this returns exactly `focusHour`.
+            .onTapGesture { location in
+                guard pointsPerHour > 0 else { return }
+                onTapTime?(originHour + (location.x - pan) / pointsPerHour)
+            }
+            // Simultaneous, and guarded on the drag: a long drag is not a long press. Holding
+            // still for 0.45s returns to now; moving first makes it a scrub and nothing fires.
+            .simultaneousGesture(
+                LongPressGesture(minimumDuration: 0.45)
+                    .onEnded { _ in
+                        guard !isScrubbing, lastTranslation == 0 else { return }
+                        onHold?()
+                    },
+                isEnabled: onHold != nil
+            )
         }
         .frame(height: ArcGeometry.totalHeight(arcHeight))
+    }
+
+    /// Drag right to go back in time, the direction the arc itself moves.
+    private func scrubGesture(pointsPerHour: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 8)
+            .onChanged { value in
+                if !isScrubbing {
+                    isScrubbing = true
+                    lastTranslation = 0
+                    onScrubBegan?()
+                }
+                // Deltas, not the cumulative translation: sending the total each callback would
+                // compound it into an accelerating slide.
+                let delta = value.translation.width - lastTranslation
+                lastTranslation = value.translation.width
+                guard pointsPerHour > 0 else { return }
+                onScrub?(-delta / pointsPerHour)
+            }
+            .onEnded { _ in
+                isScrubbing = false
+                lastTranslation = 0
+            }
     }
 
     /// One pair for the whole window: it is three hours wide, so the difference

@@ -1416,3 +1416,54 @@ anything: the main column has a minimum height near 681 points — header 87, ar
 16, `ClickWheel.diameter` 280 — and landscape on an iPhone 17 Pro offers 402. **Landscape is a
 composition problem, not a rotation switch**, and the wheel has to move beside the arc rather than
 under it. Until that exists, do not claim iPhone Duo support in an App Store featuring nomination.
+
+### The cause, found 2026-10-09: a child crushed below its minimum
+
+`FirstRunArc` pinned `ArcWindow` into `.frame(height: 190)`. `ArcWindow` sizes itself to
+`ArcGeometry.totalHeight(arcHeight)` — the arc plus the 100pt sky gutter that keeps tall clouds
+unclipped — so it wants about 290 and was being given 190. On every iPhone Sphere has run on, the
+enclosing column had enough slack that the squeeze resolved quietly. On the Duo's 678-tall outer
+display it did not, and the failure was total: the whole onboarding screen rendered nothing, not
+the arc alone. No title, no Continue button, no opaque `Theme.background`, just the sky layers
+behind it. The fix is one deleted modifier.
+
+Two things to keep from how it was found. The main view was exonerated by forcing the first-run
+branch off, which rendered everything instantly after six hypotheses had died aimed at it. And the
+culprit was isolated by replacing the demo with an inert `Color.clear` of the same height — one
+variable, one build — rather than by reasoning about it.
+
+**This had shipped.** The fault is in every released build; the Duo is simply the first screen
+short enough to expose it. Anything that squeezes a view below its minimum is now a thing to look
+for here, because the symptom is not a clipped child, it is a blank parent.
+
+## 2026-10-09 — the sky is one flat colour
+
+Two bake-offs ran and are recorded here because stripping them destroys the only evidence they
+happened.
+
+**What the bottom half of the screen is**, after the wheel left and stopped needing plain ground
+to sit on. Three treatments, differing in kind rather than in where a gradient stop sat:
+*one field* — the wash runs to the bottom edge and `Fall.out` stops meaning anything;
+*ground* — a warm earth field below a real horizon, the sun setting into it;
+*underside* — a floor derived from the sky's own hue so it cannot drift from it.
+Mason took one field. Ground invented a second palette Sphere has never had, and underside went
+weak exactly when the sky did, which read as nothing happening.
+
+**Then: uniform.** Flat against the full gradient against the shipped band. Flat won. The sky is
+now ONE COLOUR edge to edge, from four anchors — night, the edge either side of the horizon, the
+low warm sun, full day — interpolated straight, with overcast pulling toward the field's own grey
+rather than toward white.
+
+Three things retire with the gradient. `TwilightBackground`'s wash and `NightSky`'s shaped fill,
+because a flat field has no vertical and no shape; and `TwilightBackground.Fall`, whose own
+comment called it "where every wash on this screen sits, vertically". `WeatherWash` stays, since
+rain and lightning are content rather than ground.
+
+**Ink is computed, not chosen.** `SkyField.ink` takes the field's Rec. 709 luminance and holds a
+constant distance from it, so dusk gets the same contrast as noon and no value was picked by
+hand. This is what made a uniform colour affordable at all: the alternative was capping how
+saturated the sky could ever get so that one fixed grey kept working.
+
+Still open, and deliberately not solved here: the hour labels are drawn inside `ArcContent`'s
+canvas rather than as views, so they do not yet read the derived ink. And `windowHours` is still
+3, which is why the curve renders as a shallow diagonal rather than an arc.
