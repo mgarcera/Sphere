@@ -29,16 +29,16 @@ struct ArcWindow: View {
     /// actions because what is under the finger decides which: an event opens, empty time
     /// creates. The wheel's centre button could never express this — it had to infer a time from
     /// the focus, where a tap carries one.
-    /// Tap anywhere on the arc returns to now; hold creates an event at the hour held
-    /// (Mason, 2026-10-09, swapping the two). The cheap gesture went to the action taken most.
-    var onTap: (() -> Void)?
-    /// Reported as the ABSOLUTE HOUR under the finger, which is the thing a wheel could never
-    /// say: the centre button had to infer a time, a held point carries one.
-    var onHoldTime: ((Double) -> Void)?
-
-    /// Where the finger went down. A `LongPressGesture` reports no location, so a zero-distance
-    /// drag runs alongside purely to record one; it has no `onEnded` and consumes nothing.
-    @State private var touchX: CGFloat?
+    /// Tap opens what is under the finger, or creates there on empty time. Reported as the
+    /// ABSOLUTE HOUR, which is the thing a wheel could never say: the centre button had to infer
+    /// a time, a tapped point carries one.
+    ///
+    /// Swapped to return-to-now for one build on 2026-10-09 and swapped back the same night. A
+    /// tap carries a location for free; the hold needed a second gesture running alongside just
+    /// to learn where the finger was, which is a cost paid for the action that needs it least.
+    var onTapTime: ((Double) -> Void)?
+    /// Hold returns to now. No location needed, which is why it is the one that holds.
+    var onHold: (() -> Void)?
 
     /// Live drag state, kept local on purpose. The parent learns hour deltas, never the finger's
     /// position, and `translation` is cumulative so each callback sends only what is new.
@@ -176,26 +176,20 @@ struct ArcWindow: View {
             // still get their touch. A zero-distance drag would swallow all three.
             .contentShape(.rect)
             .gesture(scrubGesture(pointsPerHour: pointsPerHour), isEnabled: onScrub != nil)
-            .onTapGesture { _ in onTap?() }
-            // Records the touch point for the long press. Zero distance so it fires on contact,
-            // and deliberately inert otherwise — the 8-point scrub above still owns movement.
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in if touchX == nil { touchX = value.location.x } }
-                    .onEnded { _ in touchX = nil },
-                isEnabled: onHoldTime != nil
-            )
+            // Inverse of the pan above: at centreX this is exactly `focusHour`.
+            .onTapGesture { location in
+                guard pointsPerHour > 0 else { return }
+                onTapTime?(originHour + (location.x - pan) / pointsPerHour)
+            }
             // Guarded on the drag: a long drag is not a long press. Holding still for 0.45s
-            // creates at the hour under the finger; moving first makes it a scrub.
+            // returns to now; moving first makes it a scrub and nothing fires.
             .simultaneousGesture(
                 LongPressGesture(minimumDuration: 0.45)
                     .onEnded { _ in
-                        guard !isScrubbing, lastTranslation == 0, pointsPerHour > 0,
-                              let x = touchX else { return }
-                        // Inverse of the pan above: at centreX this is exactly `focusHour`.
-                        onHoldTime?(originHour + (x - pan) / pointsPerHour)
+                        guard !isScrubbing, lastTranslation == 0 else { return }
+                        onHold?()
                     },
-                isEnabled: onHoldTime != nil
+                isEnabled: onHold != nil
             )
         }
         .frame(height: ArcGeometry.totalHeight(arcHeight))

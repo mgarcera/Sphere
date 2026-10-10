@@ -300,14 +300,13 @@ struct ContentView: View {
                           Haptics.warm()
                           lastDetent = (model.focusHour / Haptics.detentHours).rounded(.towardZero)
                       },
-                      // Tap is the common move, so it gets the cheap gesture.
-                      onTap: {
+                      onTapTime: openAtTappedHour,
+                      onHold: {
                           guard !model.isFocusedOnNow else { return }
                           Haptics.warm()
                           Sounds.ring(.now)
                           travel { model.returnToNow() }
-                      },
-                      onHoldTime: openAtTappedHour)
+                      })
     }
 
     private var header: some View {
@@ -769,7 +768,7 @@ struct ContentView: View {
     /// happened to be under the dot.
     /// What is under the finger decides the action. An event opens; empty time creates AT THAT
     /// TIME rather than at the focus, which is the thing the wheel's centre button could not say.
-    /// All-day events are skipped — they have no hour to be held on.
+    /// All-day events are skipped — they have no hour to be tapped on.
     private func openAtTappedHour(_ hour: Double) {
         Sounds.ring(.editor)
         let hit = model.events.first { !$0.isAllDay && $0.contains(hour) }
