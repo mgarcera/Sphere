@@ -1487,3 +1487,47 @@ looked, and only that claim failed.
 The black-and-white system survives the change, checked rather than assumed: top and bottom agree
 on polarity at all seven anchors, and the worst contrast anywhere is 5.84:1 — better than the
 4.58:1 worst case flat had. The polarity reads the gradient's midpoint.
+
+## 2026-10-09 — the wheel is gone and the arc takes the gestures
+
+**Scrubbing was the only thing the wheel did that needed to be a wheel.** Rotation needs grab
+radius, which is why `ClickWheel.diameter` was 280 and why the main column needed ~681 points —
+more than the Duo's outer display has, and far more than landscape's 402. Moving scrubbing onto
+the arc left five buttons, which fit anywhere, and the layout problem stopped existing rather
+than being solved.
+
+The split that decided the gesture set: **direct or abstract**. An action is direct if it moves
+something you can see. Scrub, create at a time, open an event and return to now are direct and
+live on the arc. Menu, light/dark, open in Calendar, mute haptics and new all-day are abstract,
+name things rather than move them, and still want a visible control with a word on it — they
+reach only the menu today, and the control they belong on is unbuilt.
+
+What shipped on the arc: **drag to scrub**, reported upward in hours the way `ClickWheel`
+reported rotations, so both land on one code path; **tap returns to now**; **hold creates at the
+hour under the finger**, which the centre button could never express because it had to infer a
+time. Tap and hold were swapped after the first build — the cheap gesture went to the move made
+most. The arc tap was removed once before, on 2026-09-01, for being unlabelled; it survives this
+time because the arc is now visibly interactive, so a tap on it is a reasonable thing to try.
+
+**MENU is provisional and marked as such in the source.** Removing the wheel removed the only
+route to settings, calendars and feedback, and without a button the app strands.
+
+**The header is an overlay, not a row.** In the flow its height came out of the space the arc
+centred in, so gaining an all-day event pushed the arc down by half that growth: the drawing
+moved because a list did. The weather line moved up beside the date it qualifies.
+
+### What the deletions taught
+
+Ten symbols went after a reference sweep: `ClearBlue`, `TwilightBackground`, `NightSky`,
+`ContrastHold`, `headerLuminance`, `titleContrast`, `captionContrast`, `typeNight`,
+`weatherOffset`, `blueStrength`. Two had hidden consumers and both failed as rendering bugs.
+
+`skyGround` was documented as the occluder that lets a near deck cut a hole in a far one. It was
+ALSO the cloud's body, and nothing said so. Setting it to `.clear` emptied every cloud; setting
+it to the field's own colour made them invisible by construction. It is the opposite pole from
+the marks now. `skyInk` read a `nightness` that has been hard-zero since the shaped night went,
+which would have drawn near-black clouds on a near-black field after dusk — a bug that would
+have shipped, because nobody reviews at 11pm.
+
+**A property doing two jobs with one of them documented is the shape to watch for.** The sweep
+proved the symbol was unreferenced; it could not prove the symbol was understood.
