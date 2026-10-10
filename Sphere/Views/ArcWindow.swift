@@ -17,7 +17,13 @@ struct ArcWindow: View {
     /// Weather takes precedence over night, the way it does over dusk.
     var nightSuppressedBy: Double = 0
     /// Black or white, decided by the field and passed down to everything drawn on it.
-    var mark: Color = .black
+    ///
+    /// REQUIRED, with no default, since 2026-10-10. It defaulted to `.black`, which was correct
+    /// only because the app's own screen always computes a mark from the sky behind it. The
+    /// onboarding's arc never passed one, inherited black, and drew a black curve, a black sun
+    /// and black hour labels on `Theme.background` — invisible in dark mode, and shipped that
+    /// way. A default is a promise that one value suits every caller, and here it suited one.
+    let mark: Color
 
     /// STUDY (2026-10-09): drag the arc to scrub time, the direct version of what the wheel does
     /// by rotation. Reported upward in HOURS rather than applied here, the same shape
@@ -45,13 +51,16 @@ struct ArcWindow: View {
     var onHold: (() -> Void)?
     /// Two fingers open the menu as well, which is a duplicate as of 2026-10-10 and known.
     var onTwoFingerTap: (() -> Void)?
-    /// A tap inside either edge band steps a whole day, -1 back and +1 forward.
-    var onDayStep: ((Int) -> Void)?
+    /// A tap inside either edge band steps to the next or previous EVENT, -1 back and +1 forward.
+    /// It stepped a whole day for one build on 2026-10-10 and changed the same day: the edges are
+    /// where you reach when what you want is off-screen, and what is off-screen that you want is
+    /// an event, not a date.
+    var onEdgeStep: ((Int) -> Void)?
 
-    /// How wide the day-step bands are, measured in from each edge. 44 points is the smallest
-    /// target Apple will call reachable, and it is the most that can be taken from tap-to-create:
-    /// at the default window on an iPhone 17 it is 20 minutes of the day at each end, and 33 at
-    /// the widest zoom (Mason, 2026-10-10, told the cost and took it).
+    /// How wide the edge bands are, measured in from each edge. 44 points is the smallest target
+    /// Apple will call reachable, and it is the most that can be taken from tap-to-create: at the
+    /// default window on an iPhone 17 it is 20 minutes of the day at each end, and 33 at the
+    /// widest zoom (Mason, 2026-10-10, told the cost and took it).
     static let edgeBand: CGFloat = 44
 
     /// Live drag state, kept local on purpose. The parent learns hour deltas, never the finger's
@@ -193,14 +202,15 @@ struct ArcWindow: View {
             // still get their touch. A zero-distance drag would swallow all three.
             .contentShape(.rect)
             .gesture(scrubGesture(pointsPerHour: pointsPerHour), isEnabled: onScrub != nil)
-            // The bands come first: inside one, the tap is a day step and never a time. Outside
-            // them it is the inverse of the pan above, so at centreX it is exactly `focusHour`.
+            // The bands come first: inside one, the tap is an event step and never a time.
+            // Outside them it is the inverse of the pan above, so at centreX it is exactly
+            // `focusHour`.
             .onTapGesture { location in
                 guard pointsPerHour > 0 else { return }
-                if let onDayStep, location.x <= Self.edgeBand {
-                    onDayStep(-1)
-                } else if let onDayStep, location.x >= proxy.size.width - Self.edgeBand {
-                    onDayStep(1)
+                if let onEdgeStep, location.x <= Self.edgeBand {
+                    onEdgeStep(-1)
+                } else if let onEdgeStep, location.x >= proxy.size.width - Self.edgeBand {
+                    onEdgeStep(1)
                 } else {
                     onTapTime?(originHour + (location.x - pan) / pointsPerHour)
                 }

@@ -74,9 +74,9 @@ struct ContentView: View {
     /// whether or not you asked — a palette crossfade is precisely what this
     /// mode exists not to do.
     @State private var skyIsNight = false
-    /// Shown once, on the first run that reaches the arc. The question mark replays it.
-    @AppStorage("teachGhostSeen") private var ghostSeen = false
-    @State private var showsGhost = false
+    /// Shown once, when the onboarding hands over. The question mark in the corner replays it.
+    @AppStorage("teachGhostSeen") private var guideSeen = false
+    @State private var isGuideOpen = false
 
     var body: some View {
         ZStack {
@@ -105,6 +105,14 @@ struct ContentView: View {
                     // pressed Start, the app is active, nothing is waiting on an alert.
                     withAnimation(.easeInOut(duration: 0.6)) { gate.markOnboardingComplete() }
                     reload()
+                    // The guide rises AFTER the fade rather than through it, so the arc is what
+                    // Start reveals and the gestures arrive over a day that is already there
+                    // (Mason, 2026-10-10).
+                    guideSeen = true
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(700))
+                        isGuideOpen = true
+                    }
                 }
                 .transition(.opacity)
             } else {
@@ -163,6 +171,15 @@ struct ContentView: View {
                 // capsule across the screen on the way.
                 travel { model.focus(onStartOf: day) }
             }
+        }
+        .sheet(isPresented: $isGuideOpen) {
+            GestureGuide()
+                .presentationDetents([.height(GestureGuide.height)])
+                // Hidden, like the other two (Mason, 2026-10-10). It was shown for one build on
+                // the argument that a sheet which is read rather than answered owes a visible
+                // way out; a grabber over a page of hands is one more mark competing with the
+                // six being demonstrated, and a sheet drags down whether or not it says so.
+                .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $isTimeChoiceOpen, onDismiss: {
             guard let choice = pendingTimeChoice else { return }
@@ -299,33 +316,18 @@ struct ContentView: View {
             // The arc's content fades at both edges, which is true — there IS more day that
             // way — and is the one signifier a horizontally scrolling surface has.
             .modifier(ScrubAffordance(mark: markColour))
-            // Above the clouds (Mason, 2026-10-10), and FIXED rather than measured: anchored to
-            // the arc block's own top edge and lifted its whole height clear of it. The decks
-            // are clipped to that block — the high deck rides 104 points off the curve and a
-            // storm swells another 22 — so the block's top edge is the one line no cloud can
-            // cross, whatever the sun is doing. Measuring the band to the pinned header instead
-            // made the placement depend on the screen: 172 points on an iPhone 17 Pro, 74 on
-            // the Duo folded, so the same hand sat in three different places.
-            .overlay(alignment: .top) {
-                if showsGhost {
-                    GhostHand(mark: markColour) {
-                        withAnimation(.easeOut(duration: 0.4)) { showsGhost = false }
-                    }
-                    .padding(.horizontal, 24)
-                    .offset(y: -(GhostHand.height + 8))
-                    .transition(.opacity)
-                }
-            }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .overlay(alignment: .topLeading) {
                 header
                     .padding(.top, 12)
             }
+            // For anyone already past the onboarding when this arrived: the guide has its own
+            // opening from there, and this covers the readers that opening will never reach.
             .task {
-                guard !ghostSeen else { return }
-                ghostSeen = true
+                guard !guideSeen else { return }
+                guideSeen = true
                 try? await Task.sleep(for: .milliseconds(900))
-                withAnimation(.easeIn(duration: 0.4)) { showsGhost = true }
+                isGuideOpen = true
             }
             .padding(.vertical, 24)
             // Deliberately dim, and the one exception to "no greys": its whole job is to be
@@ -333,7 +335,7 @@ struct ContentView: View {
             // build and nobody opens a menu row until they are already stuck.
             .overlay(alignment: .bottomLeading) {
                 Button {
-                    withAnimation(.easeIn(duration: 0.4)) { showsGhost = true }
+                    isGuideOpen = true
                 } label: {
                     Image(systemName: "questionmark")
                         .font(.system(size: 13, weight: .semibold))
@@ -344,7 +346,6 @@ struct ContentView: View {
                 .buttonStyle(.plain)
                 .padding(.leading, 8)
                 .padding(.bottom, 4)
-                .opacity(showsGhost ? 0 : 1)
             }
     }
 
@@ -384,10 +385,11 @@ struct ContentView: View {
                           Sounds.ring(.menu)
                           isMenuOpen = true
                       },
-                      onDayStep: { direction in
-                          Haptics.warm()
-                          Sounds.ring(.calendar)
-                          travel { model.focusHour += Double(direction) * 24 }
+                      // The chevrons' own behaviour, which outlived the chevrons: nearest event
+                      // in that direction, searched past the drawn window, and a haptic that says
+                      // nothing is there when nothing is.
+                      onEdgeStep: { direction in
+                          step(direction < 0 ? .back : .forward)
                       })
     }
 
@@ -916,8 +918,12 @@ struct ContentView: View {
     /// store is asked over a much wider range before giving up. Without that,
     /// an event further out than a day was unreachable: the jump did nothing,
     /// the focus stayed put, and nothing triggered a reload to widen the view.
+    /// Both callers want the same bell and the same shrug, so both live here rather than at the
+    /// two call sites (2026-10-10, when the arc's edge bands adopted this).
     private func step(_ direction: CalendarService.Direction) {
         if let near = direction == .forward ? model.nextEvent : model.previousEvent {
+            Haptics.warm()
+            Sounds.ring(.calendar)
             travel { model.focusHour = near.startHour }
             return
         }
@@ -927,6 +933,8 @@ struct ContentView: View {
             Haptics.nothingThere()
             return
         }
+        Haptics.warm()
+        Sounds.ring(.calendar)
         travel { model.focusHour = far.startDate.timeIntervalSince(model.anchor) / 3600 }
     }
 

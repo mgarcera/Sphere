@@ -33,7 +33,13 @@ struct FirstRunArc: View {
         // quietly; on an iPhone Duo's 678-tall outer display it did not, and the ENTIRE
         // onboarding screen rendered nothing — no title, no button, just the sky behind it.
         // A child crushed below its minimum can take its whole parent down with it.
-        ArcWindow(model: model, arcHeight: 190)
+        // `mark:` is NOT optional here, whatever its default says (Mason, 2026-10-10: "in dark
+        // mode, I can't see anything on the arc"). `ArcWindow` defaults it to `.black`, which is
+        // right only because the app's own screen always passes a mark computed from the sky
+        // behind it. This screen's ground is `Theme.background`, so its mark is `Theme.ink` —
+        // the pair that is near-black on paper and near-white at night — and the curve, the sun,
+        // the hour labels and every cloud follow it.
+        ArcWindow(model: model, arcHeight: 190, mark: Theme.ink)
             .allowsHitTesting(false)
             .task { await run() }
             // The view is not rebuilt between screens — that is the point — so the weather build

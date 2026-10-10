@@ -119,7 +119,7 @@ struct FirstRunFlow: View {
             OnboardingStep(
                 id: "ready",
                 title: "That’s everything.",
-                body: "Your day is drawn and waiting.\n\(OnboardingCopy.reversible)",
+                body: "Your day awaits.",
                 isSkippable: true
             ),
         ]
