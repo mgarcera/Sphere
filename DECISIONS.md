@@ -1558,11 +1558,12 @@ The one tension worth recording: a DIM mark is a grey, and the colour system say
 greys. The question mark is the exception, and it earns it by being the only thing on screen
 whose job is to be ignorable.
 
-## 1.3 — the arc takes the controls (2026-10-10)
+## 2.0 — the arc takes the controls (2026-10-10)
 
-Ships as **1.3 (1)**. The number is the one judgement call in here: the app's purpose, model and
-drawing are unchanged, so this is not a 2.0 — but it is the largest interaction change the app has
-had, because the control that defined the first three releases is gone.
+Ships as **2.0 (1)**. Mason's call, over a proposed 1.3: the purpose, the model and the drawing
+are unchanged, which is the case for a point release, but the control that defined the first three
+releases is gone and everything a reader knows about driving the app is now wrong. A number is a
+promise about how much has to be relearned, and this one asks for all of it.
 
 **The wheel is gone and the arc is the control.** Drag scrubs, pinch sets the window, a tap is
 now/create/open/pick-a-date, the left and right edge bands step between events, and the menu
