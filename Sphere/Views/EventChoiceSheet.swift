@@ -5,76 +5,46 @@ enum EventChoice {
     case create
 }
 
-/// What the centre button does when the dot is already inside an event.
+/// What happens when the thing you aimed at already holds an event.
 ///
 /// Opening it was the only thing on offer, so an hour that already held
 /// something could not have anything else put in it. Real days nest: a call
 /// inside a block, a break inside a shift.
 ///
+/// Two entry points, and they ask about different events. The header title button asks about
+/// the event under the DOT and creates at the focus. A tap on the arc asks about the event
+/// under the FINGER and creates at the time under the finger. The caller carries both answers
+/// in; this sheet only asks which.
+///
 /// Two buttons and nothing else. A heading and a caption under each were tried
 /// and cut: the fork has exactly two answers, both are one word, and anything
 /// more made a choice that should take no thought look like a form.
-/// The two cards themselves, with no opinion about how they got on screen.
+/// The two cards themselves, with no opinion about how they got on screen. Kept beside the
+/// sheet because the floating variant it was pulled out for may come back; `ChoiceCard` and
+/// `ChoiceSheet` in ChoiceCard.swift hold the treatment both sheets draw with.
 struct EventChoiceCards: View {
-    var height: CGFloat = 150
     let onChoose: (EventChoice) -> Void
 
     var body: some View {
-        // New leads. Creating is the thing you could not do before, and the
-        // event you are already inside is the one you can always get back to.
+        // New leads. Creating is the thing you could not do before, and the event you are
+        // already inside is the one you can always get back to.
         HStack(spacing: 14) {
-            card(.newEvent, title: "New event") { onChoose(.create) }
-            card(.openEvent, title: "Open") { onChoose(.open) }
+            ChoiceCard(mark: .newEvent, title: "New event") { onChoose(.create) }
+            ChoiceCard(mark: .openEvent, title: "Open") { onChoose(.open) }
         }
-        .frame(height: height)
-    }
-
-    /// Drawn in the wheel's line and weight, since it is the wheel's own button
-    /// that opened this. Presses dim rather than scale, for the same reason
-    /// they do there.
-    private func card(_ mark: Mark, title: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            VStack(spacing: 18) {
-                ActionMark(mark: mark, size: 96, color: Theme.ink, stroke: 2.0)
-                Text(title)
-                    .font(.system(size: 11, weight: .semibold))
-                    .tracking(1.2)
-                    .textCase(.uppercase)
-                    .foregroundStyle(Theme.ink)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            // No frame at all. The mark and its word are the button; a border
-            // around them was drawing the container rather than the choice.
-            .contentShape(.rect)
-        }
-        .buttonStyle(DimOnPress())
+        .frame(height: 150)
     }
 }
 
-/// A · the cards inside a sheet whose own background is cleared, so only they
-/// draw. The sheet keeps its drag gesture and whatever it does to the view
-/// behind it.
 struct EventChoiceSheet: View {
     let onChoose: (EventChoice) -> Void
 
-    static let height: CGFloat = 200
+    static let height: CGFloat = ChoiceSheet<EmptyView>.height
 
     var body: some View {
-        EventChoiceCards(height: 150, onChoose: onChoose)
-            .padding(.horizontal, 24)
-            .padding(.top, 18)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            // A sheet's own ground is a translucent material, so every sheet
-            // here paints its own. Lost when the cards were pulled out of this
-            // one to be shown floating as well.
-            .background(Theme.background)
-    }
-}
-
-private struct DimOnPress: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .opacity(configuration.isPressed ? 0.45 : 1)
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+        ChoiceSheet {
+            ChoiceCard(mark: .newEvent, title: "New event") { onChoose(.create) }
+            ChoiceCard(mark: .openEvent, title: "Open") { onChoose(.open) }
+        }
     }
 }

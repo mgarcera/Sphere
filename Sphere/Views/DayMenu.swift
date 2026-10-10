@@ -493,8 +493,10 @@ struct DayMenu: View {
                     // divides the sheet.
                     //
                     // 24 rather than 12 since 2026-10-10: the same size as the place name at the
-                    // top of the sheet, so every heading in the menu is one size and the
-                    // hierarchy comes from position rather than from scale. Sentence case, and
+                    // top of the sheet, so every SECTION heading is one size and the hierarchy
+                    // comes from position rather than from scale. "Today" in the day block is
+                    // the one label left on the retired treatment, deliberately: it labels a
+                    // row inside a block rather than dividing the sheet. Sentence case, and
                     // the tracking went with the uppercase: both were there to hold a 12pt label
                     // apart, and at 24 they only loosen the word (Mason, same day).
                     .font(.display(24))

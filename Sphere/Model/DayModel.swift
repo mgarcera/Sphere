@@ -23,7 +23,8 @@ final class DayModel {
     private var calendar: Calendar
     private var solarDays: [Int: SolarDay] = [:]
 
-    /// One full rotation of the wheel covers four hours.
+    /// One full rotation of the wheel covered four hours. Parked with the wheel: its only use is
+    /// `scrub(byRotations:)` below, which nothing calls.
     static let hoursPerRotation: Double = 4
 
     /// Width of the visible slice, in hours. A VARIABLE since 2026-10-10: pinching the arc
@@ -50,7 +51,9 @@ final class DayModel {
         return min(max(stored, minWindowHours), 24)
     }
 
-    /// Where a pinch starts from and what a double-pinch-out returns to.
+    /// The window a first launch opens at, and the only thing this constant does now: a pinch
+    /// starts from whatever the window currently is, which since 2026-10-10 is the persisted
+    /// value. There is no gesture that resets it.
     static let defaultWindowHours: Double = 3
     /// The widest the window may open is set by LABEL SPACING, not by a fixed hour count
     /// (Mason, 2026-10-10: "about 5 hours end to end on iPhone 17"). An iPhone 17 is 402 points

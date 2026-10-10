@@ -23,7 +23,7 @@ struct ContentView: View {
     @State private var isMenuOpen = false
     @State private var titleScale: CGFloat = 1
     @State private var captionScale: CGFloat = 1
-    /// Which quarter-hour the wheel last clicked at, so a click fires on
+    /// Which quarter-hour the drag last clicked at, so a click fires on
     /// crossing rather than on every frame of the drag.
     @State private var lastDetent: Double = 0
     @State private var allDayScale: CGFloat = 1
@@ -32,15 +32,16 @@ struct ContentView: View {
     /// a transaction we control.
     @State private var allDayCount = 0
     @AppStorage("appearance") private var appearance: Appearance = .sky
-    /// Observed rather than read once: the bottom button's printed word changes
-    /// with it, and a label that does not follow its setting is worse than no
-    /// setting at all.
+    /// Observed rather than read once, from when the wheel drew a bottom button whose printed
+    /// word had to follow this setting. Nothing draws that button now: this is the only
+    /// reference to `WheelMapping.bottomKey` left in the repo, parked with the wheel.
     @AppStorage(WheelMapping.bottomKey) private var bottomPrimary: WheelAction = .now
     @AppStorage(Haptics.key) private var hapticsEnabled = true
     @State private var eventsHidden = false
     @State private var isAllDayOpen = false
     @State private var isDayPickerOpen = false
     @State private var isEventChoiceOpen = false
+    @State private var isHoldChoiceOpen = false
     @State private var showsWheelTip = false
     /// One claim per launch, whichever route gets there first: the tip is gated on calendar
     /// access being settled, and that settles either before this view appears or after the
@@ -62,6 +63,10 @@ struct ContentView: View {
         let start: Date
     }
     @State private var choiceContext: ChoiceContext?
+    /// Same discipline as `pendingChoice`: acted on after the sheet has closed, never while it
+    /// is closing, because the day picker is itself a sheet and presenting into a dismissing one
+    /// is the refusal that cost ten seconds once already.
+    @State private var pendingHoldChoice: HoldChoice?
     @State private var pickedDay: Date = .now
     /// Which side of the horizon the Sky mode is on.
     ///
@@ -159,6 +164,26 @@ struct ContentView: View {
                 // capsule across the screen on the way.
                 travel { model.focus(onStartOf: day) }
             }
+        }
+        .sheet(isPresented: $isHoldChoiceOpen, onDismiss: {
+            guard let choice = pendingHoldChoice else { return }
+            pendingHoldChoice = nil
+            switch choice {
+            case .now:
+                guard !model.isFocusedOnNow else { return }
+                Haptics.warm()
+                Sounds.ring(.now)
+                travel { model.returnToNow() }
+            case .pickDate:
+                isDayPickerOpen = true
+            }
+        }) {
+            HoldChoiceSheet { choice in
+                pendingHoldChoice = choice
+                isHoldChoiceOpen = false
+            }
+            .presentationDetents([.height(HoldChoiceSheet.height)])
+            .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $isEventChoiceOpen, onDismiss: {
             guard let choice = pendingChoice, let context = choiceContext else { return }
@@ -339,15 +364,21 @@ struct ContentView: View {
                       // Already clamped against the arc's own width, which is the only place
                       // that knows it.
                       onZoom: { model.windowHours = $0 },
+                      // Swapped on 2026-10-10 (Mason). Holding asks WHERE in time to go, which
+                      // is the question the arc is about; the menu is a destination you visit,
+                      // not a move you make, so it went to the gesture that needs no aim.
                       onHold: {
+                          Sounds.ring(.menu)
+                          isHoldChoiceOpen = true
+                      },
+                      onTwoFingerTap: {
                           Sounds.ring(.menu)
                           isMenuOpen = true
                       },
-                      onTwoFingerTap: {
-                          guard !model.isFocusedOnNow else { return }
+                      onDayStep: { direction in
                           Haptics.warm()
-                          Sounds.ring(.now)
-                          travel { model.returnToNow() }
+                          Sounds.ring(.calendar)
+                          travel { model.focusHour += Double(direction) * 24 }
                       })
     }
 
@@ -456,10 +487,10 @@ struct ContentView: View {
             .scaleEffect(allDayScale, anchor: .leading)
             .padding(.top, 5)
 
-            // The weather's SLOT, kept empty. The line itself is drawn lower, over the arc's
-            // sky gutter (see `ArcWindow` below), because the clouds sit ~100pt beneath the
-            // header's last line and closing the header's own gap could never reach them.
-            // The slot stays so the header keeps its height and nothing else moves.
+            // A spacer, 16 points, and nothing is drawn lower to pair with it: the weather line
+            // moved INTO the header on 1ec8f3d and is drawn at `weatherLine` above the all-day
+            // rows. This kept the header's height while the line lived over the arc's sky
+            // gutter, and is now only the gap under the date (corrected 2026-10-10).
             Color.clear
                 .frame(height: 16)
                 .padding(.top, 7)
@@ -617,7 +648,7 @@ struct ContentView: View {
     /// What the sky is doing at the hour the wheel is on: the mark, the word
     /// and the temperature.
     ///
-    /// It follows the wheel like the rest of the header — the arc's clouds are
+    /// It follows the focus like the rest of the header — the arc's clouds are
     /// already drawn for the focused hour, so a reading anchored to the real
     /// now would disagree with the picture directly above it.
     @ViewBuilder
@@ -798,10 +829,10 @@ struct ContentView: View {
                                        timeZone: location.timeZone)
     }
 
-    /// In empty time the centre button just creates. Inside an event there are
-    /// two things it could mean, so it asks rather than picking one: a day
-    /// nests, and opening the outer event was the only thing on offer.
-    /// The centre press, and the one place the editor bell rings.
+    /// Empty time just creates. On an event there are two things it could mean, so it asks
+    /// rather than picking one: a day nests, and opening the outer event was the only thing on
+    /// offer. The header title button's route into an event, and one of the two places the
+    /// editor bell rings — `openAtTappedHour` above is the other, which is the tap on the arc.
     ///
     /// It sits here rather than on the event actually being created, so the two
     /// branches sound the same: the choice sheet and the straight-to-new-event

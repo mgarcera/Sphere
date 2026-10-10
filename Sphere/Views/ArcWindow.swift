@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// A three-hour slice of an unbounded timeline. The dot is nailed to the centre
+/// A pinchable slice of an unbounded timeline, 1.5 hours to about 5 on an iPhone 17 and
+/// persisted between launches. The dot is nailed to the centre
 /// of the screen and never moves; three days of arc slide underneath it, so
 /// crossing midnight needs no separate control and no seam.
 struct ArcWindow: View {
@@ -25,13 +26,10 @@ struct ArcWindow: View {
     var onScrub: ((Double) -> Void)?
     var onScrubBegan: (() -> Void)?
 
-    /// STUDY: a tap, reported as the ABSOLUTE HOUR under the finger. One callback covers two
-    /// actions because what is under the finger decides which: an event opens, empty time
-    /// creates. The wheel's centre button could never express this — it had to infer a time from
-    /// the focus, where a tap carries one.
-    /// Tap opens what is under the finger, or creates there on empty time. Reported as the
-    /// ABSOLUTE HOUR, which is the thing a wheel could never say: the centre button had to infer
-    /// a time, a tapped point carries one.
+    /// A tap, reported as the ABSOLUTE HOUR under the finger. What is there decides what the
+    /// caller does with it: empty time creates at that time, an event asks New or Open. Reported
+    /// as an hour rather than acted on here, because the arc knows where the finger landed and
+    /// nothing else does.
     ///
     /// Swapped to return-to-now for one build on 2026-10-09 and swapped back the same night. A
     /// tap carries a location for free; the hold needed a second gesture running alongside just
@@ -41,10 +39,19 @@ struct ArcWindow: View {
     /// is where a pinch belongs: both fingers can land anywhere.
     var onZoom: ((Double) -> Void)?
 
-    /// Hold opens the menu. No location needed, which is why it is the one that holds.
+    /// Hold asks where in time to go: now, or another day. No location needed, which is why it
+    /// is the one that holds.
     var onHold: (() -> Void)?
-    /// Two fingers return to now.
+    /// Two fingers open the menu.
     var onTwoFingerTap: (() -> Void)?
+    /// A tap inside either edge band steps a whole day, -1 back and +1 forward.
+    var onDayStep: ((Int) -> Void)?
+
+    /// How wide the day-step bands are, measured in from each edge. 44 points is the smallest
+    /// target Apple will call reachable, and it is the most that can be taken from tap-to-create:
+    /// at the default window on an iPhone 17 it is 20 minutes of the day at each end, and 33 at
+    /// the widest zoom (Mason, 2026-10-10, told the cost and took it).
+    static let edgeBand: CGFloat = 44
 
     /// Live drag state, kept local on purpose. The parent learns hour deltas, never the finger's
     /// position, and `translation` is cumulative so each callback sends only what is new.
@@ -185,10 +192,17 @@ struct ArcWindow: View {
             // still get their touch. A zero-distance drag would swallow all three.
             .contentShape(.rect)
             .gesture(scrubGesture(pointsPerHour: pointsPerHour), isEnabled: onScrub != nil)
-            // Inverse of the pan above: at centreX this is exactly `focusHour`.
+            // The bands come first: inside one, the tap is a day step and never a time. Outside
+            // them it is the inverse of the pan above, so at centreX it is exactly `focusHour`.
             .onTapGesture { location in
                 guard pointsPerHour > 0 else { return }
-                onTapTime?(originHour + (location.x - pan) / pointsPerHour)
+                if let onDayStep, location.x <= Self.edgeBand {
+                    onDayStep(-1)
+                } else if let onDayStep, location.x >= proxy.size.width - Self.edgeBand {
+                    onDayStep(1)
+                } else {
+                    onTapTime?(originHour + (location.x - pan) / pointsPerHour)
+                }
             }
             // Guarded on the drag: a long drag is not a long press. Holding still for 0.45s
             // returns to now; moving first makes it a scrub and nothing fires.
@@ -251,7 +265,7 @@ struct ArcWindow: View {
             }
     }
 
-    /// One pair for the whole window: it is three hours wide, so the difference
+    /// One pair for the whole window: at every zoom it is a few hours wide, so the difference
     /// between its edges is not worth redrawing three cached layers for.
     /// Clouds, birds and stars are marks like any other: black or white, never between. This
     /// read `Theme.skyInk(nightness:)` and `nightness` is hard-zero since the shaped night went,

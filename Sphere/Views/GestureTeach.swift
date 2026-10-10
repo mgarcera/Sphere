@@ -14,10 +14,16 @@ import SwiftUI
 /// Only the two that cannot teach themselves get a beat each at full length; drag and pinch get
 /// shorter ones because a surface that follows your finger explains itself in the first few
 /// millimetres, and anyone who has used Photos will try a pinch on anything that looks zoomable.
+///
+/// That is the intent and NOT what the timing does (found 2026-10-10): the drag beat runs 2,600ms
+/// and every other beat 1,900ms, so the drag is the longest rather than the shortest. Left as it
+/// is because the drag has the most to show, and the comment above is now a note on what was
+/// meant rather than a claim about the code.
 struct GhostHand: View {
     /// What the hand needs vertically: the 72-point fingertip row, the 28-point gap, and a
-    /// caption that wraps to two lines at the longest beat. Used to decide whether the band
-    /// above the arc can hold it, which is a question only the caller can answer.
+    /// caption that wraps to two lines at the longest beat. The caller lifts the hand by exactly
+    /// this to clear the arc block's top edge (ContentView, `day`); it was a band measurement
+    /// for one build on 2026-10-10 and is now the lift itself.
     static let height: CGFloat = 134
 
     let mark: Color
@@ -38,11 +44,15 @@ struct GhostHand: View {
 
     /// Mason's order (2026-10-10), with drag leading because it is the one the arc's edge fade
     /// already hints at, so the hand starts on the gesture the screen has half-introduced.
+    /// Mason's words, except the drag and the three added on 2026-10-10 when the gestures moved
+    /// (the edge bands, and the menu and the hold trading places). Those three are placeholders
+    /// until he writes them.
     private static let beats = [
         Beat(word: "drag to move through the day", fingers: 1, kind: .drag),
         Beat(word: "tap to create or open an event", fingers: 1, kind: .tap),
-        Beat(word: "tap two fingers to come back to the current time", fingers: 2, kind: .twoFingerTap),
-        Beat(word: "hold for the menu", fingers: 1, kind: .hold),
+        Beat(word: "tap the left or right edge to jump a day", fingers: 1, kind: .tap),
+        Beat(word: "tap two fingers for the menu", fingers: 2, kind: .twoFingerTap),
+        Beat(word: "hold for now, or another day", fingers: 1, kind: .hold),
         Beat(word: "pinch in and out to zoom", fingers: 2, kind: .pinch),
     ]
 
