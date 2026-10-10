@@ -50,5 +50,12 @@ final class WeatherService {
         return byHour[hour]
     }
 
+    /// Supply readings directly, for the App Store captures. The store set is shot on fictional
+    /// days (`DemoDay`) and a provider cannot be asked for a storm on a chosen Monday.
+    func adopt(_ hours: [WeatherHour]) {
+        byHour = Dictionary(hours.map { ($0.date, $0) }, uniquingKeysWith: { first, _ in first })
+        fetchedFor = nil
+    }
+
     var isLoaded: Bool { !byHour.isEmpty }
 }

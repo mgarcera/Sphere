@@ -4,7 +4,8 @@ import SwiftUI
 import WidgetKit
 
 struct ContentView: View {
-    @State private var model = DayModel()
+    /// Ordinary at launch, and a fixed fictional day during a capture run (`DemoDay`).
+    @State private var model = DemoDay.model()
     @State private var calendar = CalendarService()
     @State private var location = LocationService()
 
@@ -95,7 +96,7 @@ struct ContentView: View {
             // Weather sits over the time of day, being nearer.
             WeatherWash(precipitation: sky.precipitation, lightning: sky.lightning)
 
-            if let gate, gate.hasResolved, gate.state == .new {
+            if let gate, gate.hasResolved, gate.state == .new, !DemoDay.isEnabled {
                 // Two screens, each immediately before the thing it explains. The screen this
                 // replaced explained both permissions and then raised both prompts back to back,
                 // so the location one arrived with its reason two screens of attention earlier
@@ -248,6 +249,13 @@ struct ContentView: View {
             // which is the thing FirstRunFlow was split in two to avoid (2026-10-04), and it is
             // not what the words on screen were talking about. The flow's weather step asks;
             // `requestLocationIfPastOnboarding` below covers every later launch.
+            // A capture run supplies all three inputs itself and then stops: no fetch, no
+            // calendar read, and no `tick()`, because the dot must stay where the scene put it
+            // rather than walking to the real now while the shot is being taken.
+            guard !DemoDay.isEnabled else {
+                allDayCount = DemoDay.apply(to: model, weather: weather)
+                return
+            }
             await weather.load(coordinate: location.coordinate)
             model.applySky(from: weather)
             reload()
@@ -324,7 +332,7 @@ struct ContentView: View {
             // For anyone already past the onboarding when this arrived: the guide has its own
             // opening from there, and this covers the readers that opening will never reach.
             .task {
-                guard !guideSeen else { return }
+                guard !guideSeen, !DemoDay.isEnabled else { return }
                 guideSeen = true
                 try? await Task.sleep(for: .milliseconds(900))
                 isGuideOpen = true

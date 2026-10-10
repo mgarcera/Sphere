@@ -1557,3 +1557,38 @@ proved it would not be found.
 The one tension worth recording: a DIM mark is a grey, and the colour system says there are no
 greys. The question mark is the exception, and it earns it by being the only thing on screen
 whose job is to be ignorable.
+
+## 1.3 — the arc takes the controls (2026-10-10)
+
+Ships as **1.3 (1)**. The number is the one judgement call in here: the app's purpose, model and
+drawing are unchanged, so this is not a 2.0 — but it is the largest interaction change the app has
+had, because the control that defined the first three releases is gone.
+
+**The wheel is gone and the arc is the control.** Drag scrubs, pinch sets the window, a tap is
+now/create/open/pick-a-date, the left and right edge bands step between events, and the menu
+answers to either two fingers or a hold. Every one of these is recorded above with the build it
+was decided in; what the release adds is that they are now the only way to drive the app.
+
+**The sky fills the screen** and every mark is black or white, never between. The gradient came
+back after the flat pass because rain and dawn need the depth.
+
+**A paged guide** replaces the sequence that ran over the arc. It opens once when the onboarding
+hands over, and the question mark in the corner brings it back.
+
+**The blank first run is fixed, and it had shipped.** `FirstRunFlow` built its `OnboardingRun` in
+a `.task` and drew nothing while that run was nil — and `.task` on an empty view may never fire,
+so the run could never be built. 1.1 (2) and 1.2 (1) were both reproduced blank on a clean
+install, in Debug and Release, on allow and on deny, surviving a relaunch. Released builds carry a
+second cause as well: the `FirstRunArc` height crush that 25c0256 fixed after 1.2 went out.
+
+**The onboarding gained a third screen** so the last permission answer lands somewhere instead of
+dropping onto the arc, and the location prompt moved off launch and onto the weather step that
+the words are about.
+
+**`DemoDay` is the capture harness**, after Fil's `-FilScreenshotMode` pattern: three fictional
+scenes supplied to the real app through a launch argument, because a storm on a chosen Monday is
+not something a forecast will hold still for. Written this release, unproven — nothing has been
+captured with it yet.
+
+Privacy manifest, entitlements and Info.plist are untouched since 1.2; checked by path, not by
+memory.
