@@ -360,13 +360,14 @@ struct ContentView: View {
                       // Already clamped against the arc's own width, which is the only place
                       // that knows it.
                       onZoom: { model.windowHours = $0 },
-                      // Swapped on 2026-10-10 (Mason). Holding asks WHERE in time to go, which
-                      // is the question the arc is about; the menu is a destination you visit,
-                      // not a move you make, so it went to the gesture that needs no aim.
+                      // Back to the menu (Mason, 2026-10-10, same day it left). Holding had the
+                      // time sheet for one build, and the single tap took that over: a tap
+                      // carries the time the sheet needs and the hold does not, so the hold was
+                      // the worse way in to the same three cards. The menu is what is left that
+                      // needs no aim.
                       onHold: {
                           Sounds.ring(.menu)
-                          timeChoiceStart = model.focusDate
-                          isTimeChoiceOpen = true
+                          isMenuOpen = true
                       },
                       onTwoFingerTap: {
                           Sounds.ring(.menu)

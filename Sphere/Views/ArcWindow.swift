@@ -39,10 +39,11 @@ struct ArcWindow: View {
     /// is where a pinch belongs: both fingers can land anywhere.
     var onZoom: ((Double) -> Void)?
 
-    /// Hold asks where in time to go: now, or another day. No location needed, which is why it
-    /// is the one that holds.
+    /// Hold opens the menu. No location needed, which is why it is the one that holds: it had
+    /// the time sheet for a single build on 2026-10-10 and gave it back to the tap, which knows
+    /// where the finger is.
     var onHold: (() -> Void)?
-    /// Two fingers open the menu.
+    /// Two fingers open the menu as well, which is a duplicate as of 2026-10-10 and known.
     var onTwoFingerTap: (() -> Void)?
     /// A tap inside either edge band steps a whole day, -1 back and +1 forward.
     var onDayStep: ((Int) -> Void)?

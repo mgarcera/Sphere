@@ -14,13 +14,10 @@ enum TimeChoice {
 /// was pointed at it, because a tap carries a time and creating there is the thing it was doing
 /// before.
 ///
-/// Was `HoldChoiceSheet` for one commit. Renamed because the hold is no longer the only way in:
-/// a tap on empty time opens it too, and the name of a sheet should say what it decides rather
-/// than which finger arrived.
-///
-/// The hold and the tap differ in one thing, and the caller resolves it: a tap knows the time
-/// under the finger, a hold does not, so a held Create starts at the focus — the time under the
-/// dot, in the middle of the screen.
+/// Was `HoldChoiceSheet` for one commit. The hold opened it, then the tap did too, and now the
+/// tap is the only way in — the hold went back to the menu the same day, because a tap carries
+/// the time these cards decide about and a long press reports no location at all. The name says
+/// what it decides rather than which finger arrived, which is why it survived the move.
 struct TimeChoiceSheet: View {
     let onChoose: (TimeChoice) -> Void
 

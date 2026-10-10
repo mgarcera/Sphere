@@ -50,10 +50,10 @@ struct GhostHand: View {
     /// until he writes them.
     private static let beats = [
         Beat(word: "drag to move through the day", fingers: 1, kind: .drag),
-        Beat(word: "tap to create or open an event", fingers: 1, kind: .tap),
+        Beat(word: "tap to create an event or open one", fingers: 1, kind: .tap),
         Beat(word: "tap the left or right edge to jump a day", fingers: 1, kind: .tap),
         Beat(word: "tap two fingers for the menu", fingers: 2, kind: .twoFingerTap),
-        Beat(word: "hold for now, or another day", fingers: 1, kind: .hold),
+        Beat(word: "hold for the menu", fingers: 1, kind: .hold),
         Beat(word: "pinch in and out to zoom", fingers: 2, kind: .pinch),
     ]
 
