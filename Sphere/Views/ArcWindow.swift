@@ -37,17 +37,26 @@ struct ArcWindow: View {
     /// tap carries a location for free; the hold needed a second gesture running alongside just
     /// to learn where the finger was, which is a cost paid for the action that needs it least.
     var onTapTime: ((Double) -> Void)?
-    /// Hold returns to now. No location needed, which is why it is the one that holds.
+    /// Pinch changes how much day is on screen. On the canvas rather than on any object, which
+    /// is where a pinch belongs: both fingers can land anywhere.
+    var onZoom: ((Double) -> Void)?
+
+    /// Hold opens the menu. No location needed, which is why it is the one that holds.
     var onHold: (() -> Void)?
+    /// Two fingers return to now.
+    var onTwoFingerTap: (() -> Void)?
 
     /// Live drag state, kept local on purpose. The parent learns hour deltas, never the finger's
     /// position, and `translation` is cumulative so each callback sends only what is new.
     @State private var lastTranslation: CGFloat = 0
     @State private var isScrubbing = false
+    /// The window the pinch started from. Magnification is relative to the gesture's start, so
+    /// without this each callback would compound into a runaway zoom.
+    @State private var zoomBase: Double?
 
     var body: some View {
         GeometryReader { proxy in
-            let pointsPerHour = proxy.size.width / DayModel.windowHours
+            let pointsPerHour = proxy.size.width / model.windowHours
             let dayWidth = 24 * pointsPerHour
             let firstDay = model.dayIndex - 1
             let originHour = Double(firstDay) * 24
@@ -191,6 +200,31 @@ struct ArcWindow: View {
                     },
                 isEnabled: onHold != nil
             )
+            // Spread to see more of the day, squeeze to come back in. Simultaneous with the
+            // scrub so a two-finger gesture that drifts does both rather than fighting.
+            .simultaneousGesture(
+                MagnifyGesture()
+                    .onChanged { value in
+                        let base = zoomBase ?? model.windowHours
+                        if zoomBase == nil { zoomBase = base }
+                        // Spreading magnifies, and spreading should show MORE hours, so the
+                        // window divides rather than multiplies.
+                        let range = DayModel.windowRange(forWidth: proxy.size.width)
+                        onZoom?(min(max(base / value.magnification, range.lowerBound),
+                                    range.upperBound))
+                    }
+                    .onEnded { _ in zoomBase = nil },
+                isEnabled: onZoom != nil
+            )
+            // Two fingers return to now. SwiftUI has no two-finger tap, so this is a UIKit
+            // recogniser wrapped in `UIGestureRecognizerRepresentable` — which joins SwiftUI's
+            // gesture arena rather than competing from outside it, and so does not reproduce
+            // the starving that a `contextMenu` did on 2026-10-03.
+            //
+            // A two-finger PAN was tried alongside it and dropped: the pinch already covers
+            // "show me more of the day", so a second two-finger gesture would be a second way
+            // to say the same thing.
+            .gesture(TwoFingerTap { onTwoFingerTap?() })
         }
         .frame(height: ArcGeometry.totalHeight(arcHeight))
     }

@@ -26,8 +26,28 @@ final class DayModel {
     /// One full rotation of the wheel covers four hours.
     static let hoursPerRotation: Double = 4
 
-    /// Width of the visible slice.
-    static let windowHours: Double = 3
+    /// Width of the visible slice, in hours. A VARIABLE since 2026-10-10: pinching the arc
+    /// changes it, which is the only way to see the day as an arc rather than as the shallow
+    /// diagonal three hours of elevation makes near noon.
+    var windowHours: Double = DayModel.defaultWindowHours
+
+    /// Where a pinch starts from and what a double-pinch-out returns to.
+    static let defaultWindowHours: Double = 3
+    /// The widest the window may open is set by LABEL SPACING, not by a fixed hour count
+    /// (Mason, 2026-10-10: "about 5 hours end to end on iPhone 17"). An iPhone 17 is 402 points
+    /// across, so five hours is ~80 points each, and that is the number worth keeping — on the
+    /// Duo's 466 it allows about six hours, in landscape about eleven, and the hour labels stay
+    /// the same distance apart on all of them.
+    static let minPointsPerHour: Double = 80
+
+    /// Tight enough to place an event to the minute.
+    static let minWindowHours: Double = 1.5
+
+    /// The window a given width can carry without crowding its labels.
+    static func windowRange(forWidth width: Double) -> ClosedRange<Double> {
+        let widest = max(minWindowHours, width / minPointsPerHour)
+        return minWindowHours...widest
+    }
 
     init(now: Date = .now, coordinate: Coordinate = .chicago, timeZone: TimeZone = .autoupdatingCurrent) {
         var calendar = Calendar(identifier: .gregorian)

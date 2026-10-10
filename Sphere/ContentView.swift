@@ -301,7 +301,14 @@ struct ContentView: View {
                           lastDetent = (model.focusHour / Haptics.detentHours).rounded(.towardZero)
                       },
                       onTapTime: openAtTappedHour,
+                      // Already clamped against the arc's own width, which is the only place
+                      // that knows it.
+                      onZoom: { model.windowHours = $0 },
                       onHold: {
+                          Sounds.ring(.menu)
+                          isMenuOpen = true
+                      },
+                      onTwoFingerTap: {
                           guard !model.isFocusedOnNow else { return }
                           Haptics.warm()
                           Sounds.ring(.now)
