@@ -10,9 +10,9 @@ import SmidgecraftKit
 ///
 /// Two screens, one per permission, because Sphere is the only one of the three apps that asks
 /// for anything at launch and it asks for two things. A third was planned to teach the hold
-/// layer so `WheelTip` could be deleted, and was cut: the tip appears on the wheel, pointing at
-/// the wheel, and retires itself on the first hold, which is better teaching than a screen shown
-/// before anyone has seen a wheel. `WheelTip` stays.
+/// layer, and was cut: teaching is better done on the arc than on a screen shown before anyone
+/// has seen one. `GhostHand` is where that landed, over the real arc, and the card that used to
+/// point at the wheel was deleted on 2026-10-10.
 ///
 /// Both permission steps are `isSkippable: false`. Apple rejected Fil 1.0 build 4 under guideline
 /// 5.1.1(iv) for offering a way out of a priming screen without reaching the system alert, and

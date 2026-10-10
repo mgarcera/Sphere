@@ -5,8 +5,9 @@ import SwiftUI
 /// why that one lost are in DECISIONS.
 ///
 /// Three earlier attempts in this app all assumed the gesture must be EXPLAINED — the arc tap
-/// was removed on 2026-09-01 because nothing could label it, `WheelTip` names a gesture on a
-/// card, and `WheelSettings`' own comment said its first job was documentation. The edge fade
+/// was removed on 2026-09-01 because nothing could label it, `WheelTip` named a gesture on a
+/// card (deleted 2026-10-10, once this replaced it), and `WheelSettings`' own comment said its
+/// first job was documentation. The edge fade
 /// below assumes it must be VISIBLE instead, and is the only part of this that leaves nothing
 /// behind: no state, no dismissal, nothing to find.
 /// A — a fingertip doing each gesture on the real arc, one word under it.

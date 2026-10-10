@@ -41,12 +41,7 @@ struct ContentView: View {
     @State private var isAllDayOpen = false
     @State private var isDayPickerOpen = false
     @State private var isEventChoiceOpen = false
-    @State private var isHoldChoiceOpen = false
-    @State private var showsWheelTip = false
-    /// One claim per launch, whichever route gets there first: the tip is gated on calendar
-    /// access being settled, and that settles either before this view appears or after the
-    /// first-run flow, never both.
-    @State private var didClaimWheelTip = false
+    @State private var isTimeChoiceOpen = false
     /// Acted on after the chooser closes, never while it is closing: presenting
     /// the editor into a sheet still dismissing is the refusal that cost ten
     /// seconds once already.
@@ -66,7 +61,10 @@ struct ContentView: View {
     /// Same discipline as `pendingChoice`: acted on after the sheet has closed, never while it
     /// is closing, because the day picker is itself a sheet and presenting into a dismissing one
     /// is the refusal that cost ten seconds once already.
-    @State private var pendingHoldChoice: HoldChoice?
+    @State private var pendingTimeChoice: TimeChoice?
+    /// Where a Create from that sheet starts. A tap fills it with the time under the finger; a
+    /// hold has no location to give, so it fills it with the focus.
+    @State private var timeChoiceStart: Date?
     @State private var pickedDay: Date = .now
     /// Which side of the horizon the Sky mode is on.
     ///
@@ -130,8 +128,6 @@ struct ContentView: View {
             gate = g
             await g.resolve()
         }
-        .task { considerWheelTip() }
-        .onChange(of: calendar.access) { _, _ in considerWheelTip() }
         // The status bar reads the HOSTING CONTROLLER's style, and
         // `preferredColorScheme` is the only lever SwiftUI gives onto it —
         // `UIStatusBarStyle.default` claims to adapt to the content below it
@@ -165,24 +161,28 @@ struct ContentView: View {
                 travel { model.focus(onStartOf: day) }
             }
         }
-        .sheet(isPresented: $isHoldChoiceOpen, onDismiss: {
-            guard let choice = pendingHoldChoice else { return }
-            pendingHoldChoice = nil
+        .sheet(isPresented: $isTimeChoiceOpen, onDismiss: {
+            guard let choice = pendingTimeChoice else { return }
+            let start = timeChoiceStart ?? model.focusDate
+            pendingTimeChoice = nil
+            timeChoiceStart = nil
             switch choice {
             case .now:
                 guard !model.isFocusedOnNow else { return }
                 Haptics.warm()
                 Sounds.ring(.now)
                 travel { model.returnToNow() }
+            case .create:
+                editorTarget = .new(start)
             case .pickDate:
                 isDayPickerOpen = true
             }
         }) {
-            HoldChoiceSheet { choice in
-                pendingHoldChoice = choice
-                isHoldChoiceOpen = false
+            TimeChoiceSheet { choice in
+                pendingTimeChoice = choice
+                isTimeChoiceOpen = false
             }
-            .presentationDetents([.height(HoldChoiceSheet.height)])
+            .presentationDetents([.height(TimeChoiceSheet.height)])
             .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $isEventChoiceOpen, onDismiss: {
@@ -279,10 +279,6 @@ struct ContentView: View {
     }
 
     private var day: some View {
-        // `showsWheelTip` and its machinery are still live below but nothing renders them now:
-        // the tip's overlay lived on the wheel. Kept rather than deleted because the gesture set
-        // replacing the wheel has the same problem the tip was built for — a hold, and now a
-        // drag, that nothing on screen admits exists — so this is the teacher it will reuse.
         // One arrangement at every size (Mason, 2026-10-09: an overlay is fine in landscape).
         // The arc centres in the WHOLE space and the header sits over it, rather than above it
         // in the flow — in the flow, the header's height was subtracted from the space the arc
@@ -369,7 +365,8 @@ struct ContentView: View {
                       // not a move you make, so it went to the gesture that needs no aim.
                       onHold: {
                           Sounds.ring(.menu)
-                          isHoldChoiceOpen = true
+                          timeChoiceStart = model.focusDate
+                          isTimeChoiceOpen = true
                       },
                       onTwoFingerTap: {
                           Sounds.ring(.menu)
@@ -853,7 +850,11 @@ struct ContentView: View {
             choiceContext = ChoiceContext(event: occurrence, start: start)
             isEventChoiceOpen = true
         } else {
-            editorTarget = .new(start)
+            // STUDY (Mason, 2026-10-10): a tap used to open the editor here, which was one
+            // gesture to a new event. It now asks the same three things the hold asks, so the
+            // tap costs a card for the thing it used to do directly. On trial.
+            timeChoiceStart = start
+            isTimeChoiceOpen = true
         }
     }
 
@@ -909,27 +910,8 @@ struct ContentView: View {
     /// where the printed word changes with the setting. Holds are assignable,
     /// which is only safe because nothing is printed for them: a label that
     /// could come to mean something else stops being readable.
-    /// Show the wheel tip, if it still has a showing left and there is a wheel to point at.
-    ///
-    /// Gated on access being settled rather than granted: a denied calendar still leaves the
-    /// wheel on screen and every hold still works. Undetermined is the one state with no wheel
-    /// in it — `FirstRunFlow` covers the screen — and a tip over a permission prompt is two
-    /// asks at once.
-    private func considerWheelTip() {
-        guard !didClaimWheelTip, calendar.access != .undetermined else { return }
-        didClaimWheelTip = true
-        guard WheelTipState.claimLaunch() else { return }
-        withAnimation(.snappy.delay(0.6)) { showsWheelTip = true }
-    }
-
     private func press(_ position: WheelPosition, _ gesture: WheelGesture) {
-        guard gesture == .tap else {
-            // Any hold, anywhere on the wheel, is the tip's job done. It teaches that holds
-            // exist, so the first one proves the message landed — including one found without it.
-            WheelTipState.retire()
-            withAnimation(.snappy) { showsWheelTip = false }
-            return run(WheelMapping.hold(for: position))
-        }
+        guard gesture == .tap else { return run(WheelMapping.hold(for: position)) }
         switch position {
         case .previous: step(.back)
         case .next: step(.forward)
