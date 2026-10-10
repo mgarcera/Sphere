@@ -50,6 +50,18 @@ struct ContentView: View {
     /// the editor into a sheet still dismissing is the refusal that cost ten
     /// seconds once already.
     @State private var pendingChoice: EventChoice?
+    /// What the New/Open sheet is deciding about (Mason, 2026-10-10).
+    ///
+    /// The header button asks about the event under the DOT and creates at the focus, which is
+    /// all a wheel could say. A tap asks about the event under the FINGER and creates at the
+    /// time under the finger, and the two differ by however far the tap was from the centre of
+    /// the screen. So the sheet carries both answers with it rather than reading the model when
+    /// it closes.
+    private struct ChoiceContext {
+        let event: EKEvent
+        let start: Date
+    }
+    @State private var choiceContext: ChoiceContext?
     @State private var pickedDay: Date = .now
     /// Which side of the horizon the Sky mode is on.
     ///
@@ -149,16 +161,12 @@ struct ContentView: View {
             }
         }
         .sheet(isPresented: $isEventChoiceOpen, onDismiss: {
-            guard let choice = pendingChoice else { return }
+            guard let choice = pendingChoice, let context = choiceContext else { return }
             pendingChoice = nil
+            choiceContext = nil
             switch choice {
-            case .open:
-                if let active = model.activeEvent,
-                   let event = calendar.occurrence(for: active.id) {
-                    editorTarget = .existing(event)
-                }
-            case .create:
-                editorTarget = .new(model.focusDate)
+            case .open: editorTarget = .existing(context.event)
+            case .create: editorTarget = .new(context.start)
             }
         }) {
             EventChoiceSheet { choice in
@@ -256,22 +264,30 @@ struct ContentView: View {
         // centred in, so gaining an all-day event grew the header and pushed the arc down by
         // half that growth. The drawing moved because a list did.
         arcBlock
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
             // The arc's content fades at both edges, which is true — there IS more day that
             // way — and is the one signifier a horizontally scrolling surface has.
             .modifier(ScrubAffordance(mark: markColour))
-            .overlay(alignment: .topLeading) {
-                header
-                    .padding(.top, 12)
-            }
-            // A and C: the same hand, once on first run or whenever it is asked for.
-            .overlay {
+            // Above the clouds (Mason, 2026-10-10), and FIXED rather than measured: anchored to
+            // the arc block's own top edge and lifted its whole height clear of it. The decks
+            // are clipped to that block — the high deck rides 104 points off the curve and a
+            // storm swells another 22 — so the block's top edge is the one line no cloud can
+            // cross, whatever the sun is doing. Measuring the band to the pinned header instead
+            // made the placement depend on the screen: 172 points on an iPhone 17 Pro, 74 on
+            // the Duo folded, so the same hand sat in three different places.
+            .overlay(alignment: .top) {
                 if showsGhost {
                     GhostHand(mark: markColour) {
                         withAnimation(.easeOut(duration: 0.4)) { showsGhost = false }
                     }
+                    .padding(.horizontal, 24)
+                    .offset(y: -(GhostHand.height + 8))
                     .transition(.opacity)
                 }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .overlay(alignment: .topLeading) {
+                header
+                    .padding(.top, 12)
             }
             .task {
                 guard !ghostSeen else { return }
@@ -792,30 +808,39 @@ struct ContentView: View {
     /// path are one press to the thumb, and only this level knows that. Ringing
     /// deeper meant the same press rang or not depending on whether something
     /// happened to be under the dot.
-    /// What is under the finger decides the action. An event opens; empty time creates AT THAT
-    /// TIME rather than at the focus, which is the thing the wheel's centre button could not say.
+    /// What is under the finger decides the action. Empty time creates AT THAT TIME rather than
+    /// at the focus, which is the thing the wheel's centre button could not say. An event asks
+    /// New or Open, because real days nest — a call inside a block, a break inside a shift — so
+    /// landing on something must not be the end of putting something there (Mason, 2026-10-10;
+    /// the same sheet the header button has shown since the wheel).
     /// All-day events are skipped — they have no hour to be tapped on.
     private func openAtTappedHour(_ hour: Double) {
         Sounds.ring(.editor)
+        let start = snappedToFiveMinutes(hour)
         let hit = model.events.first { !$0.isAllDay && $0.contains(hour) }
         if let hit, let occurrence = calendar.occurrence(for: hit.id) {
-            editorTarget = .existing(occurrence)
+            choiceContext = ChoiceContext(event: occurrence, start: start)
+            isEventChoiceOpen = true
         } else {
-            // SNAPPED to five minutes (2026-10-10). The raw tapped instant is something like
-            // 11:33:47, and EKEventEditViewController rounds that UP to the next five, so an
-            // event appeared several minutes after the spot that was tapped. Rounding to the
-            // NEAREST five here means the time the editor opens on is the time that was aimed
-            // at. Five is also finer than a fingertip: at the default window it is about 11
-            // points, so the snap never takes the tap somewhere it was not pointing.
-            let step: TimeInterval = 5 * 60
-            let raw = model.anchor.addingTimeInterval(hour * 3600).timeIntervalSince1970
-            editorTarget = .new(Date(timeIntervalSince1970: (raw / step).rounded() * step))
+            editorTarget = .new(start)
         }
+    }
+
+    /// The raw tapped instant is something like 11:33:47, and EKEventEditViewController rounds
+    /// that UP to the next five, so an event appeared several minutes after the spot that was
+    /// tapped. Rounding to the NEAREST five here means the time the editor opens on is the time
+    /// that was aimed at. Five is also finer than a fingertip: at the default window it is about
+    /// 11 points, so the snap never takes the tap somewhere it was not pointing.
+    private func snappedToFiveMinutes(_ hour: Double) -> Date {
+        let step: TimeInterval = 5 * 60
+        let raw = model.anchor.addingTimeInterval(hour * 3600).timeIntervalSince1970
+        return Date(timeIntervalSince1970: (raw / step).rounded() * step)
     }
 
     private func openEditor() {
         Sounds.ring(.editor)
-        if model.activeEvent.flatMap({ calendar.occurrence(for: $0.id) }) != nil {
+        if let event = model.activeEvent.flatMap({ calendar.occurrence(for: $0.id) }) {
+            choiceContext = ChoiceContext(event: event, start: model.focusDate)
             isEventChoiceOpen = true
         } else {
             editorTarget = .new(model.focusDate)

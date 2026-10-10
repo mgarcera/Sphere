@@ -29,7 +29,26 @@ final class DayModel {
     /// Width of the visible slice, in hours. A VARIABLE since 2026-10-10: pinching the arc
     /// changes it, which is the only way to see the day as an arc rather than as the shallow
     /// diagonal three hours of elevation makes near noon.
-    var windowHours: Double = DayModel.defaultWindowHours
+    /// Survives a launch (Mason, 2026-10-10): the window is a reading preference, like the
+    /// appearance or the hidden calendars, not a per-session position. `focusHour` is the
+    /// opposite case and still starts at now.
+    var windowHours: Double = DayModel.storedWindowHours {
+        didSet {
+            guard windowHours != oldValue else { return }
+            UserDefaults.standard.set(windowHours, forKey: DayModel.windowKey)
+        }
+    }
+
+    static let windowKey = "windowHours"
+
+    /// Clamped only at the ends a bad value could reach. The pinch clamps against the real
+    /// screen width, which is unknown here, so a window restored onto a narrower screen than it
+    /// was set on stays as it was until the next pinch brings it into range.
+    private static var storedWindowHours: Double {
+        guard let stored = UserDefaults.standard.object(forKey: windowKey) as? Double,
+              stored.isFinite else { return defaultWindowHours }
+        return min(max(stored, minWindowHours), 24)
+    }
 
     /// Where a pinch starts from and what a double-pinch-out returns to.
     static let defaultWindowHours: Double = 3

@@ -15,6 +15,11 @@ import SwiftUI
 /// shorter ones because a surface that follows your finger explains itself in the first few
 /// millimetres, and anyone who has used Photos will try a pinch on anything that looks zoomable.
 struct GhostHand: View {
+    /// What the hand needs vertically: the 72-point fingertip row, the 28-point gap, and a
+    /// caption that wraps to two lines at the longest beat. Used to decide whether the band
+    /// above the arc can hold it, which is a question only the caller can answer.
+    static let height: CGFloat = 134
+
     let mark: Color
     var onFinish: () -> Void = {}
 

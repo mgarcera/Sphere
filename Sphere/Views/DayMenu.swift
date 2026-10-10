@@ -99,8 +99,8 @@ struct DayMenu: View {
 
                 // Its own section (Mason, 2026-10-09), after Calendars because that is what it
                 // notifies about: a calendar switched off above does not notify either.
-                // "Alerts" in sentence case like every other header here; `section` applies
-                // .textCase(.uppercase), so it renders as ALERTS.
+                // "Alerts" in sentence case like every other header here, and since 2026-10-10
+                // it renders that way: `section` no longer uppercases.
                 //
                 // Shown unless access is denied, rather than only when calendars exist. The
                 // previous placement inside Calendars made the control vanish for an account with
@@ -491,9 +491,13 @@ struct DayMenu: View {
                     // in the primary ink. Held back in grey they read as
                     // captions on the rows below rather than as the thing that
                     // divides the sheet.
-                    .font(.display(12))
-                    .tracking(1.1)
-                    .textCase(.uppercase)
+                    //
+                    // 24 rather than 12 since 2026-10-10: the same size as the place name at the
+                    // top of the sheet, so every heading in the menu is one size and the
+                    // hierarchy comes from position rather than from scale. Sentence case, and
+                    // the tracking went with the uppercase: both were there to hold a 12pt label
+                    // apart, and at 24 they only loosen the word (Mason, same day).
+                    .font(.display(24))
                     .foregroundStyle(Theme.ink)
                 Spacer(minLength: 8)
                 trailing()
