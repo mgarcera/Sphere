@@ -11,7 +11,8 @@ struct DayMenu: View {
     let weather: WeatherService
     let notifications: EventNotifications
     @Binding var appearance: Appearance
-    @AppStorage(WheelMapping.bottomKey) private var bottomPrimary: WheelAction = .now
+    @AppStorage(Haptics.key) private var hapticsEnabled = true
+    @AppStorage(Sounds.key) private var soundsEnabled = false
     let onDismiss: () -> Void
 
     @State private var isFeedbackOpen = false
@@ -34,6 +35,30 @@ struct DayMenu: View {
                     }
                     .pickerStyle(.segmented)
                     .padding(.vertical, 4)
+
+                    // Back here, and back to plain names (Mason, 2026-10-10). They were "Wheel
+                    // haptics" and "Wheel sounds" for a day; the wheel is gone and they are now
+                    // simply how the app answers a touch.
+                    Toggle(isOn: $hapticsEnabled) {
+                        Text("Haptics")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.ink)
+                    }
+                    .tint(Theme.controlAccent)
+                    .padding(.vertical, 3)
+
+                    Toggle(isOn: $soundsEnabled) {
+                        Text("Sounds")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.ink)
+                    }
+                    .tint(Theme.controlAccent)
+                    .padding(.vertical, 3)
+                    .onChange(of: soundsEnabled) { _, on in
+                        // Decode on the way in, so the first bell after switching it on is not
+                        // the one that lands late.
+                        if on { Sounds.warm() }
+                    }
                 }
 
                 if !calendar.sources.isEmpty {
@@ -85,11 +110,6 @@ struct DayMenu: View {
                     section("Alerts") {
                         notificationRows
                     }
-                }
-
-                divider
-                section("Wheel") {
-                    WheelSettings(bottomPrimary: $bottomPrimary)
                 }
 
                 divider

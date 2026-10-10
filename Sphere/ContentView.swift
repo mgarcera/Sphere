@@ -259,26 +259,6 @@ struct ContentView: View {
                     .padding(.top, 12)
             }
             .padding(.vertical, 24)
-        // PROVISIONAL (2026-10-09): the wheel is gone and MENU went with it, which took the only
-        // route to settings, calendars and feedback. This button exists so the app is not
-        // stranded while the abstract layer is designed. It is placed, not designed.
-        .overlay(alignment: .bottomTrailing) {
-            Button {
-                Sounds.ring(.menu)
-                isMenuOpen = true
-            } label: {
-                Text("MENU")
-                    .font(.system(size: 12, weight: .semibold))
-                    .tracking(1.1)
-                    .foregroundStyle(markColour)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .padding(.trailing, 20)
-            .padding(.bottom, 16)
-        }
     }
 
     /// The drawing alone. The header and the weather line left for the top of the screen, so
