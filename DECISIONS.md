@@ -1531,3 +1531,29 @@ have shipped, because nobody reviews at 11pm.
 
 **A property doing two jobs with one of them documented is the shape to watch for.** The sweep
 proved the symbol was unreferenced; it could not prove the symbol was understood.
+
+## 2026-10-10 — teaching five gestures
+
+Three directions were built and switched between. The premise worth naming first: three earlier
+attempts in this app all assumed **the gesture must be explained** — the arc tap was removed on
+2026-09-01 because nothing could label it, `WheelTip` is a card that names a gesture, and
+`WheelSettings`' own comment said its first job was documentation. One variant had to attack that.
+
+- **A, ghost.** Once on first run, a fingertip performs each gesture on the real arc with one
+  line under it. The hold's ring fills over the same 0.45s the real gesture needs, so the
+  demonstration and the gesture agree on what "hold" means.
+- **B, affordance.** No teaching layer at all: the arc's content fades at both edges, which is
+  TRUE — there is more day that way — and is the one honest signifier a horizontally scrolling
+  surface has.
+- **C, on demand.** The same hand from a row in the day menu. **Cut.** Nobody opens a menu row
+  until they are already stuck, which is after the moment it would have helped.
+
+**A and B both ship, plus a dim question mark bottom-left that replays the hand.** B does the
+work for drag, because a surface that fades at its edges says "more this way" without words. It
+cannot reach the two gestures with no visible surface — two fingers and long press — so those
+keep a hand, and the question mark makes it repeatable without burying it in a menu where C
+proved it would not be found.
+
+The one tension worth recording: a DIM mark is a grey, and the colour system says there are no
+greys. The question mark is the exception, and it earns it by being the only thing on screen
+whose job is to be ignorable.

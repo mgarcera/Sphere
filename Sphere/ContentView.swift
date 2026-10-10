@@ -59,6 +59,9 @@ struct ContentView: View {
     /// whether or not you asked — a palette crossfade is precisely what this
     /// mode exists not to do.
     @State private var skyIsNight = false
+    /// Shown once, on the first run that reaches the arc. The question mark replays it.
+    @AppStorage("teachGhostSeen") private var ghostSeen = false
+    @State private var showsGhost = false
 
     var body: some View {
         ZStack {
@@ -254,11 +257,47 @@ struct ContentView: View {
         // half that growth. The drawing moved because a list did.
         arcBlock
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // The arc's content fades at both edges, which is true — there IS more day that
+            // way — and is the one signifier a horizontally scrolling surface has.
+            .modifier(ScrubAffordance(mark: markColour))
             .overlay(alignment: .topLeading) {
                 header
                     .padding(.top, 12)
             }
+            // A and C: the same hand, once on first run or whenever it is asked for.
+            .overlay {
+                if showsGhost {
+                    GhostHand(mark: markColour) {
+                        withAnimation(.easeOut(duration: 0.4)) { showsGhost = false }
+                    }
+                    .transition(.opacity)
+                }
+            }
+            .task {
+                guard !ghostSeen else { return }
+                ghostSeen = true
+                try? await Task.sleep(for: .milliseconds(900))
+                withAnimation(.easeIn(duration: 0.4)) { showsGhost = true }
+            }
             .padding(.vertical, 24)
+            // Deliberately dim, and the one exception to "no greys": its whole job is to be
+            // ignorable until someone is looking for it. The day menu carried this for one
+            // build and nobody opens a menu row until they are already stuck.
+            .overlay(alignment: .bottomLeading) {
+                Button {
+                    withAnimation(.easeIn(duration: 0.4)) { showsGhost = true }
+                } label: {
+                    Image(systemName: "questionmark")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(markColour.opacity(0.3))
+                        .frame(width: 44, height: 44)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .padding(.leading, 8)
+                .padding(.bottom, 4)
+                .opacity(showsGhost ? 0 : 1)
+            }
     }
 
     /// The drawing alone. The header and the weather line left for the top of the screen, so
@@ -762,7 +801,15 @@ struct ContentView: View {
         if let hit, let occurrence = calendar.occurrence(for: hit.id) {
             editorTarget = .existing(occurrence)
         } else {
-            editorTarget = .new(model.anchor.addingTimeInterval(hour * 3600))
+            // SNAPPED to five minutes (2026-10-10). The raw tapped instant is something like
+            // 11:33:47, and EKEventEditViewController rounds that UP to the next five, so an
+            // event appeared several minutes after the spot that was tapped. Rounding to the
+            // NEAREST five here means the time the editor opens on is the time that was aimed
+            // at. Five is also finer than a fingertip: at the default window it is about 11
+            // points, so the snap never takes the tap somewhere it was not pointing.
+            let step: TimeInterval = 5 * 60
+            let raw = model.anchor.addingTimeInterval(hour * 3600).timeIntervalSince1970
+            editorTarget = .new(Date(timeIntervalSince1970: (raw / step).rounded() * step))
         }
     }
 
