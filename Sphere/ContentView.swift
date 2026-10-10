@@ -101,12 +101,15 @@ struct ContentView: View {
                 // so the location one arrived with its reason two screens of attention earlier
                 // (2026-10-04).
                 FirstRunFlow(calendar: calendar, location: location) {
-                    gate.markOnboardingComplete()
+                    // The one animation this swap is allowed, and it is explicit: the reader
+                    // pressed Start, the app is active, nothing is waiting on an alert.
+                    withAnimation(.easeInOut(duration: 0.6)) { gate.markOnboardingComplete() }
                     reload()
                 }
                 .transition(.opacity)
             } else {
                 day
+                    .transition(.opacity)
             }
 
             // Invisible, and behind everything: it only exists to present the
@@ -223,7 +226,11 @@ struct ContentView: View {
             // Ask independently of priming. Anyone who granted calendar before
             // location existed never sees that screen again, and was silently
             // getting Chicago's sky.
-            if location.access == .undetermined { location.request() }
+            // NOT here (Mason, 2026-10-10). This raised the location prompt the instant the app
+            // launched, on top of the first-run flow's own calendar screen — two asks at once,
+            // which is the thing FirstRunFlow was split in two to avoid (2026-10-04), and it is
+            // not what the words on screen were talking about. The flow's weather step asks;
+            // `requestLocationIfPastOnboarding` below covers every later launch.
             await weather.load(coordinate: location.coordinate)
             model.applySky(from: weather)
             reload()
@@ -276,6 +283,10 @@ struct ContentView: View {
             }
         }
         .onChange(of: calendar.hiddenSourceIDs) { _, _ in reload() }
+        // For someone already past the onboarding: the flow is where a first run is asked, and
+        // this is the only other place that asks.
+        .onChange(of: gate?.hasResolved) { _, _ in requestLocationIfPastOnboarding() }
+        .onChange(of: gate?.state) { _, _ in requestLocationIfPastOnboarding() }
     }
 
     private var day: some View {
@@ -868,6 +879,20 @@ struct ContentView: View {
         let step: TimeInterval = 5 * 60
         let raw = model.anchor.addingTimeInterval(hour * 3600).timeIntervalSince1970
         return Date(timeIntervalSince1970: (raw / step).rounded() * step)
+    }
+
+    /// Asks for location on a launch where the onboarding will NOT, which is every launch after
+    /// the first.
+    ///
+    /// The test is `.ready`, not "anything but `.new`". `.waiting` comes first and means the gate
+    /// does not yet know, and reading it as "not new" raised the prompt on the very first launch
+    /// a few milliseconds before the onboarding appeared — which is the thing this method exists
+    /// to stop (2026-10-10). `.settling` and `.arrivedLate` are first-run states too; none of
+    /// them is a launch that owes a prompt.
+    private func requestLocationIfPastOnboarding() {
+        guard let gate, gate.hasResolved, gate.state == .ready else { return }
+        guard location.access == .undetermined else { return }
+        location.request()
     }
 
     private func openEditor() {

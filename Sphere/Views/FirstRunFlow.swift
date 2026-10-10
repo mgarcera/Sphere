@@ -22,11 +22,30 @@ struct FirstRunFlow: View {
     let location: LocationService
     let onFinish: () -> Void
 
-    @State private var run: OnboardingRun?
+    /// Built in `init`, NOT in a `.task` — and that is a bug fix, not a style (2026-10-10).
+    ///
+    /// It used to start nil and be filled by the `.task` below. While it was nil the `Group`
+    /// below held nothing, an empty view has nothing to appear, and `.task` and `.onAppear`
+    /// attached to one are not guaranteed to run: on a first launch they did not. So the task
+    /// that was supposed to fill `run` was waiting on a view that could not exist until `run`
+    /// was filled. The app drew its sky and nothing else, for good, and the accessibility tree
+    /// held four full-size containers and not a single leaf.
+    ///
+    /// It survived because it is timing-dependent and because ANY view added to this branch
+    /// breaks the deadlock — every probe put one there and every probe came back clean.
+    @State private var run: OnboardingRun
+
+    init(calendar: CalendarService, location: LocationService, onFinish: @escaping () -> Void) {
+        self.calendar = calendar
+        self.location = location
+        self.onFinish = onFinish
+        _run = State(initialValue: OnboardingRun(steps: Self.steps(calendar: calendar,
+                                                                   location: location)))
+    }
 
     var body: some View {
         Group {
-            if let run, let step = run.current {
+            if let step = run.current {
                 OnboardingScreen(
                     title: step.title,
                     emphasis: emphasis(in: step.id),
@@ -44,23 +63,32 @@ struct FirstRunFlow: View {
                 }
             }
         }
-        .animation(.smooth(duration: 0.35), value: run?.index)
-        .task {
-            guard run == nil else { return }
-            run = OnboardingRun(steps: steps)
-        }
-        .onChange(of: run?.isFinished) { _, finished in
+        // A floor under the whole screen, so this branch is never an empty view. Nothing is
+        // drawn and nothing is hit-tested; it exists so the modifiers below always have a view
+        // to attach to, which is the hole the blank screen came through (2026-10-10).
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(.rect)
+        .animation(.smooth(duration: 0.35), value: run.index)
+        .onChange(of: run.isFinished) { _, finished in
             if finished == true { onFinish() }
+        }
+        .task {
+            // The run can be born finished when there are no steps at all, and `onChange` does
+            // not fire for a value that was already set when the view appeared.
+            if run.isFinished { onFinish() }
         }
     }
 
     /// "Continue" before a system alert, never "Allow" or "Enable" — Apple names those as
     /// manipulation on a screen standing in front of a prompt.
     private func label(for step: OnboardingStep) -> String {
-        step.isSkippable ? OnboardingCopy.next : OnboardingCopy.continueToPermission
+        if step.id == "ready" { return OnboardingCopy.done }
+        return step.isSkippable ? OnboardingCopy.next : OnboardingCopy.continueToPermission
     }
 
-    private var steps: [OnboardingStep] {
+    private var steps: [OnboardingStep] { Self.steps(calendar: calendar, location: location) }
+
+    private static func steps(calendar: CalendarService, location: LocationService) -> [OnboardingStep] {
         [
             OnboardingStep(
                 id: "calendar",
@@ -83,6 +111,17 @@ struct FirstRunFlow: View {
                 // compiles today under Swift 5 and is an error under Swift 6 (2026-10-04).
                 await MainActor.run { location.request() }
             },
+
+            // Nothing to grant and nothing to wait for (Mason, 2026-10-10). Without it the last
+            // permission answer dropped straight onto the arc, which read as the app lurching
+            // rather than starting. It also gives the location answer somewhere to land: the
+            // prompt is raised by the step before this one and answered over it.
+            OnboardingStep(
+                id: "ready",
+                title: "That’s everything.",
+                body: "Your day is drawn and waiting.\n\(OnboardingCopy.reversible)",
+                isSkippable: true
+            ),
         ]
     }
 
