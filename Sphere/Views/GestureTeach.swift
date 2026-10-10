@@ -22,14 +22,23 @@ struct GhostHand: View {
     @State private var slide: CGFloat = 0
     @State private var press: CGFloat = 0
     @State private var spread: CGFloat = 0
+    /// The press itself. 0.96 and never lower: below 0.95 a press reads as exaggerated rather
+    /// than as a touch.
+    @State private var pop: CGFloat = 1
 
-    private struct Beat { let word: String; let fingers: Int }
+    /// Keyed by KIND rather than by position, so the order below is free to change without the
+    /// animations following the wrong beat.
+    private enum Kind { case drag, tap, twoFingerTap, hold, pinch }
+    private struct Beat { let word: String; let fingers: Int; let kind: Kind }
+
+    /// Mason's order (2026-10-10), with drag leading because it is the one the arc's edge fade
+    /// already hints at, so the hand starts on the gesture the screen has half-introduced.
     private static let beats = [
-        Beat(word: "drag to move through the day", fingers: 1),
-        Beat(word: "tap an hour to make something", fingers: 1),
-        Beat(word: "hold for the menu", fingers: 1),
-        Beat(word: "two fingers to come back to now", fingers: 2),
-        Beat(word: "pinch to see more of the day", fingers: 2),
+        Beat(word: "drag to move through the day", fingers: 1, kind: .drag),
+        Beat(word: "tap to create or open an event", fingers: 1, kind: .tap),
+        Beat(word: "tap two fingers to come back to the current time", fingers: 2, kind: .twoFingerTap),
+        Beat(word: "hold for the menu", fingers: 1, kind: .hold),
+        Beat(word: "pinch in and out to zoom", fingers: 2, kind: .pinch),
     ]
 
     var body: some View {
@@ -43,12 +52,13 @@ struct GhostHand: View {
                     .stroke(mark.opacity(0.5), style: StrokeStyle(lineWidth: 2, lineCap: .round))
                     .frame(width: 52, height: 52)
                     .rotationEffect(.degrees(-90))
-                    .opacity(beat == 2 ? 1 : 0)
+                    .opacity(Self.beats[min(beat, Self.beats.count - 1)].kind == .hold ? 1 : 0)
 
                 HStack(spacing: current.fingers == 2 ? 26 + spread : 0) {
                     fingertip
                     if current.fingers == 2 { fingertip }
                 }
+                .scaleEffect(pop)
                 .offset(x: slide)
             }
             .frame(height: 72)
@@ -71,21 +81,31 @@ struct GhostHand: View {
     private func run() async {
         for index in Self.beats.indices {
             beat = index
-            slide = 0; press = 0; spread = 0
-            switch index {
-            case 0: withAnimation(.easeInOut(duration: 1.1)) { slide = -70 }
-                    try? await Task.sleep(for: .milliseconds(1_200))
-                    withAnimation(.easeInOut(duration: 1.1)) { slide = 60 }
-            case 1: withAnimation(.easeOut(duration: 0.18)) { press = 1 }
-                    try? await Task.sleep(for: .milliseconds(200))
-                    withAnimation(.easeIn(duration: 0.18)) { press = 0 }
-            case 2: withAnimation(.linear(duration: 0.45)) { press = 1 }
-            case 3: withAnimation(.easeOut(duration: 0.16)) { spread = -4 }
-                    try? await Task.sleep(for: .milliseconds(180))
-                    withAnimation(.easeIn(duration: 0.16)) { spread = 0 }
-            default: withAnimation(.easeInOut(duration: 1.0)) { spread = 58 }
+            slide = 0; press = 0; spread = 0; pop = 1
+            switch Self.beats[index].kind {
+            case .drag:
+                withAnimation(.easeInOut(duration: 1.1)) { slide = -70 }
+                try? await Task.sleep(for: .milliseconds(1_200))
+                withAnimation(.easeInOut(duration: 1.1)) { slide = 60 }
+            case .tap, .twoFingerTap:
+                // Down fast and flat, back on a spring that overshoots a little, which is what
+                // makes it read as a tap rather than as a shrink. Twice, because one pop at this
+                // size is easy to miss.
+                for _ in 0..<2 {
+                    withAnimation(.easeIn(duration: 0.09)) { pop = 0.96 }
+                    try? await Task.sleep(for: .milliseconds(110))
+                    withAnimation(.spring(response: 0.26, dampingFraction: 0.55)) { pop = 1 }
+                    try? await Task.sleep(for: .milliseconds(360))
+                }
+            case .hold:
+                withAnimation(.easeIn(duration: 0.12)) { pop = 0.96 }
+                withAnimation(.linear(duration: 0.45)) { press = 1 }
+                try? await Task.sleep(for: .milliseconds(520))
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { pop = 1 }
+            case .pinch:
+                withAnimation(.easeInOut(duration: 1.0)) { spread = 58 }
             }
-            try? await Task.sleep(for: .milliseconds(index == 0 ? 2_600 : 1_900))
+            try? await Task.sleep(for: .milliseconds(Self.beats[index].kind == .drag ? 2_600 : 1_900))
         }
         onFinish()
     }
