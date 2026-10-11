@@ -25,10 +25,12 @@ struct TimeChoiceSheet: View {
 
     var body: some View {
         ChoiceSheet {
-            // Now leads, as the one you reach for without thinking. Create is the middle because
-            // it is the most common of the three and the thumb lands there.
+            // Now leads, as the one you reach for without thinking. New event is the middle
+            // because it is the most common of the three and the thumb lands there. It reads
+            // "New event" rather than "Create" so the two sheets name the same act the same way
+            // (Mason, 2026-10-10).
             ChoiceCard(mark: .now, title: "Now") { onChoose(.now) }
-            ChoiceCard(mark: .newEvent, title: "Create") { onChoose(.create) }
+            ChoiceCard(mark: .newEvent, title: "New event") { onChoose(.create) }
             ChoiceCard(mark: .calendar, title: "Pick date") { onChoose(.pickDate) }
         }
     }

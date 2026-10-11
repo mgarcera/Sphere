@@ -209,6 +209,7 @@ struct ContentView: View {
             switch choice {
             case .open: editorTarget = .existing(context.event)
             case .create: editorTarget = .new(context.start)
+            case .pickDate: isDayPickerOpen = true
             }
         }) {
             EventChoiceSheet { choice in
