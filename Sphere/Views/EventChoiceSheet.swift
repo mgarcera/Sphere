@@ -29,13 +29,17 @@ struct EventChoiceSheet: View {
     static let height: CGFloat = ChoiceSheet<EmptyView>.height
 
     var body: some View {
-        ChoiceSheet {
+        ChoiceSheet { EventChoiceSheet.cards(onChoose: onChoose) }
+    }
+
+    /// Shared by the sheet and by `ChoicePanel`, so the two presentations cannot drift.
+    @ViewBuilder
+    static func cards(onChoose: @escaping (EventChoice) -> Void) -> some View {
             // Open leads: it is the one that is about the thing you aimed at. The other two are
             // the same two the time sheet offers, in the same order, so the pair reads as one
             // set with its first card swapped.
             ChoiceCard(mark: .openEvent, title: "Open") { onChoose(.open) }
             ChoiceCard(mark: .newEvent, title: "New event") { onChoose(.create) }
             ChoiceCard(mark: .calendar, title: "Pick date") { onChoose(.pickDate) }
-        }
     }
 }

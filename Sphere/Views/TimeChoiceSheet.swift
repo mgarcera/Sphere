@@ -24,7 +24,12 @@ struct TimeChoiceSheet: View {
     static let height: CGFloat = ChoiceSheet<EmptyView>.height
 
     var body: some View {
-        ChoiceSheet {
+        ChoiceSheet { TimeChoiceSheet.cards(onChoose: onChoose) }
+    }
+
+    /// Shared by the sheet and by `ChoicePanel`, so the two presentations cannot drift.
+    @ViewBuilder
+    static func cards(onChoose: @escaping (TimeChoice) -> Void) -> some View {
             // Now leads, as the one you reach for without thinking. New event is the middle
             // because it is the most common of the three and the thumb lands there. It reads
             // "New event" rather than "Create" so the two sheets name the same act the same way
@@ -32,6 +37,5 @@ struct TimeChoiceSheet: View {
             ChoiceCard(mark: .now, title: "Now") { onChoose(.now) }
             ChoiceCard(mark: .newEvent, title: "New event") { onChoose(.create) }
             ChoiceCard(mark: .calendar, title: "Pick date") { onChoose(.pickDate) }
-        }
     }
 }

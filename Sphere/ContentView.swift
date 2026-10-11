@@ -75,6 +75,27 @@ struct ContentView: View {
     @AppStorage("teachGhostSeen") private var guideSeen = false
     @State private var isGuideOpen = false
 
+    /// The window's size, so a detent can be capped against the screen it is opening on. The
+    /// sheets are attached here rather than inside `day`, so this is the only place that knows.
+    @State private var screenSize: CGSize = .zero
+    /// The same test the layout uses, against the window rather than the day area. A screen tall
+    /// enough to stack is tall enough for a bottom sheet.
+    ///
+    /// Named for the height it measures rather than for the orientation it used to mean: the
+    /// Duo's inner display is landscape and is NOT short, and a name that said otherwise would
+    /// have been read as an orientation check by the next person (2026-10-10).
+    private var isShortScreen: Bool {
+        screenSize.height > 0 && screenSize.height < Self.stackedMinimumHeight
+    }
+
+    /// Never taller than most of the screen. Every detent below was a constant chosen against
+    /// an 874-point portrait screen; landscape gives them 402, where 300 is three quarters of
+    /// the view and the day picker's 420 was taller than the screen outright (2026-10-10).
+    private func detent(_ ideal: CGFloat) -> CGFloat {
+        guard screenSize.height > 0 else { return ideal }
+        return min(ideal, max(180, screenSize.height * 0.85))
+    }
+
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
@@ -117,6 +138,34 @@ struct ContentView: View {
                     .transition(.opacity)
             }
 
+            // Landscape's answer to the two choice sheets. Same cards, same callbacks, and the
+            // same dismissal discipline — the choice is held and acted on after the panel is
+            // gone, because the day picker and the editor are sheets and presenting one into a
+            // view that is still leaving is the refusal that cost ten seconds once already.
+            if isShortScreen, isTimeChoiceOpen {
+                ChoicePanel {
+                    withAnimation(.easeOut(duration: 0.2)) { isTimeChoiceOpen = false }
+                } cards: {
+                    TimeChoiceSheet.cards { choice in
+                        pendingTimeChoice = choice
+                        withAnimation(.easeOut(duration: 0.2)) { isTimeChoiceOpen = false }
+                        actOnTimeChoice()
+                    }
+                }
+            }
+
+            if isShortScreen, isEventChoiceOpen {
+                ChoicePanel {
+                    withAnimation(.easeOut(duration: 0.2)) { isEventChoiceOpen = false }
+                } cards: {
+                    EventChoiceSheet.cards { choice in
+                        pendingChoice = choice
+                        withAnimation(.easeOut(duration: 0.2)) { isEventChoiceOpen = false }
+                        actOnEventChoice()
+                    }
+                }
+            }
+
             // Invisible, and behind everything: it only exists to present the
             // EventKit controllers from a real view controller.
             EventKitHost(target: $editorTarget, store: calendar.store) {
@@ -126,6 +175,7 @@ struct ContentView: View {
             .allowsHitTesting(false)
         }
         .animation(.easeInOut(duration: 0.25), value: calendar.access)
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { screenSize = $0 }
         .task {
             guard gate == nil else { return }
             let calendarService = calendar
@@ -160,7 +210,7 @@ struct ContentView: View {
             .padding(.top, 12)
             .frame(maxWidth: .infinity, alignment: .top)
             .background(Theme.background)
-            .presentationDetents([.height(420)])
+            .presentationDetents([.height(detent(420))])
             .presentationDragIndicator(.hidden)
             .onChange(of: pickedDay) { _, day in
                 isDayPickerOpen = false
@@ -171,29 +221,16 @@ struct ContentView: View {
         }
         .sheet(isPresented: $isGuideOpen) {
             GestureGuide()
-                .presentationDetents([.height(GestureGuide.height)])
+                .presentationDetents([.height(detent(GestureGuide.height))])
                 // Hidden, like the other two (Mason, 2026-10-10). It was shown for one build on
                 // the argument that a sheet which is read rather than answered owes a visible
                 // way out; a grabber over a page of hands is one more mark competing with the
                 // six being demonstrated, and a sheet drags down whether or not it says so.
                 .presentationDragIndicator(.hidden)
         }
-        .sheet(isPresented: $isTimeChoiceOpen, onDismiss: {
-            guard let choice = pendingTimeChoice else { return }
-            let start = timeChoiceStart ?? model.focusDate
-            pendingTimeChoice = nil
-            timeChoiceStart = nil
-            switch choice {
-            case .now:
-                guard !model.isFocusedOnNow else { return }
-                Haptics.warm()
-                Sounds.ring(.now)
-                travel { model.returnToNow() }
-            case .create:
-                editorTarget = .new(start)
-            case .pickDate:
-                isDayPickerOpen = true
-            }
+        .sheet(isPresented: Binding(get: { isTimeChoiceOpen && !isShortScreen },
+                                    set: { isTimeChoiceOpen = $0 }), onDismiss: {
+            actOnTimeChoice()
         }) {
             TimeChoiceSheet { choice in
                 pendingTimeChoice = choice
@@ -202,15 +239,9 @@ struct ContentView: View {
             .presentationDetents([.height(TimeChoiceSheet.height)])
             .presentationDragIndicator(.hidden)
         }
-        .sheet(isPresented: $isEventChoiceOpen, onDismiss: {
-            guard let choice = pendingChoice, let context = choiceContext else { return }
-            pendingChoice = nil
-            choiceContext = nil
-            switch choice {
-            case .open: editorTarget = .existing(context.event)
-            case .create: editorTarget = .new(context.start)
-            case .pickDate: isDayPickerOpen = true
-            }
+        .sheet(isPresented: Binding(get: { isEventChoiceOpen && !isShortScreen },
+                                    set: { isEventChoiceOpen = $0 }), onDismiss: {
+            actOnEventChoice()
         }) {
             EventChoiceSheet { choice in
                 pendingChoice = choice
@@ -228,7 +259,7 @@ struct ContentView: View {
             }
             // One detent, so it cannot be dragged open. It is a glance, not a
             // list view.
-            .presentationDetents([.height(AllDaySheet.height(for: model.allDayEvents.count))])
+            .presentationDetents([.height(detent(AllDaySheet.height(for: model.allDayEvents.count)))])
             .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $isMenuOpen) {
@@ -320,17 +351,32 @@ struct ContentView: View {
     /// no vertical room left to find. Landscape's room is horizontal (2026-10-10).
     private var day: some View {
         GeometryReader { proxy in
-            if proxy.size.width > proxy.size.height {
-                landscapeDay(width: proxy.size.width)
+            if proxy.size.height < Self.stackedMinimumHeight {
+                shortScreenDay(width: proxy.size.width)
             } else {
                 portraitDay
             }
         }
     }
 
-    /// The header takes a column and stops competing for height. Nothing is scaled down and
-    /// nothing is clipped: the same arc, the same header, side by side.
-    private func landscapeDay(width: CGFloat) -> some View {
+    /// Below this, the header and the arc go side by side; at or above it they stack.
+    ///
+    /// The test is HEIGHT, not orientation (Mason, 2026-10-10: the Duo's inner display in
+    /// landscape has the room, and columns there are solving a problem it does not have). The
+    /// arithmetic: the arc block is 322 tall and centres in the space, so its top sits at
+    /// (H - 322) / 2, and the header runs from 12 down to about 112 with no all-day events. The
+    /// header clears the block's sky gutter — the band the clouds draw in — when
+    /// 112 <= (H - 322) / 2, which is H >= 546. 560 for air.
+    ///
+    /// A regular iPhone in landscape has 382 and gets columns; the Duo's inner display has about
+    /// 640 and stacks. The honest caveat: three all-day events push the header to about 170,
+    /// which needs 662, so at the bottom of the stacked range a full header reaches into the
+    /// gutter again. That is a smaller fault than columns on a screen with room to spare.
+    private static let stackedMinimumHeight: CGFloat = 560
+
+    /// Two columns, for a screen without the height to stack. The header takes a column and
+    /// stops competing for height; nothing is scaled down and nothing is clipped.
+    private func shortScreenDay(width: CGFloat) -> some View {
         HStack(alignment: .center, spacing: 0) {
             header
                 .frame(width: Self.headerColumn(in: width), alignment: .topLeading)
@@ -941,6 +987,37 @@ struct ContentView: View {
     /// a few milliseconds before the onboarding appeared — which is the thing this method exists
     /// to stop (2026-10-10). `.settling` and `.arrivedLate` are first-run states too; none of
     /// them is a launch that owes a prompt.
+    /// What a choice means, in one place. The sheet calls it from `onDismiss` and the landscape
+    /// panel calls it as it closes, so the two presentations can never answer differently.
+    private func actOnTimeChoice() {
+        guard let choice = pendingTimeChoice else { return }
+        let start = timeChoiceStart ?? model.focusDate
+        pendingTimeChoice = nil
+        timeChoiceStart = nil
+        switch choice {
+        case .now:
+            guard !model.isFocusedOnNow else { return }
+            Haptics.warm()
+            Sounds.ring(.now)
+            travel { model.returnToNow() }
+        case .create:
+            editorTarget = .new(start)
+        case .pickDate:
+            isDayPickerOpen = true
+        }
+    }
+
+    private func actOnEventChoice() {
+        guard let choice = pendingChoice, let context = choiceContext else { return }
+        pendingChoice = nil
+        choiceContext = nil
+        switch choice {
+        case .open: editorTarget = .existing(context.event)
+        case .create: editorTarget = .new(context.start)
+        case .pickDate: isDayPickerOpen = true
+        }
+    }
+
     private func requestLocationIfPastOnboarding() {
         guard let gate, gate.hasResolved, gate.state == .ready else { return }
         guard location.access == .undetermined else { return }

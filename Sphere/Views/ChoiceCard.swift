@@ -51,6 +51,42 @@ struct ChoiceSheet<Content: View>: View {
     }
 }
 
+/// The same cards, centred, for a screen whose scarce axis is height.
+///
+/// A bottom sheet spends height, and landscape has 402 points of it against 874 in portrait — so
+/// the detent that reads as a quarter of the screen there covers half of it here, and the day
+/// picker's 420 was taller than the screen outright. Three cards in a row is a horizontal
+/// arrangement and landscape is a horizontal shape; this stops fighting that (Mason, 2026-10-10).
+struct ChoicePanel<Content: View>: View {
+    let onDismiss: () -> Void
+    @ViewBuilder let cards: () -> Content
+
+    var body: some View {
+        ZStack {
+            // Tapping away closes it, which is the affordance a sheet got for free from its
+            // grabber and its drag. Paper rather than black: the sheets paint their own ground
+            // and a black scrim would be the only dark thing in a light app.
+            Theme.background.opacity(0.82)
+                .ignoresSafeArea()
+                .contentShape(.rect)
+                .onTapGesture(perform: onDismiss)
+
+            HStack(spacing: 14) {
+                cards()
+            }
+            .frame(height: 132)
+            .padding(.horizontal, 22)
+            .padding(.vertical, 18)
+            .background(Theme.background)
+            .clipShape(.rect(cornerRadius: 22))
+            .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(Theme.hairline, lineWidth: 1))
+            .frame(maxWidth: 520)
+            .padding(.horizontal, 24)
+        }
+        .transition(.opacity)
+    }
+}
+
 struct DimOnPress: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
