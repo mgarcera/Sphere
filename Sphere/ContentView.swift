@@ -311,7 +311,47 @@ struct ContentView: View {
         .onChange(of: gate?.state) { _, _ in requestLocationIfPastOnboarding() }
     }
 
+    /// Two arrangements, because landscape is a different shape rather than a smaller one.
+    ///
+    /// The measurement that forced it: in landscape the window is 874x402, the arc block is 322
+    /// tall, so it spans y 36 to 358 — and its SKY GUTTER, the top 100 points where the cloud
+    /// decks draw, is y 36 to 136. The header occupied y 36 to 112. It was not sitting over the
+    /// arc, it was sitting in the clouds, and no amount of padding fixes that because there is
+    /// no vertical room left to find. Landscape's room is horizontal (2026-10-10).
     private var day: some View {
+        GeometryReader { proxy in
+            if proxy.size.width > proxy.size.height {
+                landscapeDay(width: proxy.size.width)
+            } else {
+                portraitDay
+            }
+        }
+    }
+
+    /// The header takes a column and stops competing for height. Nothing is scaled down and
+    /// nothing is clipped: the same arc, the same header, side by side.
+    private func landscapeDay(width: CGFloat) -> some View {
+        HStack(alignment: .center, spacing: 0) {
+            header
+                .frame(width: Self.headerColumn(in: width), alignment: .topLeading)
+                .frame(maxHeight: .infinity, alignment: .top)
+                .padding(.top, 12)
+
+            arcBlock
+                .modifier(ScrubAffordance(mark: markColour))
+        }
+        .padding(.vertical, 12)
+        .overlay(alignment: .bottomLeading) { guideButton }
+    }
+
+    /// Wide enough for the longest line the header sets — the date, about 130 points — with room
+    /// for an event title to wrap once, and never more than a third of the screen, because what
+    /// is left is what the arc has to draw a day in.
+    private static func headerColumn(in width: CGFloat) -> CGFloat {
+        min(300, max(220, width * 0.32))
+    }
+
+    private var portraitDay: some View {
         // One arrangement at every size (Mason, 2026-10-09: an overlay is fine in landscape).
         // The arc centres in the WHOLE space and the header sits over it, rather than above it
         // in the flow — in the flow, the header's height was subtracted from the space the arc
@@ -338,20 +378,25 @@ struct ContentView: View {
             // Deliberately dim, and the one exception to "no greys": its whole job is to be
             // ignorable until someone is looking for it. The day menu carried this for one
             // build and nobody opens a menu row until they are already stuck.
-            .overlay(alignment: .bottomLeading) {
-                Button {
-                    isGuideOpen = true
-                } label: {
-                    Image(systemName: "questionmark")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(markColour.opacity(0.3))
-                        .frame(width: 44, height: 44)
-                        .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .padding(.leading, 8)
-                .padding(.bottom, 4)
-            }
+            .overlay(alignment: .bottomLeading) { guideButton }
+    }
+
+    /// Deliberately dim, and the one exception to "no greys": its whole job is to be ignorable
+    /// until someone is looking for it. The day menu carried this for one build and nobody opens
+    /// a menu row until they are already stuck.
+    private var guideButton: some View {
+        Button {
+            isGuideOpen = true
+        } label: {
+            Image(systemName: "questionmark")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(markColour.opacity(0.3))
+                .frame(width: 44, height: 44)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .padding(.leading, 8)
+        .padding(.bottom, 4)
     }
 
     /// The drawing alone. The header and the weather line left for the top of the screen, so
