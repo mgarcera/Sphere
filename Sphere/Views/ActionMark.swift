@@ -14,43 +14,15 @@ import SwiftUI
 /// line, then that line rising into a day. One arrow steps an event and two
 /// step a day, so the pair is told apart by a count rather than by two
 /// unrelated drawings.
-/// Everything the wheel can be drawn as, taps included.
-///
-/// Kept apart from `WheelAction` so that giving MENU a picture does not put it
-/// in the pool of things a hold can be set to.
+/// Every mark the app can draw, which outlived the wheel the set was built for: the choice
+/// sheets draw their cards from it (`ChoiceCard`), and `.newEvent`, `.openEvent`, `.now` and
+/// `.calendar` are the four in use. The rest are kept as a glyph set rather than deleted —
+/// they are drawings, not wiring, and `Open in Calendar` and `New all-day event` lost their
+/// only route when the wheel went and will want one again (2026-10-10).
 enum Mark {
     case none, now, calendar, previousDay, nextDay, newAllDay
     case appearance, openCalendarApp, muteHaptics
     case menu, openEvent, newEvent, previousEvent, nextEvent
-}
-
-extension WheelAction {
-    var mark: Mark {
-        switch self {
-        case .none: .none
-        case .now: .now
-        case .calendar: .calendar
-        case .previousDay: .previousDay
-        case .nextDay: .nextDay
-        case .newAllDay: .newAllDay
-        case .appearance: .appearance
-        case .openCalendarApp: .openCalendarApp
-        case .muteHaptics: .muteHaptics
-        }
-    }
-}
-
-extension WheelPosition {
-    /// What tapping this position looks like. The bottom's follows its setting.
-    var tapMark: Mark {
-        switch self {
-        case .previous: .previousEvent
-        case .next: .nextEvent
-        case .menu: .menu
-        case .centre: .openEvent
-        case .bottom: WheelMapping.bottomPrimary.mark
-        }
-    }
 }
 
 struct ActionMark: View {

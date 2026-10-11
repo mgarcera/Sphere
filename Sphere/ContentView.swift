@@ -33,10 +33,6 @@ struct ContentView: View {
     /// a transaction we control.
     @State private var allDayCount = 0
     @AppStorage("appearance") private var appearance: Appearance = .sky
-    /// Observed rather than read once, from when the wheel drew a bottom button whose printed
-    /// word had to follow this setting. Nothing draws that button now: this is the only
-    /// reference to `WheelMapping.bottomKey` left in the repo, parked with the wheel.
-    @AppStorage(WheelMapping.bottomKey) private var bottomPrimary: WheelAction = .now
     @AppStorage(Haptics.key) private var hapticsEnabled = true
     @State private var eventsHidden = false
     @State private var isAllDayOpen = false
@@ -944,63 +940,6 @@ struct ContentView: View {
         Haptics.warm()
         Sounds.ring(.calendar)
         travel { model.focusHour = far.startDate.timeIntervalSince(model.anchor) / 3600 }
-    }
-
-    /// Everything the wheel does, in one place.
-    ///
-    /// Taps are the wheel's vocabulary and are fixed, except at the bottom,
-    /// where the printed word changes with the setting. Holds are assignable,
-    /// which is only safe because nothing is printed for them: a label that
-    /// could come to mean something else stops being readable.
-    private func press(_ position: WheelPosition, _ gesture: WheelGesture) {
-        guard gesture == .tap else { return run(WheelMapping.hold(for: position)) }
-        switch position {
-        case .previous: step(.back)
-        case .next: step(.forward)
-        case .menu: Sounds.ring(.menu); isMenuOpen = true
-        case .centre: openEditor()
-        case .bottom: run(WheelMapping.bottomPrimary)
-        }
-    }
-
-    private func run(_ action: WheelAction) {
-        switch action {
-        case .none: break
-        case .now: Sounds.ring(.now); travel { model.returnToNow() }
-        case .calendar:
-            Sounds.ring(.calendar)
-            pickedDay = model.focusDate
-            isDayPickerOpen = true
-        // The same clock time a day either side, which is what makes this
-        // different from the chevrons' tap: those land on an event, this lands
-        // on where you already were.
-        case .previousDay: travel { model.focusHour -= 24 }
-        case .nextDay: travel { model.focusHour += 24 }
-        case .newAllDay: editorTarget = .newAllDay(model.focusDate)
-        case .appearance: flipAppearance()
-        case .openCalendarApp: openCalendarApp()
-        case .muteHaptics: hapticsEnabled.toggle()
-        }
-    }
-
-    /// With two settings there is nothing to be clever about: it swaps them.
-    ///
-    /// It used to land on the opposite of what was ON SCREEN, which mattered
-    /// when a third option could be showing either. Natural Sky at night and
-    /// Dark look the same, so "opposite of what is showing" would have made the
-    /// toggle a no-op after sunset.
-    private func flipAppearance() {
-        withAnimation(.easeInOut(duration: 0.25)) {
-            appearance = appearance == .dark ? .sky : .dark
-        }
-    }
-
-    /// `calshow:` takes seconds since the 2001 reference date, so Calendar
-    /// opens on the day being looked at rather than on today.
-    private func openCalendarApp() {
-        let seconds = model.focusDate.timeIntervalSinceReferenceDate
-        guard let url = URL(string: "calshow:\(seconds)") else { return }
-        UIApplication.shared.open(url)
     }
 
     /// One click per quarter hour of scrubbed time, counted against where the

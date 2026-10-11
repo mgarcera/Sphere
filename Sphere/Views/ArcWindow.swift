@@ -25,10 +25,9 @@ struct ArcWindow: View {
     /// way. A default is a promise that one value suits every caller, and here it suited one.
     let mark: Color
 
-    /// STUDY (2026-10-09): drag the arc to scrub time, the direct version of what the wheel does
-    /// by rotation. Reported upward in HOURS rather than applied here, the same shape
-    /// `ClickWheel` uses for `onRotate`, so the model write and the detent haptics stay in one
-    /// place. Nil leaves the arc inert, which is what the onboarding demo wants.
+    /// Drag the arc to scrub time. Reported upward in HOURS rather than applied here, so the
+    /// model write and the detent haptics stay in one place. Nil leaves the arc inert, which is
+    /// what the onboarding demo wants.
     var onScrub: ((Double) -> Void)?
     var onScrubBegan: (() -> Void)?
 

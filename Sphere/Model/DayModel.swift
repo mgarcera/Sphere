@@ -23,10 +23,6 @@ final class DayModel {
     private var calendar: Calendar
     private var solarDays: [Int: SolarDay] = [:]
 
-    /// One full rotation of the wheel covered four hours. Parked with the wheel: its only use is
-    /// `scrub(byRotations:)` below, which nothing calls.
-    static let hoursPerRotation: Double = 4
-
     /// Width of the visible slice, in hours. A VARIABLE since 2026-10-10: pinching the arc
     /// changes it, which is the only way to see the day as an arc rather than as the shallow
     /// diagonal three hours of elevation makes near noon.
@@ -164,10 +160,6 @@ final class DayModel {
     var todaySolarDay: SolarDay { solarDay(todayIndex) }
     var todayHourOfDay: Double { nowHour - Double(todayIndex) * 24 }
     var nowMoonPhase: MoonPhase { MoonPhase(date: realNow) }
-
-    func scrub(byRotations rotations: Double) {
-        focusHour += rotations * Self.hoursPerRotation
-    }
 
     func returnToNow() {
         focusHour = nowHour
