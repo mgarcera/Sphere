@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Every gesture the arc has, one per page, on the same ground as the New/Open and Now/Create
-/// sheets (Mason, 2026-10-10).
+/// Every gesture the arc has, one per page, on the same ground as the three choice sheets the
+/// tap, the hold and the header button open (Mason, 2026-10-10).
 ///
 /// It was an overlay on the arc that ran all six in sequence and then left. Two things were
 /// wrong with that: a reader who missed one could not go back to it, and a layer drawn over the

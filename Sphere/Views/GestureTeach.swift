@@ -19,17 +19,26 @@ struct GestureLesson: Identifiable {
     /// edge fade already hints at, so the guide opens on the gesture the screen has
     /// half-introduced; the two ways to the menu close it as one sentence broken over two pages,
     /// which is why the last two read as a trailing clause rather than as separate rules.
+    ///
+    /// Rewritten 2026-10-13, when Now left the tap for the hold. Two pages changed and they
+    /// changed places: the hold now carries a choice and the two-finger tap is the shortcut past
+    /// it, so the hold states the pair and the shortcut follows as the clause. Still six pages,
+    /// so the dots and their spoken position are untouched.
     static let all = [
         GestureLesson(id: "drag", word: "Drag to move.", fingers: 1, kind: .drag),
         GestureLesson(id: "pinch", word: "Pinch in and out to zoom.", fingers: 2, kind: .pinch),
         GestureLesson(id: "tap",
-                      word: "Tap to jump to now, create an event, open an event, or pick a date.",
+                      word: "Tap to create an event, open an event, or pick a date.",
                       fingers: 1, kind: .tap),
         GestureLesson(id: "edge",
                       word: "Tap the left or right edges to jump between events.",
                       fingers: 1, kind: .tap),
-        GestureLesson(id: "twoFinger", word: "Either tap two fingers for the menu…", fingers: 2, kind: .twoFingerTap),
-        GestureLesson(id: "hold", word: "…or hold.", fingers: 1, kind: .hold),
+        GestureLesson(id: "hold",
+                      word: "Hold to jump to now, or open the menu…",
+                      fingers: 1, kind: .hold),
+        GestureLesson(id: "twoFinger",
+                      word: "…or tap two fingers straight to the menu.",
+                      fingers: 2, kind: .twoFingerTap),
     ]
 }
 

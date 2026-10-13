@@ -39,6 +39,7 @@ struct ContentView: View {
     @State private var isDayPickerOpen = false
     @State private var isEventChoiceOpen = false
     @State private var isTimeChoiceOpen = false
+    @State private var isHoldChoiceOpen = false
     /// Acted on after the chooser closes, never while it is closing: presenting
     /// the editor into a sheet still dismissing is the refusal that cost ten
     /// seconds once already.
@@ -59,8 +60,12 @@ struct ContentView: View {
     /// is closing, because the day picker is itself a sheet and presenting into a dismissing one
     /// is the refusal that cost ten seconds once already.
     @State private var pendingTimeChoice: TimeChoice?
-    /// Where a Create from that sheet starts. A tap fills it with the time under the finger; a
-    /// hold has no location to give, so it fills it with the focus.
+    /// Same discipline again, for the hold's own pair (Now / Menu, 2026-10-13). The menu is a
+    /// sheet, so choosing it while this one is still dismissing is the same refusal.
+    @State private var pendingHoldChoice: HoldChoice?
+    /// Where a Create from that sheet starts. A tap fills it with the time under the finger.
+    /// Nothing else fills it any more: the hold, which had no location to give and used the
+    /// focus instead, no longer offers Create.
     @State private var timeChoiceStart: Date?
     @State private var pickedDay: Date = .now
     /// Which side of the horizon the Sky mode is on.
@@ -166,6 +171,18 @@ struct ContentView: View {
                 }
             }
 
+            if isShortScreen, isHoldChoiceOpen {
+                ChoicePanel {
+                    withAnimation(.easeOut(duration: 0.2)) { isHoldChoiceOpen = false }
+                } cards: {
+                    HoldChoiceSheet.cards { choice in
+                        pendingHoldChoice = choice
+                        withAnimation(.easeOut(duration: 0.2)) { isHoldChoiceOpen = false }
+                        actOnHoldChoice()
+                    }
+                }
+            }
+
             // Invisible, and behind everything: it only exists to present the
             // EventKit controllers from a real view controller.
             EventKitHost(target: $editorTarget, store: calendar.store) {
@@ -248,6 +265,17 @@ struct ContentView: View {
                 isEventChoiceOpen = false
             }
             .presentationDetents([.height(EventChoiceSheet.height)])
+            .presentationDragIndicator(.hidden)
+        }
+        .sheet(isPresented: Binding(get: { isHoldChoiceOpen && !isShortScreen },
+                                    set: { isHoldChoiceOpen = $0 }), onDismiss: {
+            actOnHoldChoice()
+        }) {
+            HoldChoiceSheet { choice in
+                pendingHoldChoice = choice
+                isHoldChoiceOpen = false
+            }
+            .presentationDetents([.height(HoldChoiceSheet.height)])
             .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $isAllDayOpen) {
@@ -468,15 +496,18 @@ struct ContentView: View {
                       // Already clamped against the arc's own width, which is the only place
                       // that knows it.
                       onZoom: { model.windowHours = $0 },
-                      // Back to the menu (Mason, 2026-10-10, same day it left). Holding had the
-                      // time sheet for one build, and the single tap took that over: a tap
-                      // carries the time the sheet needs and the hold does not, so the hold was
-                      // the worse way in to the same three cards. The menu is what is left that
-                      // needs no aim.
+                      // Now or the menu (Mason, 2026-10-13). The hold opened the menu outright
+                      // from 2026-10-10; before that it had the time sheet for one build and
+                      // lost it to the tap, because a tap carries the time those cards decide
+                      // about and a long press reports no location at all. That is still true
+                      // and is now the reason this gesture carries BOTH of the actions that
+                      // need no aim: back to the present, or the day's menu.
                       onHold: {
                           Sounds.ring(.menu)
-                          isMenuOpen = true
+                          isHoldChoiceOpen = true
                       },
+                      // Straight to the menu still, and deliberately not the pair above: with
+                      // the menu one card behind the hold, two fingers are the direct way to it.
                       onTwoFingerTap: {
                           Sounds.ring(.menu)
                           isMenuOpen = true
@@ -961,8 +992,10 @@ struct ContentView: View {
             isEventChoiceOpen = true
         } else {
             // STUDY (Mason, 2026-10-10): a tap used to open the editor here, which was one
-            // gesture to a new event. It now asks the same three things the hold asks, so the
-            // tap costs a card for the thing it used to do directly. On trial.
+            // gesture to a new event. It asks first instead, so the tap costs a card for the
+            // thing it used to do directly. On trial. The pair it asks is down to two as of
+            // 2026-10-13 — New event or Pick date — because Now was the one card that threw
+            // away the spot the tap had aimed at, and it went to the hold.
             timeChoiceStart = start
             isTimeChoiceOpen = true
         }
@@ -995,15 +1028,28 @@ struct ContentView: View {
         pendingTimeChoice = nil
         timeChoiceStart = nil
         switch choice {
-        case .now:
-            guard !model.isFocusedOnNow else { return }
-            Haptics.warm()
-            Sounds.ring(.now)
-            travel { model.returnToNow() }
         case .create:
             editorTarget = .new(start)
         case .pickDate:
             isDayPickerOpen = true
+        }
+    }
+
+    /// The hold's pair, on the same terms as the two above: held while the sheet closes, acted
+    /// on once it has, because the menu is itself a sheet.
+    private func actOnHoldChoice() {
+        guard let choice = pendingHoldChoice else { return }
+        pendingHoldChoice = nil
+        switch choice {
+        case .now:
+            // Already there is a no-op and not an arrival, so it rings nothing. This moved here
+            // from the tap's sheet on 2026-10-13 unchanged.
+            guard !model.isFocusedOnNow else { return }
+            Haptics.warm()
+            Sounds.ring(.now)
+            travel { model.returnToNow() }
+        case .menu:
+            isMenuOpen = true
         }
     }
 

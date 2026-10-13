@@ -44,11 +44,13 @@ struct ArcWindow: View {
     /// is where a pinch belongs: both fingers can land anywhere.
     var onZoom: ((Double) -> Void)?
 
-    /// Hold opens the menu. No location needed, which is why it is the one that holds: it had
-    /// the time sheet for a single build on 2026-10-10 and gave it back to the tap, which knows
-    /// where the finger is.
+    /// Hold asks Now or Menu (2026-10-13). No location needed, which is why it is the one that
+    /// holds: it had the time sheet for a single build on 2026-10-10 and gave it back to the
+    /// tap, which knows where the finger is — and the two things left on this gesture are the
+    /// two that never wanted to know.
     var onHold: (() -> Void)?
-    /// Two fingers open the menu as well, which is a duplicate as of 2026-10-10 and known.
+    /// Two fingers open the menu outright. It was a duplicate of the hold from 2026-10-10; since
+    /// the hold asks first, it is the shortcut past the question rather than a second copy of it.
     var onTwoFingerTap: (() -> Void)?
     /// A tap inside either edge band steps to the next or previous EVENT, -1 back and +1 forward.
     /// It stepped a whole day for one build on 2026-10-10 and changed the same day: the edges are
