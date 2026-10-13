@@ -1593,3 +1593,28 @@ captured with it yet.
 
 Privacy manifest, entitlements and Info.plist are untouched since 1.2; checked by path, not by
 memory.
+
+## Now leaves the tap for the hold (2026-10-13)
+
+The tap's sheet was Now / New event / Pick date, and Now was the one card that had nothing to do
+with the time under the finger: the other two act on the spot that was aimed at, and Now throws
+that spot away to go back to the present. **A tap is an aim, so the aimless choice left the aimed
+gesture.**
+
+It went to the hold, which reports no position at all — a long press says when it happened and
+nothing about where. That was already the recorded reason the hold could not keep the time sheet
+when it had it for one build on 2026-10-10; the same fact now makes it the right carrier for the
+two actions that never wanted a position. **The hold asks Now or Menu**, two cards, built from
+the same `ChoiceCard` as the other two sheets.
+
+**The two-finger tap still opens the menu outright, and that stops being a duplicate.** It was
+one from 2026-10-10 and the code said so. With the menu a card behind the hold, two fingers are
+the direct route to it, which is the only kind of shortcut worth keeping.
+
+The guide's six pages were rewritten and two of them swapped places: the hold states the pair and
+the two-finger tap follows as its clause, which is the arrangement the two ways to the menu had
+when they were the same action. Still six pages, so the dots and the position VoiceOver speaks
+are unchanged.
+
+The cost to say out loud: the tap is down to two cards for a thing it once did in one gesture,
+and that STUDY note from 2026-10-10 is still open. Removing Now did not settle it.
