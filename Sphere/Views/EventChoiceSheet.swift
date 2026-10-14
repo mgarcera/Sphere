@@ -17,12 +17,18 @@ enum EventChoice {
 /// under the FINGER and creates at the time under the finger. The caller carries both answers
 /// in; this sheet only asks which.
 ///
-/// Two buttons and nothing else. A heading and a caption under each were tried
-/// and cut: anything that explains a one-word choice makes it look like a form.
+/// Cards and nothing else. A heading and a caption under each were tried and cut: anything that
+/// explains a one-word choice makes it look like a form. (This read "two buttons" until
+/// 2026-10-13, which stopped being true when the third card arrived on 2026-10-10.)
 ///
-/// Three cards since 2026-10-10, and the same three the other sheet offers but for Open in place
-/// of Now (Mason). Aiming at an event and aiming at empty time are the same act with a different
-/// thing under the finger, so the sheets differ by one card rather than by shape.
+/// Three cards since 2026-10-10. Aiming at an event and aiming at empty time are the same act
+/// with a different thing under the finger, so the two sheets a tap can raise differ by one card
+/// rather than by shape: this one is `TimeChoiceSheet` with Open inserted after New event.
+///
+/// That sentence read "the same three the other sheet offers but for Open in place of Now" until
+/// 2026-10-13, and had been false since earlier the same day, when Now left the time sheet for
+/// the hold and took that sheet down to two cards. The relationship survived the change; the
+/// description of it did not.
 struct EventChoiceSheet: View {
     let onChoose: (EventChoice) -> Void
 
@@ -35,11 +41,16 @@ struct EventChoiceSheet: View {
     /// Shared by the sheet and by `ChoicePanel`, so the two presentations cannot drift.
     @ViewBuilder
     static func cards(onChoose: @escaping (EventChoice) -> Void) -> some View {
-            // Open leads: it is the one that is about the thing you aimed at. The other two are
-            // the same two the time sheet offers, in the same order, so the pair reads as one
-            // set with its first card swapped.
-            ChoiceCard(mark: .openEvent, title: "Open") { onChoose(.open) }
+            // New event leads (Mason, 2026-10-13), and Open, which had the position, takes the
+            // middle. Open is the card that is about the thing you aimed at, which is why it led
+            // from 2026-10-10, and what outranks that is position: a tap cannot tell you in
+            // advance which of the two sheets it will raise, since that depends on whether the
+            // finger happened to land on an event. So the card worth holding still is the one
+            // both sheets share, and with New event first here and first in `TimeChoiceSheet`,
+            // the leftmost card of a tap is the same thing either way. Open becomes what is
+            // INSERTED when there was something there, which is also what it is.
             ChoiceCard(mark: .newEvent, title: "New event") { onChoose(.create) }
+            ChoiceCard(mark: .openEvent, title: "Open") { onChoose(.open) }
             ChoiceCard(mark: .calendar, title: "Pick date") { onChoose(.pickDate) }
     }
 }

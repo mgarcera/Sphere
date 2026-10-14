@@ -1694,3 +1694,11 @@ long press had registered before its action landed, it had zero call sites, and 
 claimed to be "the only thing that says the gesture took" — which nothing was. The hold's answer
 is a sheet, and a sheet arriving is the report. The reason sits where the function was, so
 restoring it is a paste.
+
+**The event sheet's three cards reordered to New event, Open, Pick date (Mason, 2026-10-13),**
+from Open, New event, Pick date. Open led from 2026-10-10 because it is the card about the thing
+you aimed at, and position outranks that: a tap cannot tell you in advance which of the two sheets
+it will raise, since that depends on whether the finger landed on an event. The card worth holding
+still is therefore the one both sheets share, and New event now leads in both, so the leftmost card
+of any tap on the arc is the same thing either way. Open becomes what is inserted when there was
+something there, which is what it is.
