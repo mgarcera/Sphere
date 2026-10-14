@@ -1,7 +1,9 @@
 import SwiftUI
 
-/// Every gesture the arc has, one per page, on the same ground as the three choice sheets the
-/// tap, the hold and the header button open (Mason, 2026-10-10).
+/// Every gesture the arc has, one per page, on the same ground as the four choice sheets the
+/// tap, the hold and the corner's question mark open (Mason, 2026-10-10). It said "three" and
+/// "the header button" until 2026-10-13: the header button opens the editor and never opened a
+/// choice sheet, and the corner's own pair had not been built yet.
 ///
 /// It was an overlay on the arc that ran all six in sequence and then left. Two things were
 /// wrong with that: a reader who missed one could not go back to it, and a layer drawn over the
@@ -9,7 +11,10 @@ import SwiftUI
 /// first explanation wants. In a sheet it can be plain ink on the app's own ground, and the
 /// reader sets the pace.
 ///
-/// Opened by the "?" in the corner, and once by itself when the onboarding hands over.
+/// Reached through the "?" in the corner, which since 2026-10-13 asks Guide or Menu first, and
+/// twice without being asked for: when the onboarding hands over, and once for anyone who was
+/// already past onboarding when the guide arrived. Both of those open it directly, because an
+/// explanation that comes to you cannot put a question in front of itself.
 struct GestureGuide: View {
     /// Room for the hand, a caption that wraps to two lines, and the dots, with the same 18pt of
     /// air over the top that the two-card sheets have.

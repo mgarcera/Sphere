@@ -40,6 +40,7 @@ struct ContentView: View {
     @State private var isEventChoiceOpen = false
     @State private var isTimeChoiceOpen = false
     @State private var isHoldChoiceOpen = false
+    @State private var isCornerChoiceOpen = false
     /// Acted on after the chooser closes, never while it is closing: presenting
     /// the editor into a sheet still dismissing is the refusal that cost ten
     /// seconds once already.
@@ -63,6 +64,10 @@ struct ContentView: View {
     /// Same discipline again, for the hold's own pair (Now / Menu, 2026-10-13). The menu is a
     /// sheet, so choosing it while this one is still dismissing is the same refusal.
     @State private var pendingHoldChoice: HoldChoice?
+    /// Held like the other three, and for the sharper version of the same reason: both of this
+    /// pair's answers are sheets, so acting before this one has closed would present a sheet
+    /// into a sheet that is still dismissing.
+    @State private var pendingCornerChoice: CornerChoice?
     /// Where a Create from that sheet starts. A tap fills it with the time under the finger.
     /// Nothing else fills it any more: the hold, which had no location to give and used the
     /// focus instead, no longer offers Create.
@@ -183,6 +188,18 @@ struct ContentView: View {
                 }
             }
 
+            if isShortScreen, isCornerChoiceOpen {
+                ChoicePanel {
+                    withAnimation(.easeOut(duration: 0.2)) { isCornerChoiceOpen = false }
+                } cards: {
+                    CornerChoiceSheet.cards { choice in
+                        pendingCornerChoice = choice
+                        withAnimation(.easeOut(duration: 0.2)) { isCornerChoiceOpen = false }
+                        actOnCornerChoice()
+                    }
+                }
+            }
+
             // Invisible, and behind everything: it only exists to present the
             // EventKit controllers from a real view controller.
             EventKitHost(target: $editorTarget, store: calendar.store) {
@@ -276,6 +293,17 @@ struct ContentView: View {
                 isHoldChoiceOpen = false
             }
             .presentationDetents([.height(HoldChoiceSheet.height)])
+            .presentationDragIndicator(.hidden)
+        }
+        .sheet(isPresented: Binding(get: { isCornerChoiceOpen && !isShortScreen },
+                                    set: { isCornerChoiceOpen = $0 }), onDismiss: {
+            actOnCornerChoice()
+        }) {
+            CornerChoiceSheet { choice in
+                pendingCornerChoice = choice
+                isCornerChoiceOpen = false
+            }
+            .presentationDetents([.height(CornerChoiceSheet.height)])
             .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $isAllDayOpen) {
@@ -458,9 +486,17 @@ struct ContentView: View {
     /// Deliberately dim, and the one exception to "no greys": its whole job is to be ignorable
     /// until someone is looking for it. The day menu carried this for one build and nobody opens
     /// a menu row until they are already stuck.
+    ///
+    /// It asks Guide or Menu as of 2026-10-13 rather than opening the guide outright, because
+    /// the menu had been left with no visible route at all; `CornerChoiceSheet` holds that
+    /// argument and the cost of it. The two automatic openings of the guide, at the end of
+    /// onboarding and once for anyone already past it, still go straight to `isGuideOpen` and
+    /// never through the cards: an explanation that arrives by itself cannot ask a question
+    /// first. It rings nothing, unlike the hold — a button dims under the finger, so the press
+    /// has already reported itself.
     private var guideButton: some View {
         Button {
-            isGuideOpen = true
+            isCornerChoiceOpen = true
         } label: {
             Image(systemName: "questionmark")
                 .font(.system(size: 13, weight: .semibold))
@@ -1032,6 +1068,18 @@ struct ContentView: View {
             editorTarget = .new(start)
         case .pickDate:
             isDayPickerOpen = true
+        }
+    }
+
+    /// The corner's pair. Both answers are sheets, so both wait for this one to be gone.
+    private func actOnCornerChoice() {
+        guard let choice = pendingCornerChoice else { return }
+        pendingCornerChoice = nil
+        switch choice {
+        case .guide:
+            isGuideOpen = true
+        case .menu:
+            isMenuOpen = true
         }
     }
 

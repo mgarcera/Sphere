@@ -15,14 +15,15 @@ import SwiftUI
 /// step a day, so the pair is told apart by a count rather than by two
 /// unrelated drawings.
 /// Every mark the app can draw, which outlived the wheel the set was built for: the choice
-/// sheets draw their cards from it (`ChoiceCard`), and `.newEvent`, `.openEvent`, `.now` and
-/// `.calendar` are the four in use. The rest are kept as a glyph set rather than deleted —
-/// they are drawings, not wiring, and `Open in Calendar` and `New all-day event` lost their
-/// only route when the wheel went and will want one again (2026-10-10).
+/// sheets draw their cards from it (`ChoiceCard`), and six are in use — `.newEvent`,
+/// `.openEvent`, `.now`, `.calendar`, `.menu` and `.guide`, the last two having arrived with
+/// the hold's pair and the corner's pair on 2026-10-13. The rest are kept as a glyph set rather
+/// than deleted: they are drawings, not wiring, and `Open in Calendar` and `New all-day event`
+/// lost their only route when the wheel went and will want one again (2026-10-10).
 enum Mark {
     case none, now, calendar, previousDay, nextDay, newAllDay
     case appearance, openCalendarApp, muteHaptics
-    case menu, openEvent, newEvent, previousEvent, nextEvent
+    case menu, guide, openEvent, newEvent, previousEvent, nextEvent
 }
 
 struct ActionMark: View {
@@ -305,6 +306,23 @@ struct ActionMark: View {
                 line.move(to: CGPoint(x: 4, y: y))
                 line.addLine(to: CGPoint(x: 16, y: y))
             }
+
+        case .guide:
+            // Drawn rather than borrowed, unlike `openCalendarApp`. The corner button is an SF
+            // `questionmark`, and the obvious move was to reuse it here through `symbolName` so
+            // the card showed the same glyph that was pressed — but a regular-weight symbol at
+            // 78 points carries a far heavier stroke than the 2.0 these cards draw at, and it
+            // would have sat beside `.menu`'s three hairlines. A question mark is also sayable
+            // in this app's own vocabulary: the hook is an arc, and an arc is what a day is.
+            //
+            // One arc opening at the lower left, its stem continuing the same subpath so the
+            // join is the curve's own end rather than a seam, and the point as a dot in the
+            // same weight the other dots carry.
+            line.addArc(center: CGPoint(x: 10, y: 7.5), radius: 3.8,
+                        startAngle: .degrees(170), endAngle: .degrees(450),
+                        clockwise: false)
+            line.addLine(to: CGPoint(x: 10, y: 13.6))
+            solid.addEllipse(in: CGRect(x: 9.05, y: 15.3, width: 1.9, height: 1.9))
 
         case .openEvent:
             break   // drawn by `lens`, which needs ordered layers

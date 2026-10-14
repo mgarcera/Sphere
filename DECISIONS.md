@@ -1634,3 +1634,45 @@ a hold and a press to reach.
 **Open:** the two cards' words and their order. "Now" and "Menu" are what they say while Mason
 reads a spread of alternatives; whatever he picks also sets the two guide captions, which name
 the same two things.
+
+## The corner asks Guide or Menu (2026-10-13)
+
+Moving Now onto the two-finger tap earlier the same day left the menu with exactly one way in:
+the hold's second card. `isMenuOpen = true` had one assignment in the whole of `ContentView`, so
+the surface holding the place search, the calendars, the alerts and the appearance setting cost a
+0.45s hold plus a press, and nothing on screen said it existed.
+
+The app had already argued this case in the other direction. The question mark in the corner was
+put there in 2.0 so the guide would be "repeatable without burying it in a menu where C proved it
+would not be found". A surface nobody can find is the same problem whichever way it runs, and the
+menu was now the buried one.
+
+Three routes were on the table, limited by what the existing surfaces allow. **A vertical swipe
+was not among them:** the arc's `DragGesture` has `minimumDistance: 8` in every direction and
+reads only `translation.width`, so a vertical gesture there is already swallowed by the scrub, and
+constraining the scrub to one axis risks the gesture starving the file has fought twice. The three
+were a second dim mark beside the question mark, the question mark asking first, and a long press
+on the header column (inert outside an event, since the title button only takes hits there).
+
+**Mason chose the question mark asking first.** It is the app's own answer whenever one gesture
+has two things behind it — the tap asks, the hold asks, the corner now asks — and it keeps the
+corner at one mark. The alternative would have left both routes one press deep, at the cost of a
+second permanent mark on a canvas whose whole stance is that it carries almost nothing: two dim
+marks in a corner is a toolbar starting.
+
+**The cost, which is real: help is one press further away, and help is what a stuck reader reaches
+for.** Two things hold it down. Guide leads, so the press that always opened the guide still lands
+on the guide's own card. And the corner is not the only way in: the guide still rises by itself
+when the onboarding hands over, and once more for anyone who was already past onboarding when it
+arrived, and neither of those goes through the cards. An explanation that comes to you cannot put
+a question in front of itself.
+
+`Mark.guide` was drawn rather than borrowed. Reusing the corner's own SF `questionmark` through
+`symbolName` was the obvious move and would have shown the reader the same glyph they pressed, but
+a regular-weight symbol at 78 points carries a much heavier stroke than the 2.0 these cards draw
+at, and it would have sat beside `.menu`'s three hairlines. A question mark is also sayable in this
+app's vocabulary without borrowing: the hook is an arc, and an arc is what a day is here.
+
+Four choice sheets now, all from one `ChoiceCard` and one `ChoiceSheet`, each with a `static func
+cards` so the portrait sheet and the landscape panel cannot drift: the tap on empty time, the tap
+on an event, the hold, and the corner.
