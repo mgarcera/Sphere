@@ -18,7 +18,17 @@ Deliberately absent from the copy, because the code does not ship them:
 *Copy these into App Store Connect. Character counts are noted; Apple's limits in parentheses.
 Verify counts in ASC (it's the source of truth).*
 
-> **No rejection history.** Sphere has never been submitted. The one rejection this file inherits is
+> **STALE AS OF 2026-10-13, read this first.** Two things in this file are no longer true. Sphere
+> HAS been submitted: 1.0.1 through 2.0, nine versions, all READY_FOR_SALE, 2.0 since 2026-10-10
+> (read from the App Store Connect API, not recalled). And the description Apple is serving is not
+> the one below — Mason wrote a different one directly in ASC, so this file is a draft that was
+> never pasted and the live copy has no record in this repo. **The live description still has a
+> section headed "The wheel:" describing the centre button, clicking left and right, and
+> reassignable buttons in settings, none of which have existed since 2.0 deleted the wheel.** The
+> same listing's What's New says "The wheel is gone". Fixing that is the first item of any
+> submission prep; the controls bullets below are wrong in the same way and for the same reason.
+>
+> **No rejection history for Sphere itself.** The one rejection this file inherits is
 > Fil's: **5.2.5, Intellectual Property**, where the subtitle read `Lock screen & dynamic island`.
 > Apple allows referential use of a feature trademark in a description's prose and not in the **name
 > or subtitle**. Sphere's name and subtitle name no Apple feature at all, which is the cheapest way
@@ -46,8 +56,11 @@ Verify counts in ASC (it's the source of truth).*
   entitlements files are referenced by `CODE_SIGN_ENTITLEMENTS`, which they were not on 2026-09-02.
 - **Price:** Free. **No in-app purchases, no subscription.** Monetization closed 2026-09-02: the app
   is not monetized, which is what keeps Open-Meteo's free tier sufficient and WeatherKit unnecessary.
-- **Devices:** iPhone only (`TARGETED_DEVICE_FAMILY = 1`), portrait only, iOS 26.0 minimum. No iPad
-  screenshots are required and none should be uploaded.
+- **Devices:** iPhone only (`TARGETED_DEVICE_FAMILY = 1`), iOS 26.0 minimum. No iPad
+  screenshots are required and none should be uploaded. **"Portrait only" was removed from this
+  line on 2026-10-13:** the app has a landscape layout, which `ChoicePanel` exists for and which
+  `isShortScreen` gates, so the claim had stopped being true. The screenshot set is still portrait
+  and still only needs to be.
 
 ## Keywords (100, comma-separated, no spaces)
 ```
