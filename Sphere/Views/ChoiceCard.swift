@@ -1,14 +1,16 @@
 import SwiftUI
 
-/// One card in a two-card sheet: a mark, a word under it, and nothing else.
+/// One card in a choice sheet: a mark, a word under it, and nothing else.
 ///
 /// Drawn in the wheel's line and weight, since the wheel's own centre button is where this
 /// treatment came from. Presses dim rather than scale, for the same reason they did there.
 ///
-/// Shared by both sheets that use it (2026-10-10). A heading and a caption under each card were
-/// tried and cut: a fork with two one-word answers reads as a form the moment anything explains
-/// it. Keeping the card here rather than inside one sheet means the second sheet inherits the
-/// treatment instead of copying it.
+/// Shared by all four sheets that use it, as of 2026-10-13: the tap on empty time, the tap on an
+/// event, the hold, and the corner. Two of them when this was written on 2026-10-10, which is
+/// what "both sheets" meant. A heading and a caption under each card were tried and cut: a fork
+/// with one-word answers reads as a form the moment anything explains it. Keeping the card here
+/// rather than inside one sheet is why each new sheet inherits the treatment instead of copying
+/// it.
 struct ChoiceCard: View {
     let mark: Mark
     let title: String
@@ -33,8 +35,9 @@ struct ChoiceCard: View {
     }
 }
 
-/// The two cards in a sheet whose own ground is painted, since a sheet's default is a
-/// translucent material and nothing else here is translucent.
+/// The cards in a sheet whose own ground is painted, since a sheet's default is a translucent
+/// material and nothing else here is translucent. It counts nothing and is generic over its
+/// content: three sheets put two cards through it and `EventChoiceSheet` puts three.
 struct ChoiceSheet<Content: View>: View {
     static var height: CGFloat { 200 }
     @ViewBuilder let cards: () -> Content

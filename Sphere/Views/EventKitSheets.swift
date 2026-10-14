@@ -23,6 +23,10 @@ import SwiftUI
 /// The cost is one extra tap to edit an event you own. Asked for, after using it.
 enum EventTarget: Identifiable, Equatable {
     case new(Date)
+    /// NEVER CONSTRUCTED as of 2026-10-13: `editorTarget` is only ever `.new` or `.existing`, so
+    /// the `allDayEditor(on:)` branch below is unreachable. It lost its route when the wheel's
+    /// centre-button hold went in 2.0, which is the same thing that happened to `Mark.newAllDay`
+    /// — see the note on `Mark`, which records that both will want a route again.
     case newAllDay(Date)
     case existing(EKEvent)
 

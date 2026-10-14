@@ -3,7 +3,7 @@ import SwiftUI
 /// The ground darkens under rain and darkens further under a storm.
 ///
 /// Like the twilight wash it follows the FOCUS hour, so it agrees with the dot
-/// and turning the wheel into a storm darkens the screen. Unlike twilight it is
+/// and dragging into a storm darkens the screen. Unlike twilight it is
 /// weighted to the TOP of the screen and clears before the drawing starts:
 /// darkening the band would cost the arc and the clouds their contrast, and
 /// they cannot be recoloured per frame without giving up the cached layers.
@@ -33,13 +33,15 @@ struct WeatherWash: View {
             + min(lightning, 1) * stormPeak, 1)
     }
 
-    /// Top-of-screen colours as components, so the header can composite them
-    /// and measure what it is actually sitting on.
+    /// Top-of-screen colours as components. Read only by `topLuminance` below and by the
+    /// gradients in this file; the header has not composited them since 2026-10-09.
     static let lightRainTop = (r: 0.42, g: 0.49, b: 0.58)
     static let lightStormTop = (r: 0.22, g: 0.27, b: 0.37)
 
-    /// Relative luminance at the top of the screen in light mode, where the
-    /// header sits.
+    /// Relative luminance at the top of the screen in light mode. **No callers as of
+    /// 2026-10-13** (one grep hit, this declaration). It existed so the header could measure its
+    /// own ground; the header now takes `markColour` from `SkyField.mark(on:)` and never
+    /// composites a wash, so nothing reads this and nothing needs to.
     static func topLuminance(precipitation: Double, lightning: Double,
                              twilight: (color: (r: Double, g: Double, b: Double), opacity: Double),
                              night: (color: (r: Double, g: Double, b: Double), opacity: Double)

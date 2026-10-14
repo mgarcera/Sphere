@@ -2,22 +2,26 @@ import UIKit
 
 /// Feel, behind one switch.
 ///
-/// The wheel is the one control with no travel and no sound, so a turn that
-/// changes an hour otherwise reads only as the numbers above it changing. A
-/// detent every quarter hour gives it the click the drawing implies: sixteen to
-/// a rotation, which is close to the hardware it is borrowed from and far
-/// enough apart to stay a texture rather than a buzz.
+/// Dragging the arc has no travel and no sound, so a drag that changes an hour
+/// otherwise reads only as the numbers above it changing. A detent every quarter
+/// hour gives it a click: far enough apart to stay a texture rather than a buzz.
+///
+/// Written for the wheel, which is where "sixteen to a rotation, close to the
+/// hardware it is borrowed from" came from, and rewritten 2026-10-13 because
+/// there is no rotation left to count sixteen of. The spacing did not change
+/// with the control; a quarter hour is still the unit, now measured in points
+/// dragged rather than in degrees turned.
 @MainActor
 enum Haptics {
     static let key = "hapticsEnabled"
 
-    /// On unless turned off, so the wheel has its click the first time it turns.
+    /// On unless turned off, so the arc has its click the first time it is dragged.
     static var isEnabled: Bool {
         UserDefaults.standard.object(forKey: key) as? Bool ?? true
     }
 
-    /// A quarter hour per click. Held here rather than at the call site so the
-    /// wheel and any later control share one spacing.
+    /// A quarter hour per click. Held here rather than at the call site so the drag and any
+    /// later control share one spacing, which is the reason it survived the wheel.
     static let detentHours = 0.25
 
     private static let detent = UIImpactFeedbackGenerator(style: .light)
@@ -26,7 +30,7 @@ enum Haptics {
 
     /// Generators go cold in about a second, and a cold one fires late enough
     /// to feel detached from the thumb. Prepared on the way into a gesture and
-    /// again after each click, so a continuous turn stays warm.
+    /// again after each click, so a continuous drag stays warm.
     static func warm() {
         guard isEnabled else { return }
         detent.prepare()

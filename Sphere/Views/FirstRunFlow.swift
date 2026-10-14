@@ -1,18 +1,23 @@
 import SwiftUI
 import SmidgecraftKit
 
-/// Sphere's first run: two screens, each one immediately before the thing it explains.
+/// Sphere's first run: three screens, the first two each immediately before the thing they
+/// explain. ("Two" until 2026-10-13; the third arrived on 2026-10-10 and `steps(calendar:
+/// location:)` below has returned three ever since.)
 ///
 /// It replaced `CalendarPriming`, which was a single screen that explained both permissions and
 /// then requested both, back to back. iOS queues the second prompt behind the first, so the
 /// location prompt arrived with its explanation two screens of attention earlier — and a cold
 /// denial is close to permanent. Splitting them is the whole point of this file (2026-10-04).
 ///
-/// Two screens, one per permission, because Sphere is the only one of the three apps that asks
-/// for anything at launch and it asks for two things. A third was planned to teach the hold
+/// Two of them are permissions, one each, because Sphere is the only one of the three apps that
+/// asks for anything at launch and it asks for two things. The third is the handover, which asks
+/// for nothing and is where the gesture guide is handed over to. A third was planned to teach the hold
 /// layer, and was cut: teaching is better done on the arc than on a screen shown before anyone
-/// has seen one. `GhostHand` is where that landed, over the real arc, and the card that used to
-/// point at the wheel was deleted on 2026-10-10.
+/// has seen one. The paged guide in `GestureTeach` and `GestureGuide` is where that landed, and
+/// the card that used to point at the wheel was deleted on 2026-10-10. (This named `GhostHand`
+/// until 2026-10-13; no such type has ever existed in the repo, and the over-the-arc overlay it
+/// described was itself replaced by a sheet on 2026-10-10 — see `GestureGuide`.)
 ///
 /// Both permission steps are `isSkippable: false`. Apple rejected Fil 1.0 build 4 under guideline
 /// 5.1.1(iv) for offering a way out of a priming screen without reaching the system alert, and

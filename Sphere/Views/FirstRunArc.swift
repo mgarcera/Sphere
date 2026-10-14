@@ -1,14 +1,15 @@
 import SwiftUI
 
-/// The real arc, on a sample day, for the two first-run screens.
+/// The real arc, on a sample day, for the first-run screens — all three of them, since
+/// `FirstRunFlow` passes this as the `demo:` for every step.
 ///
 /// `ArcWindow` rather than `MiniArc` because that is what the app actually shows: three hours
 /// wide, the dot nailed to the centre, the arc sliding underneath. A whole-day hill is the menu's
 /// summary view, and the website's own note says the narrow layout "windows and pans, exactly as
 /// `ArcWindow` does" (2026-10-04).
 ///
-/// Sample data, because neither screen has what it needs yet — no calendar on the first, no
-/// location on the second. That is the same reason the App Store assets use a fictional day.
+/// Sample data, because no screen here has what it needs yet — no calendar on the first, no
+/// location on the second, and the third runs before the first fetch. That is the same reason the App Store assets use a fictional day.
 struct FirstRunArc: View {
     /// Whether the sky is the slightly cloudy one. Off for the calendar screen, on for the sky one.
     var weather = false
@@ -33,10 +34,11 @@ struct FirstRunArc: View {
         // quietly; on an iPhone Duo's 678-tall outer display it did not, and the ENTIRE
         // onboarding screen rendered nothing — no title, no button, just the sky behind it.
         // A child crushed below its minimum can take its whole parent down with it.
-        // `mark:` is NOT optional here, whatever its default says (Mason, 2026-10-10: "in dark
-        // mode, I can't see anything on the arc"). `ArcWindow` defaults it to `.black`, which is
-        // right only because the app's own screen always passes a mark computed from the sky
-        // behind it. This screen's ground is `Theme.background`, so its mark is `Theme.ink` —
+        // `mark:` is passed deliberately here (Mason, 2026-10-10: "in dark mode, I can't see
+        // anything on the arc"). It USED to default to `.black` in `ArcWindow`, which is the bug
+        // this comment was written about; since 2026-10-10 `ArcWindow.mark` is a plain `let` with
+        // no default and omitting it would not compile, so the hazard is closed rather than
+        // live. This screen's ground is `Theme.background`, so its mark is `Theme.ink` —
         // the pair that is near-black on paper and near-white at night — and the curve, the sun,
         // the hour labels and every cloud follow it.
         ArcWindow(model: model, arcHeight: 190, mark: Theme.ink)

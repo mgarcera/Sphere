@@ -94,13 +94,13 @@ enum Appearance: String, CaseIterable, Identifiable {
     }
 }
 
-/// Holds a role's text at a fixed contrast ratio against whatever the header is
-/// actually sitting on, so the title and the caption keep the same relationship
-/// in every condition.
-///
-/// This caps as well as raises: on a clear day the ink measures about 15:1 and
-/// is deliberately brought down to the title's target, because a gap that only
-/// holds in some conditions is what made the caption catch the title at dusk.
-/// The cost is a lighter title on the most common screen of all.
-///
+// ORPHANED DOC, kept as the record of a deleted idea rather than left looking live.
+//
+// Everything below documented `ContrastHold`, which held a role's text at a fixed contrast ratio
+// against whatever the header was sitting on, capping as well as raising: on a clear day the ink
+// measured about 15:1 and was brought down to the title's target. The type went on 2026-10-09
+// when the app became two colours, and `ContentView` records the reason — "a two-colour system
+// has no ratio to hold and no escape hatch to need". The prose stayed behind, in present tense,
+// in the file the widget target also compiles, until 2026-10-13.
+//
 /// Light mode only. In dark mode the ink is already light and the ground only

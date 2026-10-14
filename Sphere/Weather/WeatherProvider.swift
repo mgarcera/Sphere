@@ -2,7 +2,7 @@ import Foundation
 
 /// Deliberately thin. Open-Meteo ships first because it needs no App ID, no
 /// attribution mark and no key, and it reaches 92 days into the past, which
-/// the wheel can now reach too. WeatherKit becomes a second conformer the day
+/// a drag can now reach too. WeatherKit becomes a second conformer the day
 /// Sphere needs a provider licensed for commercial use.
 protocol WeatherProvider: Sendable {
     func hourly(coordinate: Coordinate, from: Date, to: Date) async throws -> [WeatherHour]

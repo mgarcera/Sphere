@@ -290,10 +290,13 @@ struct ActionMark: View {
             line.addLine(to: CGPoint(x: 17, y: 10.5))
 
         case .muteHaptics:
-            // The wheel, not clicking.
+            // A dial, not clicking. NEVER DRAWN: `.muteHaptics` is passed to no
+            // `ChoiceCard` and the menu's toggle is a plain row, so this glyph is
+            // part of the parked set the enum's header describes.
             //
-            // Haptics in this app IS the wheel's click, so the thing being
-            // switched off is the wheel itself. It replaced the universal
+            // Haptics in this app was the wheel's click and is now the drag's, so
+            // the thing being switched off is the texture under a scrub rather than
+            // a control. It replaced the universal
             // vibration glyph — a dot, two arcs and a slash — which was four
             // levels of detail inside the 10-point box this mark actually gets,
             // and read as noise there.

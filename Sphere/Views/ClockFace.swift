@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// A clock whose hands carry the hour the wheel is on, so it turns as you
-/// scrub. Same idea as the time dot: one moment, read on every part of the
+/// A clock whose hands carry the hour the arc is focused on, so it turns as
+/// you scrub. Same idea as the time dot: one moment, read on every part of the
 /// screen at once.
 ///
 /// Two hands in a plain circle and nothing else. At caption size a tick face

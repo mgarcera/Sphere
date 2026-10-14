@@ -15,6 +15,11 @@ import SwiftUI
 /// xcrun simctl launch <device> com.smidgecraft.Sphere -SphereScreenshotScene morning
 /// ```
 enum DemoDay {
+    /// UNUSED, and a trap: nothing reads it and the string appears nowhere else in the repo.
+    /// `isEnabled` goes through `scene`, which reads `sceneArgument` below, so a capture run that
+    /// passed only this flag would launch the ordinary app against the real calendar. Kept with
+    /// this note rather than deleted, since the pairing is what the next person will assume
+    /// (2026-10-13).
     static let launchArgument = "-SphereScreenshotMode"
     static let sceneArgument = "-SphereScreenshotScene"
 

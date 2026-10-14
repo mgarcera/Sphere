@@ -4,8 +4,8 @@ import Observation
 /// The screen's state.
 ///
 /// Time is one unbounded axis, not a day: `focusHour` counts hours from
-/// `anchor` (local midnight at launch), so turning the wheel past midnight
-/// carries into the next or previous day with no clamp and no second control.
+/// `anchor` (local midnight at launch), so dragging past midnight carries into
+/// the next or previous day with no clamp and no second control.
 ///
 /// Note the grid is a flat 24 hours per day. On the two DST days a year the
 /// arc will sit an hour off; the sun geometry itself stays correct because
@@ -123,8 +123,7 @@ final class DayModel {
         calendar.date(byAdding: .day, value: index, to: anchor) ?? anchor
     }
 
-    /// Cached per day, since the wheel crosses a boundary far less often than
-    /// it moves.
+    /// Cached per day, since the focus crosses a boundary far less often than it moves.
     func solarDay(_ index: Int) -> SolarDay {
         if let cached = solarDays[index] { return cached }
         let day = SolarDay(date: date(forDayIndex: index), coordinate: coordinate, timeZone: timeZone)
@@ -154,8 +153,8 @@ final class DayModel {
     var focusSolarDay: SolarDay { solarDay(dayIndex) }
 
     // The sheet's sun and moon material is anchored to the real now rather
-    // than to the wheel, so it stays a reference for the actual day however
-    // far the wheel has wandered.
+    // than to the focus, so it stays a reference for the actual day however
+    // far the arc has been dragged.
     var todayIndex: Int { Int(floor(nowHour / 24)) }
     var todaySolarDay: SolarDay { solarDay(todayIndex) }
     var todayHourOfDay: Double { nowHour - Double(todayIndex) * 24 }
@@ -167,7 +166,7 @@ final class DayModel {
 
     /// Jump to the start of another date. Landing at midnight rather than at
     /// the clock time you were already on puts the dot at the beginning of the
-    /// day, so the wheel scrolls forward through the whole of it.
+    /// day, so a drag forward crosses the whole of it.
     func focus(onStartOf date: Date) {
         let target = calendar.startOfDay(for: date)
         let days = calendar.dateComponents([.day], from: anchor, to: target).day ?? 0
@@ -188,8 +187,10 @@ final class DayModel {
     /// belong somewhere else on screen.
     var timedEvents: [CalendarEvent] { events.filter { !$0.isAllDay } }
 
-    /// What is happening right now, which is not the same as what the wheel is
-    /// pointing at. The arc wanders; this does not.
+    /// What is happening right now, which is not the same as what the arc is
+    /// showing. The focus wanders; this does not. **No callers as of 2026-10-13**
+    /// (one grep hit, this declaration); kept because it is the model's own answer
+    /// to "what is on now" and the header asks a different question.
     var eventContainingNow: CalendarEvent? {
         timedEvents.filter { $0.contains(nowHour) }
             .max { a, b in
@@ -248,7 +249,7 @@ final class DayModel {
     // MARK: - Sky
 
     /// Precomputed per day rather than per frame, since the band only changes
-    /// when a fetch lands or the wheel crosses into a new day.
+    /// when a fetch lands or the focus crosses into a new day.
     private(set) var skyByDay: [Int: [SkyHour]] = [:]
 
     func sky(forDayIndex index: Int) -> [SkyHour] { skyByDay[index] ?? [] }
@@ -257,7 +258,9 @@ final class DayModel {
     ///
     /// It has no weather service and no location — asking for the second is the point of the
     /// screen it draws on — so the only way to show a real sky there is to hand it one. The
-    /// shipping path is `applySky(from:)`; this one has exactly one caller, `FirstRunArc`.
+    /// shipping path is `applySky(from:)`. This one has three callers, not the one it claimed
+    /// until 2026-10-13: `FirstRunArc` twice, and `DemoDay`, which uses it for three days of sky
+    /// in the App Store capture run. A change to this signature lands on the store captures.
     func applySky(_ hours: [SkyHour], forDayIndex index: Int) {
         skyByDay[index] = hours
     }
@@ -304,7 +307,7 @@ final class DayModel {
     ///
     /// Weighted by deck, because that is what makes two overcast hours
     /// different — low cloud closes the sky, cirrus barely touches it.
-    /// Interpolated for the same reason the washes are: the wheel turns
+    /// Interpolated for the same reason the washes are: a drag moves
     /// continuously and a sky that snapped at hour boundaries would read as a
     /// fault rather than as weather.
     ///
@@ -325,7 +328,7 @@ final class DayModel {
 
     /// Weather at any fractional hour, interpolated between the two readings
     /// either side. The readings are hourly, so without this a wash would snap
-    /// on and off at hour boundaries while the wheel turns.
+    /// on and off at hour boundaries while the arc is dragged.
     func weather(atAbsoluteHour hour: Double) -> (precipitation: Double, lightning: Double) {
         let lower = floor(hour)
         let t = hour - lower

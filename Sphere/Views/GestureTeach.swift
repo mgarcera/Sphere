@@ -136,6 +136,10 @@ struct GestureDemo: View {
 /// at both edges, which says "there is more of this that way" because there is. Permanent,
 /// wordless, and it never has to be dismissed or found.
 struct ScrubAffordance: ViewModifier {
+    /// Unused since the mask below became black-and-clear only: a mask cares about alpha and not
+    /// about colour, so there is nothing here for a mark to tint. Both call sites still pass
+    /// `markColour`. Kept rather than removed because the signature is the thing a caller sees,
+    /// and a fade that one day stops at a colour would want it back (2026-10-13).
     let mark: Color
 
     func body(content: Content) -> some View {

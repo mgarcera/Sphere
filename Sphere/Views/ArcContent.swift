@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The whole day drawn once, at full zoom width. Nothing here depends on
-/// `focusHour`, so turning the wheel never re-samples the 288-point path — the
+/// `focusHour`, so a drag never re-samples the 288-point path — the
 /// parent slides this layer with `.offset` instead. Keeping that true is what
 /// makes the drag smooth; see `ArcWindow`.
 struct ArcContent: View, Equatable {

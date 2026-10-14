@@ -1522,6 +1522,13 @@ Ten symbols went after a reference sweep: `ClearBlue`, `TwilightBackground`, `Ni
 `ContrastHold`, `headerLuminance`, `titleContrast`, `captionContrast`, `typeNight`,
 `weatherOffset`, `blueStrength`. Two had hidden consumers and both failed as rendering bugs.
 
+**Correction, 2026-10-13: two of those ten did not go.** `titleContrast` and `captionContrast`
+are still declared at `ContentView.swift:929-930`, with zero references anywhere, and still carry
+a comment describing the ratio system this section says was removed. The other eight are genuinely
+absent, checked with a grep whose pattern was proved on a known positive first. A sweep's own
+record is what the next sweep trusts, which is why this is corrected here rather than quietly
+fixed in the code.
+
 `skyGround` was documented as the occluder that lets a near deck cut a hole in a far one. It was
 ALSO the cloud's body, and nothing said so. Setting it to `.clear` emptied every cloud; setting
 it to the field's own colour made them invisible by construction. It is the opposite pole from
@@ -1702,3 +1709,58 @@ it will raise, since that depends on whether the finger landed on an event. The 
 still is therefore the one both sheets share, and New event now leads in both, so the leftmost card
 of any tap on the arc is the same thing either way. Open becomes what is inserted when there was
 something there, which is what it is.
+
+## The comments catch up with the arc (2026-10-13)
+
+A `comment-drift` sweep of the whole app, run at Mason's word after today's five gesture commits,
+and the result was not five stale comments. It was a vocabulary. These files run 41–48% comment by
+line and the comments are the decision record, so a record that describes a deleted control is the
+expensive kind of wrong: it is what the next session trusts.
+
+**The wheel was still the subject of the codebase.** Twenty-six present-tense sites across
+`DayModel`, `Haptics`, `Sounds`, `ContentView`, `ArcWindow`, `DayMenu`, `MiniArc`, `ClockFace`,
+`ClearSky`, `SkyMarks`, `ArcContent`, `CalendarService`, `WeatherProvider` and `WeatherWash` said
+things like "turning the wheel past midnight carries into the next day", "sixteen to a rotation",
+"NOW on the wheel is what moves you". All of them now name the gesture that does the work. The
+genuinely historical ones were left: "drawn in the wheel's line", "the marks outlived the wheel the
+set was built for", "all a wheel could say". The test applied to each was whether the sentence
+asserts present behaviour or records how something came to be.
+
+**Three doc blocks had come off their functions**, which is the class that actually costs
+something. `openEditor`'s doc sat on `openAtTappedHour`, one function above the one it described,
+so the header button's behaviour was documented on the arc's tap handler — the one gesture whose
+behaviour moved twice this week. `requestLocationIfPastOnboarding`'s doc sat on `actOnTimeChoice`,
+which touches neither the gate nor the location. `travel`'s pan measurements sat on `step`, one of
+its four callers, in a block that also asserted chevrons and then contradicted itself four lines
+later. Each is now on the function it describes, and each says where it had been.
+
+**`Sounds` had three of four bells documented against the wrong surface**, including a rule that
+has inverted: its header said the chevrons deliberately get no bell, "a bell on a button you hit
+five times in a row is the definition of obnoxious", and the edge bands that replaced the chevrons
+are now the ONLY thing that rings. That is left standing as a question rather than quietly
+rewritten, because either the rule was wrong or the edge bands should be silent, and that is
+Mason's call.
+
+**Counts had moved.** Two choice sheets are four, two cards in a sheet are two or three, two sheets
+hiding a drag indicator are eight, two first-run screens are three, and one arrangement at every
+size has been two since landscape got its own branch.
+
+**Dead code now carries its reason or is named as dead.** `Haptics.held()` was deleted earlier
+today. `topLuminance`, `ContentView.nightness`/`showsNightSky`, `ArcWindow.nightness`/
+`nightSuppressedBy`, `eventContainingNow`, `ScrubAffordance.mark`, `titleContrast`/
+`captionContrast`, `EventTarget.newAllDay`, `DemoDay.launchArgument` and the whole of
+`Model/Chart.swift` each now say so where they are declared. Two of those matter beyond tidiness:
+`DemoDay.launchArgument` is a trap, since a capture run passing only that flag would launch the
+ordinary app against the real calendar; and `titleContrast`/`captionContrast` were certified as
+deleted by this file's own 2026-10-09 sweep record, which is corrected above.
+
+**One comment described a type that never existed.** `FirstRunFlow` said the teaching layer landed
+in `GhostHand`; no such type is in the repo, and the overlay it described was replaced by a paged
+sheet on 2026-10-10. A false name is worse than a stale claim, because it sends someone looking.
+
+The lesson for next time, which is why this section exists rather than just the commit: **the
+listing drifted for the same reason the comments did.** Sphere's live App Store description still
+described the wheel three days after the wheel shipped as deleted, in the same listing whose
+What's New announced the deletion. A control leaves the code in one commit and leaves the prose
+about it in however many places the prose lives. Deleting a control is not done until a sweep for
+its name comes back with nothing but history.

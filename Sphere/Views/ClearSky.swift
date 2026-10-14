@@ -25,7 +25,7 @@ struct ClearSky: View, Equatable {
     var skyGround: Color = Theme.background
 
     /// The scrub position, quantised. Everything else in this app moves because
-    /// the wheel moved, and a clock ticking on its own was the one thing that
+    /// a finger moved it, and a clock ticking on its own was the one thing that
     /// did not — it also meant nine views redrawing while nothing was happening.
     /// Stars wink as the sky passes instead, so an idle screen is perfectly
     /// still and the cost is bounded by how fast a thumb can turn.
@@ -60,7 +60,7 @@ struct ClearSky: View, Equatable {
     }
 
     /// Birds hold still, so their decks ignore the scrub entirely and never
-    /// redraw while the wheel turns.
+    /// redraw while the arc is dragged.
     static func == (a: ClearSky, b: ClearSky) -> Bool {
         a.daySeed == b.daySeed && a.deck == b.deck
             && a.width == b.width && a.height == b.height && a.hours == b.hours

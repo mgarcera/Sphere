@@ -76,12 +76,13 @@ struct ContentView: View {
     /// Which side of the horizon the Sky mode is on.
     ///
     /// Held in state rather than read from `typeNight` so the flip can be made
-    /// with animations explicitly off. The wheel scrubs through sunset inside
+    /// with animations explicitly off. A scrub crosses sunset inside
     /// an animated transaction, and everything in a transaction animates
     /// whether or not you asked — a palette crossfade is precisely what this
     /// mode exists not to do.
     @State private var skyIsNight = false
-    /// Shown once, when the onboarding hands over. The question mark in the corner replays it.
+    /// Shown once, when the onboarding hands over. The question mark in the corner reaches it
+    /// through the Guide card, which since 2026-10-13 is one press rather than none.
     @AppStorage("teachGhostSeen") private var guideSeen = false
     @State private var isGuideOpen = false
 
@@ -124,7 +125,8 @@ struct ContentView: View {
             WeatherWash(precipitation: sky.precipitation, lightning: sky.lightning)
 
             if let gate, gate.hasResolved, gate.state == .new, !DemoDay.isEnabled {
-                // Two screens, each immediately before the thing it explains. The screen this
+                // Three screens, the first two each immediately before the thing they explain,
+                // and a handover after them. The screen this
                 // replaced explained both permissions and then raised both prompts back to back,
                 // so the location one arrived with its reason two screens of attention earlier
                 // (2026-10-04).
@@ -148,7 +150,7 @@ struct ContentView: View {
                     .transition(.opacity)
             }
 
-            // Landscape's answer to the two choice sheets. Same cards, same callbacks, and the
+            // Landscape's answer to the four choice sheets. Same cards, same callbacks, and the
             // same dismissal discipline — the choice is held and acted on after the panel is
             // gone, because the day picker and the editor are sheets and presenting one into a
             // view that is still leaving is the refusal that cost ten seconds once already.
@@ -256,7 +258,8 @@ struct ContentView: View {
         .sheet(isPresented: $isGuideOpen) {
             GestureGuide()
                 .presentationDetents([.height(detent(GestureGuide.height))])
-                // Hidden, like the other two (Mason, 2026-10-10). It was shown for one build on
+                // Hidden, like every other sheet here — eight of them now, two when this was
+                // written (Mason, 2026-10-10). It was shown for one build on
                 // the argument that a sheet which is read rather than answered owes a visible
                 // way out; a grabber over a page of hands is one more mark competing with the
                 // six being demonstrated, and a sheet drags down whether or not it says so.
@@ -454,7 +457,9 @@ struct ContentView: View {
     }
 
     private var portraitDay: some View {
-        // One arrangement at every size (Mason, 2026-10-09: an overlay is fine in landscape).
+        // One arrangement WITHIN portrait (Mason, 2026-10-09: an overlay is fine in landscape).
+        // Landscape has had its own branch since 2026-10-10; see `day` above, which chooses
+        // between this and `shortScreenDay` on the available height.
         // The arc centres in the WHOLE space and the header sits over it, rather than above it
         // in the flow — in the flow, the header's height was subtracted from the space the arc
         // centred in, so gaining an all-day event grew the header and pushed the arc down by
@@ -477,9 +482,9 @@ struct ContentView: View {
                 isGuideOpen = true
             }
             .padding(.vertical, 24)
-            // Deliberately dim, and the one exception to "no greys": its whole job is to be
-            // ignorable until someone is looking for it. The day menu carried this for one
-            // build and nobody opens a menu row until they are already stuck.
+            // Dim, for the reasons on `guideButton` itself, which is where that argument lives
+            // and where the 0.3 → 0.55 change of 2026-10-13 is recorded. This call site carried
+            // a verbatim copy of the retired version of it.
             .overlay(alignment: .bottomLeading) { guideButton }
     }
 
@@ -531,8 +536,10 @@ struct ContentView: View {
                       nightness: 0,
                       nightSuppressedBy: washAmount / WeatherWash.stormPeak,
                       mark: markColour,
-                      // STUDY: the same two callbacks the wheel reports through, so the drag and
-                      // the rotation land on one code path and feel identical past the touch.
+                      // STUDY: these two callbacks were shared by the wheel and the drag, so
+                      // both landed on one code path and felt identical past the touch. The
+                      // wheel went in 2.0 and the drag is the only caller now; the pair is kept
+                      // because the shape is what a later control would join (2026-10-13).
                       onScrub: { hours in
                           model.focusHour += hours
                           clickPastDetents()
@@ -689,7 +696,7 @@ struct ContentView: View {
         .onChange(of: captionKey) { _, _ in popCaption() }
         .onChange(of: allDayKey) { _, _ in popAllDay() }
         // A cut, not a fade. The parked palette experiment was built on the
-        // opposite premise — that the wheel turning through sunset under a
+        // opposite premise — that crossing sunset under a moving
         // thumb meant the change had to be continuous or it would read as a
         // jump — and it spent a bespoke Palette, staged per-mark turns and a
         // custom ground path trying to survive the crossing. There is no
@@ -706,7 +713,7 @@ struct ContentView: View {
         // A transition needs an animated transaction at the moment the
         // hierarchy changes. Jumping supplied one, because `travel` wraps the
         // change in withAnimation, so the pop worked there. Scrubbing does not
-        // — the wheel moves focusHour with no transaction — and an
+        // — a scrub moves focusHour with no transaction — and an
         // `.animation(_:value:)` reading a computed property off the
         // @Observable did not cover it: the insertion and removal were never
         // attributed to that value. Mirroring the count into @State and
@@ -801,12 +808,16 @@ struct ContentView: View {
     /// author of the change, which is what a discontinuity needs in order to
     /// read as intent rather than as a glitch.
     ///
-    /// **Only the system's furniture turns.** The app's own type stays dark and
-    /// lets `ContrastHold` drive it against the blue, which is both the chosen
-    /// look and the more legible one: on that ground black measures about 4.8:1
-    /// against white's 3.1:1. The status bar cannot be given a colour, only a
-    /// scheme, so it gets the one that reads on the deepest part of the
-    /// gradient — which is where it happens to sit.
+    /// **Only the system's furniture turns.** The status bar cannot be given a
+    /// colour, only a scheme, so it gets the one that reads on the deepest part
+    /// of the gradient — which is where it happens to sit.
+    ///
+    /// Two sentences went from here on 2026-10-13. One had the app's own type driven by
+    /// `ContrastHold`, a type deleted on 2026-10-09 when the app became two colours. The other
+    /// gave the ratios the wrong way round for what ships: `onBlue` below is true exactly when
+    /// the field is light enough for BLACK marks, and `SkyField` measures 6.0:1 for black on the
+    /// noon blue. The paragraph above, which decides the polarity on the cause rather than on the
+    /// measurement, is the one that is still live.
     /// Whether the field is light enough to carry black marks. This used to ask how much blue
     /// was on screen via `ClearBlue.strength`; with one field and a two-colour ink system the
     /// same question is just which way the polarity fell.
@@ -832,7 +843,7 @@ struct ContentView: View {
         return appearance.colorScheme
     }
 
-    /// What the sky is doing at the hour the wheel is on: the mark, the word
+    /// What the sky is doing at the focused hour: the mark, the word
     /// and the temperature.
     ///
     /// It follows the focus like the rest of the header — the arc's clouds are
@@ -877,7 +888,11 @@ struct ContentView: View {
                                     numberFormatStyle: .number.precision(.fractionLength(0))))
     }
 
-    /// How dark the sky is at the hour the wheel is on.
+    /// How dark the sky is at the focused hour. **Dead as a pair with `showsNightSky`**, which
+    /// is this property's only reader: nothing in this file reads `nightness`, and the only place
+    /// it goes is `ArcWindow`'s parameter of the same name, which nothing there reads either. Kept
+    /// deliberately, along with the literal 0 passed below, for whenever a shaped night returns
+    /// (2026-10-13).
     private var nightness: Double {
         guard showsNightSky else { return 0 }
         return SkyDepth.nightness(elevationDegrees: model.elevationDegrees(atAbsoluteHour: model.focusHour))
@@ -923,9 +938,16 @@ struct ContentView: View {
     }
 
 
-    /// gap between them is the same in every condition. Capping the title as
-    /// well as raising it is the point: letting it run to 15:1 on a clear day
-    /// while the caption is pinned is what let them meet at dusk.
+    /// DEAD, both of them: zero references anywhere in the app or the widget as of 2026-10-13.
+    /// They were `ContrastHold`'s two targets, and `DECISIONS.md` lists them among ten symbols a
+    /// 2026-10-09 reference sweep deleted — it is wrong about these two, and that section now
+    /// carries the correction. The ratio system they belong to is gone: a two-colour app has no
+    /// ratio to hold.
+    ///
+    /// What they used to mean, and the only reason to keep them rather than delete them with the
+    /// rest: the gap between the two was meant to be the same in every condition, and capping the
+    /// title as well as raising it was the point, because letting it run to 15:1 on a clear day
+    /// while the caption was pinned is what let them meet at dusk.
     private static let titleContrast: Double = 9.0
     private static let captionContrast: Double = 3.5
 
@@ -968,9 +990,9 @@ struct ContentView: View {
     /// as inputs. The next event it cannot: a widget has no event store unless
     /// it asks for calendar access of its own, and one permission prompt is
     /// enough for one app.
-    /// Everything outside the arc is about NOW, never about the wheel.
+    /// Everything outside the arc is about NOW, never about where the arc has been dragged to.
     ///
-    /// The events used to be whatever the wheel had loaded — a day either side
+    /// The events used to be whatever the arc had loaded — a day either side
     /// of the focus — so scrubbing three days out left the widgets with a
     /// snapshot that held no events for today at all. They come from the store
     /// now, for today and tomorrow, which is what a timeline running eight
@@ -1016,16 +1038,6 @@ struct ContentView: View {
                                        timeZone: location.timeZone)
     }
 
-    /// Empty time just creates. On an event there are two things it could mean, so it asks
-    /// rather than picking one: a day nests, and opening the outer event was the only thing on
-    /// offer. The header title button's route into an event, and one of the two places the
-    /// editor bell rings — `openAtTappedHour` above is the other, which is the tap on the arc.
-    ///
-    /// It sits here rather than on the event actually being created, so the two
-    /// branches sound the same: the choice sheet and the straight-to-new-event
-    /// path are one press to the thumb, and only this level knows that. Ringing
-    /// deeper meant the same press rang or not depending on whether something
-    /// happened to be under the dot.
     /// What is under the finger decides the action. Empty time creates AT THAT TIME rather than
     /// at the focus, which is the thing the wheel's centre button could not say. An event asks
     /// New or Open, because real days nest — a call inside a block, a break inside a shift — so
@@ -1061,14 +1073,6 @@ struct ContentView: View {
         return Date(timeIntervalSince1970: (raw / step).rounded() * step)
     }
 
-    /// Asks for location on a launch where the onboarding will NOT, which is every launch after
-    /// the first.
-    ///
-    /// The test is `.ready`, not "anything but `.new`". `.waiting` comes first and means the gate
-    /// does not yet know, and reading it as "not new" raised the prompt on the very first launch
-    /// a few milliseconds before the onboarding appeared — which is the thing this method exists
-    /// to stop (2026-10-10). `.settling` and `.arrivedLate` are first-run states too; none of
-    /// them is a launch that owes a prompt.
     /// What a choice means, in one place. The sheet calls it from `onDismiss` and the landscape
     /// panel calls it as it closes, so the two presentations can never answer differently.
     private func actOnTimeChoice() {
@@ -1133,12 +1137,37 @@ struct ContentView: View {
         }
     }
 
+    /// Asks for location on a launch where the onboarding will NOT, which is every launch after
+    /// the first.
+    ///
+    /// The test is `.ready`, not "anything but `.new`". `.waiting` comes first and means the gate
+    /// does not yet know, and reading it as "not new" raised the prompt on the very first launch
+    /// a few milliseconds before the onboarding appeared — which is the thing this method exists
+    /// to stop (2026-10-10). `.settling` and `.arrivedLate` are first-run states too; none of
+    /// them is a launch that owes a prompt.
+    ///
+    /// Attached to `actOnTimeChoice` until 2026-10-13, which touches neither the gate nor the
+    /// location.
     private func requestLocationIfPastOnboarding() {
         guard let gate, gate.hasResolved, gate.state == .ready else { return }
         guard location.access == .undetermined else { return }
         location.request()
     }
 
+    /// Empty time just creates. On an event there are two things it could mean, so it asks
+    /// rather than picking one: a day nests, and opening the outer event was the only thing on
+    /// offer. The header title button's route into an event, and one of the two places the
+    /// editor bell rings — `openAtTappedHour` is the other, which is the tap on the arc.
+    ///
+    /// It sits here rather than on the event actually being created, so the two
+    /// branches sound the same: the choice sheet and the straight-to-new-event
+    /// path are one press to the thumb, and only this level knows that. Ringing
+    /// deeper meant the same press rang or not depending on whether something
+    /// happened to be under the dot.
+    ///
+    /// This doc block spent some time attached to `openAtTappedHour`, one function above the one
+    /// it describes, where it read as though that function were the header button's route. Moved
+    /// 2026-10-13.
     private func openEditor() {
         Sounds.ring(.editor)
         if let event = model.activeEvent.flatMap({ calendar.occurrence(for: $0.id) }) {
@@ -1149,12 +1178,8 @@ struct ContentView: View {
         }
     }
 
-    /// A jump pans EVERY layer, and the distance is set by the gap between
-    /// events while the duration was fixed. A one-hour hop travelled 130pt and
-    /// an eight-hour one 1040pt, both in 0.55s, so the far end smeared at about
-    /// 3000 pt/s against a readable 800 to 1200. The capsule arriving mid-smear
-    /// is what read as it being dragged along.
-    /// Chevrons move the time cursor to the next or previous event's START.
+    /// Move the focus to the next or previous event's START. Reached from the arc's left and
+    /// right edge bands, which took this over from the chevrons on 2026-10-10.
     ///
     /// The near list only spans the drawn window, so when it comes up empty the
     /// store is asked over a much wider range before giving up. Without that,
@@ -1199,12 +1224,18 @@ struct ContentView: View {
     /// screen on the way — which is most of what a long move looks like. They
     /// are all held back for the flight and revealed on arrival.
     ///
+    /// Measured, when the duration was fixed and the distance was not: a one-hour hop travelled
+    /// 130pt and an eight-hour one 1040pt, both in 0.55s, so the far end smeared at about
+    /// 3000 pt/s against a readable 800 to 1200, and the capsule arriving mid-smear is what read
+    /// as it being dragged along. (Those numbers sat on `step` until 2026-10-13, which is one of
+    /// the four callers rather than the thing being described.)
+    ///
     /// Critically damped, both on the pan and the reveal: a move should land,
     /// not settle. The reveal hangs off the animation's own completion rather
     /// than a timer; a timer is a guess at when a spring settles, and it goes
     /// stale the moment the spring is retuned.
     ///
-    /// One function, because NOW and the chevrons do the same thing and the
+    /// One function, because Now and an edge-band step do the same thing and the
     /// suppression was written at one call site and not the other. The arrival
     /// haptic lives here for the same reason: four call sites jump, and any of
     /// them written separately is the one that ends up silent.
@@ -1216,9 +1247,9 @@ struct ContentView: View {
         } completion: {
             withAnimation(.easeOut(duration: 0.22)) { eventsHidden = false }
         }
-        // Only when it actually went somewhere. Pressing NOW while already on
+        // Only when it actually went somewhere. Choosing Now while already on
         // now is a no-op, not an arrival, and reporting one would make the
-        // wheel's vocabulary mean less everywhere else.
+        // app's haptic vocabulary mean less everywhere else.
         if model.focusHour != origin { Haptics.moved() }
     }
 

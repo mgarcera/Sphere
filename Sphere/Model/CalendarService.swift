@@ -136,9 +136,9 @@ final class CalendarService {
     }
 
     /// Timed events in a window, taken from the store rather than from
-    /// whatever the wheel happens to have loaded.
+    /// whatever the arc happens to have loaded.
     ///
-    /// The arc loads a day either side of the FOCUS, so a wheel three days out
+    /// The arc loads a day either side of the FOCUS, so a focus three days out
     /// left the widgets with a snapshot that had no events for today in it at
     /// all — and a widget is about now, always. This is what they read.
     func timedOccurrences(from start: Date, to end: Date) -> [SnapshotEvent] {

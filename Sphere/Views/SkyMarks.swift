@@ -5,7 +5,7 @@ import SwiftUI
 /// Nothing here is randomised at draw time. Where a shape needs to look
 /// hand-placed rather than stamped, it is perturbed by a hash of the day and
 /// hour, so it is identical on every redraw and the sky does not shimmer while
-/// the wheel turns.
+/// the arc is dragged.
 enum SkyMarks {
     static let stroke = StrokeStyle(lineWidth: 1.3, lineCap: .round, lineJoin: .round)
 

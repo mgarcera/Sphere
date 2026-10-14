@@ -11,10 +11,14 @@ struct ArcWindow: View {
     /// of what a long jump looks like.
     var eventsHidden = false
     var arcHeight: CGFloat = 190
-    /// How dark the sky is: the night's own strength, and what the marks above
-    /// the horizon lighten with.
+    /// How dark the sky is, and READ BY NOTHING in this file as of 2026-10-13. It used to be
+    /// what the marks above the horizon lightened with; `skyInk` is now plain `mark`, and the
+    /// comment on it 270 lines below says why. `ContentView` passes a literal 0 and records that
+    /// the parameter is kept on purpose rather than torn out, so this is a parked input, not a
+    /// live one. Anything above the horizon changes with `mark` and with nothing else.
     var nightness: Double = 0
-    /// Weather takes precedence over night, the way it does over dusk.
+    /// Weather takes precedence over night, the way it did over dusk. Also read by nothing here,
+    /// for the same reason and since the same date.
     var nightSuppressedBy: Double = 0
     /// Black or white, decided by the field and passed down to everything drawn on it.
     ///
@@ -91,7 +95,7 @@ struct ArcWindow: View {
                 // block and cover the header's sky as well.
                 ZStack(alignment: .topLeading) {
                 // Each day is its own cached layer, so only the set of three
-                // changes when the wheel crosses a boundary. Panning never
+                // changes when the drag crosses a boundary. Panning never
                 // re-samples a path.
                 HStack(alignment: .top, spacing: 0) {
                     ForEach(firstDay...(firstDay + 2), id: \.self) { index in
@@ -113,7 +117,7 @@ struct ArcWindow: View {
                 ZStack(alignment: .topLeading) {
                 // Each deck is its own layer so it can trail the arc by its own
                 // amount. Further decks lag more, which is the parallax; they
-                // catch up the moment the wheel stops, so a cloud is never
+                // catch up the moment the drag stops, so a cloud is never
                 // permanently off its hour.
                 ForEach(SkyContinuous.Deck.allCases) { deck in
                     HStack(alignment: .top, spacing: 0) {

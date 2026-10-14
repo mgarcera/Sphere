@@ -8,8 +8,8 @@ import SwiftUI
 /// while squeezing the same day into a few hundred points turns it into a
 /// proper hill.
 ///
-/// It is anchored to the real now, not to the wheel, so it stays a reference
-/// for the actual day however far the wheel has wandered.
+/// It is anchored to the real now, not to the focus, so it stays a reference
+/// for the actual day however far the arc has been dragged.
 struct MiniArc: View {
     /// One event on the day, in the calendar's own colour — the same capsule
     /// the widgets draw, for the same reason: the arc is a picture of the day

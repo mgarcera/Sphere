@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// What MENU opens. Everything that has nowhere else to live: another date,
+/// What the Menu card opens, from the hold's pair or the corner's. Everything
+/// that has nowhere else to live: another date,
 /// all-day events (which have no hour, so the arc cannot hold them), which
 /// calendars count, and the sun's times now that the arc no longer labels
 /// them. The times are readings, not controls.
@@ -297,10 +298,10 @@ struct DayMenu: View {
     }
 
     /// The real now, in the corner: tonight's moon and what it is doing
-    /// outside, both independent of where the wheel is.
-    /// Today's timed events, from the store rather than from the wheel's
-    /// loaded window — the arc above is today's whatever the wheel is doing,
-    /// and a wheel three days out had left it empty.
+    /// outside, both independent of where the arc has been dragged to.
+    /// Today's timed events, from the store rather than from the arc's loaded
+    /// window — the arc above is today's wherever the focus has gone, and a
+    /// focus three days out had left it empty.
     ///
     /// An event either side of midnight is clipped to the day rather than
     /// dropped, and a very short one is given enough length to read as a
@@ -370,7 +371,9 @@ struct DayMenu: View {
         }
     }
 
-    /// Information only. NOW on the wheel is what moves you.
+    /// Information only. What moves you is the hold's Now card, or two fingers
+    /// on the arc; this said "NOW on the wheel" until 2026-10-13 and pointed at
+    /// a control deleted in 2.0.
     private func reading(_ title: String, _ hour: Double?) -> some View {
         HStack {
             Text(title)
