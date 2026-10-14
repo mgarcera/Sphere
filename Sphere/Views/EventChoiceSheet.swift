@@ -12,10 +12,13 @@ enum EventChoice {
 /// something could not have anything else put in it. Real days nest: a call
 /// inside a block, a break inside a shift.
 ///
-/// Two entry points, and they ask about different events. The header title button asks about
-/// the event under the DOT and creates at the focus. A tap on the arc asks about the event
-/// under the FINGER and creates at the time under the finger. The caller carries both answers
-/// in; this sheet only asks which.
+/// Two entry points, and as of 2026-10-14 they agree about WHICH event. The header title button
+/// asks about the event under the dot and creates at the focus. A tap on the arc asks about the
+/// event under the finger, and when the finger is not on one it falls back to the same event the
+/// header is showing — Mason's rule: "if it's in the header, it should be able to be opened."
+/// They still differ in where they CREATE, which is the point of the tap: the header creates at
+/// the focus, the tap at the time under the finger. The caller carries both answers in; this
+/// sheet only asks which.
 ///
 /// Cards and nothing else. A heading and a caption under each were tried and cut: anything that
 /// explains a one-word choice makes it look like a form. (This read "two buttons" until

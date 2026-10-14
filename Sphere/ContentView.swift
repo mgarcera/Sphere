@@ -1024,8 +1024,22 @@ struct ContentView: View {
     private func openAtTappedHour(_ hour: Double) {
         Sounds.ring(.editor)
         let start = snappedToFiveMinutes(hour)
-        let hit = model.events.first { !$0.isAllDay && $0.contains(hour) }
-        if let hit, let occurrence = calendar.occurrence(for: hit.id) {
+        // If the header is showing an event, a tap can open it (Mason, 2026-10-14). The event
+        // under the finger still wins when there is one; `model.activeEvent` is the fallback, and
+        // it is exactly what the header draws, so the rule a reader can see on screen is the rule
+        // the code runs: title in the header, Open on the card.
+        //
+        // Until today this asked only about the finger, and `contains` is exact while the capsule
+        // is stroked with round caps that overhang each end by half a line width. So the visible
+        // tips of an event missed, and so did the whole of it from inside either 44pt edge band,
+        // where a tap is a step and never reaches this function. Mason saw it as Open appearing
+        // on some parts of an event and not others.
+        //
+        // `start` is still the tapped time, not the active event's, so New event goes on creating
+        // where the tap aimed. That is the whole reason the tap kept this sheet when Now left it.
+        let underFinger = model.events.first { !$0.isAllDay && $0.contains(hour) }
+        if let hit = underFinger ?? model.activeEvent,
+           let occurrence = calendar.occurrence(for: hit.id) {
             choiceContext = ChoiceContext(event: occurrence, start: start)
             isEventChoiceOpen = true
         } else {

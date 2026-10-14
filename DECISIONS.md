@@ -1842,3 +1842,38 @@ with no reader anywhere in any target. Its own comment argued for keeping them �
 seven lines later is the worse cost" — and that argument loses to the file being the only thing in
 the app justified by a direction rather than a use. The lines are recoverable from this repo's
 history; the direction is recorded in "Planetary hours have no surface" above.
+
+## Open follows the header (2026-10-14)
+
+Mason, on an event in the arc: "the open part is only appearing on certain parts on the event, not
+all." Then the rule, which is better than the three fixes I had drafted: **"if it's in the header,
+it should be able to be opened."**
+
+The tap asked only about the hour under the finger, and `CalendarEvent.contains` is exact while
+`EventLayer` strokes each capsule with round caps that overhang both ends by half a line width, 2
+to 2.5 points. So the visible tips of every event were outside its own time range, and tapping them
+raised the empty-time sheet with no Open card on it. The same tap inside either 44pt edge band
+never reaches the handler at all, since a band tap is a step.
+
+`openAtTappedHour` now falls back to `model.activeEvent` when the finger is not on an event, and
+`model.activeEvent` is exactly what the header draws. The rule a reader can see on screen is the
+rule the code runs: title in the header, Open on the card.
+
+Two consequences worth stating:
+
+**The empty-time sheet now appears only when the header has no event.** Tap a clearly empty hour
+while sitting inside a long event and you get three cards, not two: New event at the hour you
+aimed at, Open for the event you are in, Pick date. That is the rule working rather than failing —
+Open has always meant "the event I am on", and the header is where the app says which one that is.
+
+**`start` is still the tapped time, not the active event's.** New event goes on creating where the
+tap aimed, which is the whole reason the tap kept this sheet when Now left it for the hold on
+2026-10-13.
+
+The edge bands still step rather than open, which is deliberate and documented, and is now the
+only part of a visible event a tap will not open.
+
+The diagnosis was worth more than the fix here. Three candidate fixes were drafted off the code —
+widen `contains`, narrow the band, draw the band's boundary — and the one-line answer came from
+Mason naming the invariant instead: the header is the app's own statement of which event you are
+on, so anything that disagrees with the header is the bug.
