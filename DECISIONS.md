@@ -1952,3 +1952,32 @@ who has not found a 13pt mark in the corner can press and hold anywhere on the d
 The gesture guide's six pages are unchanged in number. The tap page gained "jump to now" and the
 hold page became "Hold for this guide, or the menu", which is a caption that describes the sheet
 the reader is holding while they read it.
+
+## A long press stops also counting as a tap (2026-10-14)
+
+Mason, on the device: "sometimes when long pressing, it registers as both a single tap and a long
+press. both modals open up (or compete to open)."
+
+Both gestures were allowed to win, and both did. `LongPressGesture(minimumDuration: 0.45)`
+succeeds with the finger still down — which is the feel the guide's press ring teaches — and then
+`onTapGesture` recognises the same touch when it lifts, because SwiftUI's tap has no maximum
+duration. One press therefore ran `onHold` and then `onTapTime`, and two `.sheet` modifiers became
+true within the same touch and fought over which got presented. It was not new today; today's
+change only altered which two sheets collided.
+
+`didHold` in `ArcWindow` is set when the press fires and consumed by the tap that follows, which
+swallows exactly one tap: the one belonging to that press. The scrub's start clears it, so a press
+whose lift landed on the sheet rather than on the arc cannot leave the flag set and eat a later
+tap.
+
+**The structural fix was available and not taken.** `LongPressGesture().exclusively(before:)`
+makes the conflict impossible rather than cleaned up afterwards, because the tap is only recognised
+if the long press fails. It means replacing `.onTapGesture` with a gesture in the same arena as the
+scrub's `DragGesture(minimumDistance: 8)`, and this file has lost that fight twice: the
+`contextMenu` starvation of 2026-10-03, and the reason `minimumDistance` is 8 rather than 0 in the
+first place. A flag cannot starve a gesture. If the flag ever proves leaky, the exclusive
+composition is the next move and the reason to make it is written here.
+
+Worth noticing about how this was found: three gesture rearrangements shipped in two days, every
+one of them built, and none of them exposed this. It took one minute of a thumb on glass. The
+compiler cannot see a gesture arena.

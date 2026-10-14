@@ -77,6 +77,21 @@ struct ArcWindow: View {
     /// position, and `translation` is cumulative so each callback sends only what is new.
     @State private var lastTranslation: CGFloat = 0
     @State private var isScrubbing = false
+    /// Set when the long press fires, consumed by the tap that follows it on lift.
+    ///
+    /// The two gestures are independent and both are allowed to win. `LongPressGesture` succeeds
+    /// at 0.45s with the finger still down, which is the feel the guide's press ring teaches, and
+    /// then `onTapGesture` recognises the same touch when it lifts — SwiftUI's tap has no maximum
+    /// duration. So one long press raised the hold's sheet AND the tap's, and the two `.sheet`
+    /// modifiers fought over which got presented (Mason, 2026-10-14: "both modals open up (or
+    /// compete to open)").
+    ///
+    /// Composing them as `LongPressGesture().exclusively(before:)` is the structural fix and was
+    /// not taken: it means replacing `.onTapGesture` with a gesture in the same arena as the
+    /// scrub's `DragGesture(minimumDistance: 8)`, and this file has lost that fight twice — the
+    /// `contextMenu` starvation of 2026-10-03, and the reason `minimumDistance` is 8 and not 0.
+    /// A flag cannot starve anything.
+    @State private var didHold = false
     /// The window the pinch started from. Magnification is relative to the gesture's start, so
     /// without this each callback would compound into a runaway zoom.
     @State private var zoomBase: Double?
@@ -219,6 +234,12 @@ struct ArcWindow: View {
             // `focusHour`.
             .onTapGesture { location in
                 guard pointsPerHour > 0 else { return }
+                // The lift at the end of a long press arrives here as a tap. Swallow exactly one,
+                // the one belonging to the press that just fired.
+                if didHold {
+                    didHold = false
+                    return
+                }
                 if let onEdgeStep, location.x <= Self.edgeBand {
                     onEdgeStep(-1)
                 } else if let onEdgeStep, location.x >= proxy.size.width - Self.edgeBand {
@@ -228,13 +249,17 @@ struct ArcWindow: View {
                 }
             }
             // Guarded on the drag: a long drag is not a long press. Holding still for 0.45s
-            // asks Now or Menu; moving first makes it a scrub and nothing fires. (It read
+            // asks Guide or Menu; moving first makes it a scrub and nothing fires. (It read
             // "returns to now" until 2026-10-13, which was true until 2026-10-10 and then was
-            // not: the hold went to the menu that day and to the pair three days later.)
+            // not: the hold went to the menu that day, to a pair three days later, and to the
+            // corner's pair on 2026-10-14.)
+            //
+            // `didHold` is what stops the lift from also counting as a tap; see its declaration.
             .simultaneousGesture(
                 LongPressGesture(minimumDuration: 0.45)
                     .onEnded { _ in
                         guard !isScrubbing, lastTranslation == 0 else { return }
+                        didHold = true
                         onHold?()
                     },
                 isEnabled: onHold != nil
@@ -275,6 +300,10 @@ struct ArcWindow: View {
                 if !isScrubbing {
                     isScrubbing = true
                     lastTranslation = 0
+                    // A drag is a new touch, so any unconsumed hold belongs to a finished one.
+                    // Without this, a press whose lift landed on the sheet rather than on the arc
+                    // would leave the flag set and swallow the next real tap.
+                    didHold = false
                     onScrubBegan?()
                 }
                 // Deltas, not the cumulative translation: sending the total each callback would
