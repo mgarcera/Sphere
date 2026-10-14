@@ -39,7 +39,6 @@ struct ContentView: View {
     @State private var isDayPickerOpen = false
     @State private var isEventChoiceOpen = false
     @State private var isTimeChoiceOpen = false
-    @State private var isHoldChoiceOpen = false
     @State private var isCornerChoiceOpen = false
     /// Acted on after the chooser closes, never while it is closing: presenting
     /// the editor into a sheet still dismissing is the refusal that cost ten
@@ -63,7 +62,6 @@ struct ContentView: View {
     @State private var pendingTimeChoice: TimeChoice?
     /// Same discipline again, for the hold's own pair (Now / Menu, 2026-10-13). The menu is a
     /// sheet, so choosing it while this one is still dismissing is the same refusal.
-    @State private var pendingHoldChoice: HoldChoice?
     /// Held like the other three, and for the sharper version of the same reason: both of this
     /// pair's answers are sheets, so acting before this one has closed would present a sheet
     /// into a sheet that is still dismissing.
@@ -178,18 +176,6 @@ struct ContentView: View {
                 }
             }
 
-            if isShortScreen, isHoldChoiceOpen {
-                ChoicePanel {
-                    withAnimation(.easeOut(duration: 0.2)) { isHoldChoiceOpen = false }
-                } cards: {
-                    HoldChoiceSheet.cards { choice in
-                        pendingHoldChoice = choice
-                        withAnimation(.easeOut(duration: 0.2)) { isHoldChoiceOpen = false }
-                        actOnHoldChoice()
-                    }
-                }
-            }
-
             if isShortScreen, isCornerChoiceOpen {
                 ChoicePanel {
                     withAnimation(.easeOut(duration: 0.2)) { isCornerChoiceOpen = false }
@@ -285,17 +271,6 @@ struct ContentView: View {
                 isEventChoiceOpen = false
             }
             .presentationDetents([.height(EventChoiceSheet.height)])
-            .presentationDragIndicator(.hidden)
-        }
-        .sheet(isPresented: Binding(get: { isHoldChoiceOpen && !isShortScreen },
-                                    set: { isHoldChoiceOpen = $0 }), onDismiss: {
-            actOnHoldChoice()
-        }) {
-            HoldChoiceSheet { choice in
-                pendingHoldChoice = choice
-                isHoldChoiceOpen = false
-            }
-            .presentationDetents([.height(HoldChoiceSheet.height)])
             .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: Binding(get: { isCornerChoiceOpen && !isShortScreen },
@@ -559,14 +534,15 @@ struct ContentView: View {
                       // about and a long press reports no location at all. That is still true
                       // and is now the reason this gesture carries BOTH of the actions that
                       // need no aim: back to the present, or the day's menu.
-                      onHold: {
-                          // No bell. A modal is a question, and the bells mark what the answer
-                          // DOES (Mason, 2026-10-14). This rang `.menu` from 2026-10-10, when the
-                          // hold went straight to the menu, and kept ringing it after the hold
-                          // became a question — so the sound arrived for a menu that might never
-                          // open. `.menu` now rings at the two places the menu actually opens.
-                          isHoldChoiceOpen = true
-                      },
+                      // The guide or the menu (Mason, 2026-10-14): the same pair the question
+                      // mark in the corner opens, and literally the same sheet rather than a
+                      // copy of it. The hold is the gesture with no visible surface, and the two
+                      // things behind it are now the two surfaces that explain the app and hold
+                      // everything else — neither of which cares where the finger was. Now went
+                      // back to the tap on the same day.
+                      //
+                      // No bell. A modal is a question, and the bells mark what the answer DOES.
+                      onHold: { isCornerChoiceOpen = true },
                       // Straight to now (Mason, 2026-10-13), which is the half of the pair
                       // above that gets reached for without thinking. It asks nothing and lands
                       // in one gesture; the menu, being a place rather than a move, is worth the
@@ -1079,6 +1055,11 @@ struct ContentView: View {
         case .create:
             Sounds.ring(.editor)
             editorTarget = .new(start)
+        case .now:
+            // Back on this sheet as of 2026-10-14, through the same `goToNow` the two-finger tap
+            // runs, so the card and the shortcut cannot drift. It rings and shakes in there, and
+            // does neither when you are already on now.
+            goToNow()
         case .pickDate:
             // The bell comes home (Mason, 2026-10-14). `.calendar` is `weather.m4a` and rang on
             // the wheel's CAL from 2026-09-12 — "Sound: weather rings on CAL", whose own message
@@ -1099,20 +1080,6 @@ struct ContentView: View {
             // The guide has no bell of its own and never has. It is the only one of these
             // destinations that is a thing to read rather than a thing done.
             isGuideOpen = true
-        case .menu:
-            Sounds.ring(.menu)
-            isMenuOpen = true
-        }
-    }
-
-    /// The hold's pair, on the same terms as the two above: held while the sheet closes, acted
-    /// on once it has, because the menu is itself a sheet.
-    private func actOnHoldChoice() {
-        guard let choice = pendingHoldChoice else { return }
-        pendingHoldChoice = nil
-        switch choice {
-        case .now:
-            goToNow()
         case .menu:
             Sounds.ring(.menu)
             isMenuOpen = true

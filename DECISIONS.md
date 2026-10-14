@@ -1915,3 +1915,40 @@ written at the control, and then the control's job moved: the chevrons' bell wen
 bands that replaced them, the picker's bell went to `step`, the menu's bell stayed on a gesture
 that became a question. Every time, the sound ended up on the gesture rather than on the act. The
 fix each time was to ring where the thing happens, not where the finger went.
+
+## Three cards on the tap, the guide and the menu on the hold (2026-10-14)
+
+Mason: "let's make a single tap new event | now | pick date. let's make long press the same
+guide/menu."
+
+**The tap offers three cards, and the middle one is the only thing that changes.** Both tap sheets
+now read New event, something, Pick date, and the something is **Now when there is no event under
+you and Open when there is**. So the tap's shape never changes, the first and last cards never
+move, and the middle slot answers "the thing that is there": the present, or the event you are
+already in.
+
+That is the reading taken of "single tap new event | now | pick date", and it is the one that keeps
+Open, which Mason had insisted on hours earlier — "if it's in the header, it should be able to be
+opened". The literal alternative, one sheet of exactly those three cards with Open gone, was not
+built.
+
+**Now came back to the tap, one day after leaving it.** On 2026-10-13 it moved to the hold on the
+argument that a tap is an aim and Now throws the aimed spot away, while a long press reports no
+position and had nothing to lose. The argument about the gestures is still true and lost anyway:
+the hold had to carry the guide and the menu, and Now is reached far more often than it is
+reasoned about. Two fingers still go straight to it for anyone who does not want the card, through
+the same `goToNow` the card runs.
+
+**The hold and the corner's question mark are one sheet.** `HoldChoiceSheet` was deleted rather
+than left as a second copy of Guide and Menu; `onHold` now sets `isCornerChoiceOpen`. A hold and a
+corner button asking the same question from two files would have drifted within a week, which is
+the same reason every sheet here exposes `static func cards`. Three choice sheets now, from one
+`ChoiceCard`: the tap's two, and this one with two ways in.
+
+**The help is behind two gestures.** The cost recorded when the corner started asking was that help
+moved one press further away. The hold reaching the same sheet partly answers it: a stuck reader
+who has not found a 13pt mark in the corner can press and hold anywhere on the drawing.
+
+The gesture guide's six pages are unchanged in number. The tap page gained "jump to now" and the
+hold page became "Hold for this guide, or the menu", which is a caption that describes the sheet
+the reader is holding while they read it.

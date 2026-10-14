@@ -1,9 +1,11 @@
 import SwiftUI
 
-/// Every gesture the arc has, one per page, on the same ground as the four choice sheets the
-/// tap, the hold and the corner's question mark open (Mason, 2026-10-10). It said "three" and
-/// "the header button" until 2026-10-13: the header button opens the editor and never opened a
-/// choice sheet, and the corner's own pair had not been built yet.
+/// Every gesture the arc has, one per page, on the same ground as the three choice sheets the
+/// tap and this sheet's own openers raise (Mason, 2026-10-10): `TimeChoiceSheet` and
+/// `EventChoiceSheet` from a tap, and `CornerChoiceSheet` from either the corner's question mark
+/// or a long press. It said "three" and "the header button" until 2026-10-13, when the header
+/// button turned out to open the editor and never a choice sheet; "four" until 2026-10-14, when
+/// the hold stopped having a sheet of its own and joined the corner's.
 ///
 /// It was an overlay on the arc that ran all six in sequence and then left. Two things were
 /// wrong with that: a reader who missed one could not go back to it, and a layer drawn over the
