@@ -38,9 +38,14 @@ enum Haptics {
         detent.prepare()
     }
 
-    /// The dot jumped somewhere: a chevron, the arc tapped to return to now, a
-    /// day picked. Weightier than a detent, since a jump crosses in one press
-    /// what the wheel would take several turns to cover.
+    /// The dot jumped somewhere: an edge band stepping to an event, Now from the hold or from
+    /// two fingers, a day picked. Weightier than a detent, since a jump crosses in one press
+    /// what a scrub would take a long drag to cover.
+    ///
+    /// Rewritten 2026-10-13. It named a chevron, a tap that returned to now, and what the wheel
+    /// would take several turns to cover; the chevrons and the wheel went in 2.0 and the tap
+    /// gave Now up on 2026-10-10, so all three examples described controls that do not exist.
+    /// The four jumps it reports are every caller of `travel` in `ContentView`.
     static func moved() {
         guard isEnabled else { return }
         arrival.impactOccurred(intensity: 0.7)
@@ -49,6 +54,12 @@ enum Haptics {
     /// A long press registered. Nothing about a hold is visible while it is
     /// happening, so this is the only thing that says the gesture took before
     /// the action itself lands.
+    ///
+    /// NOT CALLED as of 2026-10-13, and nothing else reports the hold either: grep found zero
+    /// `.held()` call sites in the app. The hold's feedback is `Sounds.ring(.menu)` and the
+    /// sheet arriving, both of which land after the gesture completes rather than when it
+    /// registers. Kept rather than deleted because the question is whether the hold SHOULD
+    /// announce itself at 0.45s, which is Mason's to answer; if the answer is no, this goes.
     static func held() {
         guard isEnabled else { return }
         arrival.impactOccurred(intensity: 0.45)

@@ -202,8 +202,10 @@ struct ArcWindow: View {
             }
             .frame(width: proxy.size.width, height: ArcGeometry.totalHeight(arcHeight), alignment: .topLeading)
             // STUDY: scrub by dragging the arc. `minimumDistance` is 8 rather than 0 so the taps
-            // this surface is about to carry — create at a time, open a capsule, return to now —
-            // still get their touch. A zero-distance drag would swallow all three.
+            // this surface is about to carry — create at a time, open a capsule, step to an
+            // event at either edge — still get their touch. A zero-distance drag would swallow
+            // all three. (That list read "return to now" until 2026-10-13; the tap stopped
+            // carrying Now on 2026-10-10 and the comment did not notice.)
             .contentShape(.rect)
             .gesture(scrubGesture(pointsPerHour: pointsPerHour), isEnabled: onScrub != nil)
             // The bands come first: inside one, the tap is an event step and never a time.
@@ -220,7 +222,9 @@ struct ArcWindow: View {
                 }
             }
             // Guarded on the drag: a long drag is not a long press. Holding still for 0.45s
-            // returns to now; moving first makes it a scrub and nothing fires.
+            // asks Now or Menu; moving first makes it a scrub and nothing fires. (It read
+            // "returns to now" until 2026-10-13, which was true until 2026-10-10 and then was
+            // not: the hold went to the menu that day and to the pair three days later.)
             .simultaneousGesture(
                 LongPressGesture(minimumDuration: 0.45)
                     .onEnded { _ in
