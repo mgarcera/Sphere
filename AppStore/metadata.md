@@ -83,7 +83,73 @@ Sphere draws today as the sun's own elevation curve for where you are, lays your
 155 chars. This is the only listing field that stays editable after a version is approved, so it is
 where a seasonal line or a "new in 1.1" note goes without waiting for review.
 
-## Description
+## Description — LIVE, and the repo's record of it
+
+This is what App Store Connect serves, read back from the API on 2026-10-13, with one section
+replaced. Everything outside "The arc:" is Mason's own published wording, unchanged. **The section
+it replaces was headed "The wheel:"** and described the centre button, clicking left and right for
+the previous and next event, and reassignable buttons in settings — three controls deleted in 2.0,
+in the same listing whose What's New announced that the wheel was gone.
+
+The draft further down this file is a SEPARATE, older piece of writing that was never pasted. Keep
+this block in step with ASC; that one is history.
+
+```
+Sphere shows your schedule and weather in the sky. It's designed to have atmosphere. Each of your events is a capsule on the arc, running from start to end in the color of the calendar it came from. Clouds stack by altitude (modeled after cirrus and cumulus clouds), and you'll see rain, storms, lightning, and more. For clear hours, you'll see birds in the day and twinkling stars at night.
+
+The arc:
+
+- Drag it to move through the day. It clicks every quarter hour.
+- Pinch to change how much of the day you can see.
+- Tap to make an event at that hour, open one that is already there, or pick a different date.
+- Tap the left or right edge to go to the previous or next event.
+- Press and hold to go back to now, or to open the menu. Two fingers goes straight to now.
+- Events open in Apple's native calendar, so editing, deleting and replying to an invitation work exactly the way you're used to.
+- All-day events are under the date, where they can be read without taking room on the arc.
+- A question mark in the corner opens a guide to all of it, or the menu.
+
+The menu:
+
+- Today's arc with sunrise, midday and sunset.
+- Tonight's moon and the temperature right now.
+- Appearance; Natural Sky means the app is light by day and dark at night, and dark makes it dark all the time.
+- Calendar toggles.
+
+Outside the app:
+
+- Home Screen: the sky curve with your events on it, in small and medium.
+- Lock Screen: where the sun is and your next calendar event.
+
+Sphere is free. No account, no subscription, no ads, no analytics, no tracking.
+
+Privacy: https://smidgecraft.com/sphere/privacy
+Support: https://smidgecraft.com/sphere/support
+
+Questions, ideas, or feedback? mason@smidgecraft.com
+```
+
+Each bullet, against the code as of 2026-10-13: the drag is `scrubGesture` at `ArcWindow.swift:263`
+with `clickPastDetents` on a quarter hour; the pinch is `MagnifyGesture` on the same surface; the
+tap raises `TimeChoiceSheet` on empty time and `EventChoiceSheet` on an event, which between them
+are create, open and pick-a-date; the edges are `onEdgeStep` into `step`; the hold raises
+`HoldChoiceSheet`; two fingers run `goToNow`; the corner raises `CornerChoiceSheet`.
+
+## What's New — 2.1
+
+```
+Gestures
+- Hold the arc to jump back to now, or to open the menu.
+- Two fingers goes straight to now.
+- Tapping the arc is now create, open, or pick a date.
+
+The corner
+- The question mark opens the guide or the menu, so the menu is no longer hidden behind a hold.
+- It is easier to see, and VoiceOver reads it as "Guide or menu".
+
+Thank you for using Sphere! Feedback: mason@smidgecraft.com
+```
+
+## Description — DRAFT of 2026-09-11, never pasted, describes the 1.x app
 ```
 Sphere draws today as a single line: the sun's real elevation curve for where you are and the date you are on. The hill is taller in summer and shallower in winter because the sun really does go higher. Your calendar lies along that line, each event a capsule running from its start to its end, in the color of the calendar it came from.
 
