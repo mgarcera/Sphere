@@ -23,17 +23,11 @@ import SwiftUI
 /// The cost is one extra tap to edit an event you own. Asked for, after using it.
 enum EventTarget: Identifiable, Equatable {
     case new(Date)
-    /// NEVER CONSTRUCTED as of 2026-10-13: `editorTarget` is only ever `.new` or `.existing`, so
-    /// the `allDayEditor(on:)` branch below is unreachable. It lost its route when the wheel's
-    /// centre-button hold went in 2.0, which is the same thing that happened to `Mark.newAllDay`
-    /// — see the note on `Mark`, which records that both will want a route again.
-    case newAllDay(Date)
     case existing(EKEvent)
 
     var id: String {
         switch self {
         case .new(let date): "new-\(date.timeIntervalSince1970)"
-        case .newAllDay(let date): "newAllDay-\(date.timeIntervalSince1970)"
         case .existing(let event): "edit-\(event.eventIdentifier ?? "")-\(event.startDate.timeIntervalSince1970)"
         }
     }
@@ -116,7 +110,6 @@ struct EventKitHost: UIViewControllerRepresentable {
             waitDeadline = nil
             let controller: UIViewController = switch target {
             case .new(let start): editor(startingAt: start)
-            case .newAllDay(let day): allDayEditor(on: day)
             // No editability check of our own. There used to be an `isEditable`
             // here — allowsContentModifications plus an organizer test — and it
             // went with the branch on 2026-09-26, because the detail view applies
@@ -133,19 +126,6 @@ struct EventKitHost: UIViewControllerRepresentable {
             let event = EKEvent(eventStore: parent.store)
             event.startDate = start
             event.endDate = start.addingTimeInterval(parent.defaultDuration)
-            event.calendar = parent.store.defaultCalendarForNewEvents
-            return editor(for: event)
-        }
-
-        /// One whole day, so start and end land on the same date: that is what
-        /// Calendar.app writes for a single all-day event, and what the editor
-        /// reads back as one day rather than two.
-        private func allDayEditor(on day: Date) -> UIViewController {
-            let event = EKEvent(eventStore: parent.store)
-            let start = Calendar.current.startOfDay(for: day)
-            event.isAllDay = true
-            event.startDate = start
-            event.endDate = start
             event.calendar = parent.store.defaultCalendarForNewEvents
             return editor(for: event)
         }

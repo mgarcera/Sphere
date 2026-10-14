@@ -1764,3 +1764,39 @@ described the wheel three days after the wheel shipped as deleted, in the same l
 What's New announced the deletion. A control leaves the code in one commit and leaves the prose
 about it in however many places the prose lives. Deleting a control is not done until a sweep for
 its name comes back with nothing but history.
+
+## The unread symbols go (2026-10-13)
+
+Eighteen declarations and one whole file, every one of them with zero references outside its own
+declaration, deleted on Mason's word after the comment sweep named them. The greps were run from
+the repo root across `Sphere`, `Shared` and `SphereWidget`, each with a known positive proved
+first, and comment lines filtered out so a mention in prose did not count as a reader.
+
+`ContentView`: `titleContrast`, `captionContrast`, `isMorning`, `nightness`, `showsNightSky`.
+`DayModel`: `isFocusedOnToday`, `eventContainingNow`, `jumpToNextEvent`, `jumpToPreviousEvent`.
+`SkyCondition`: `hasLow`, `hasMid`, `hasHigh`, `bodyVisible`. `SolarDay`: `dayLengthHours`.
+`WeatherService`: `isLoaded`. `WeatherWash`: `topLuminance`. `GestureTeach`:
+`ScrubAffordance.mark`. `EventKitSheets`: `EventTarget.newAllDay` with its two switch branches and
+`allDayEditor(on:)`. And `Model/Chart.swift` entire: `BirthData`, `NatalChart`, `NatalPlacement`,
+`TransitAspect`.
+
+178 lines out, 12 in, and the 12 are the restore notes. Four of the deletions had a reason written
+on them earlier the same day arguing to keep them, which Mason's call supersedes; where a thing is
+worth bringing back, the line that brings it back is left where it was. `showsNightSky` and
+`nightness` are a sentence each. `ScrubAffordance.mark` cost its two call sites an argument.
+
+Two consequences worth stating rather than discovering later:
+
+**`Planet` is now dead.** `Chart.swift` was its only consumer, and a grep for `Planet` across all
+three targets returns nothing outside `Planet.swift` itself. It is NOT deleted: it carries a parked
+reason of its own for the seven call-to-action lines, and `AppStore/metadata.md` lists planetary
+hours among the things the listing deliberately does not claim. It is the one file in the app whose
+only justification is now a direction rather than a use.
+
+**`Sounds.Bell.calendar` is close to the same position.** Its only two ring sites are inside
+`step`, the edge-band event jump, which is the control the enum's own header says should be silent.
+If that rule wins, the bell has no sites at all and `Sphere/Sounds/weather.m4a` goes with it.
+
+`Mark.newAllDay` was deliberately kept while `EventTarget.newAllDay` went. The enum's header argues
+for the glyph set as a set of drawings rather than wiring, and a drawing costs nothing to keep;
+an unreachable editor branch is a claim about what the app can do.

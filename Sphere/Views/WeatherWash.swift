@@ -33,44 +33,12 @@ struct WeatherWash: View {
             + min(lightning, 1) * stormPeak, 1)
     }
 
-    /// Top-of-screen colours as components. Read only by `topLuminance` below and by the
-    /// gradients in this file; the header has not composited them since 2026-10-09.
+    /// Top-of-screen colours as components, read by the two gradients below and by nothing
+    /// outside this file. They were components rather than `Color`s so the header could
+    /// composite them and measure its own ground; it stopped doing that on 2026-10-09, and
+    /// `topLuminance`, the last reader that needed the arithmetic, was deleted on 2026-10-13.
     static let lightRainTop = (r: 0.42, g: 0.49, b: 0.58)
     static let lightStormTop = (r: 0.22, g: 0.27, b: 0.37)
-
-    /// Relative luminance at the top of the screen in light mode. **No callers as of
-    /// 2026-10-13** (one grep hit, this declaration). It existed so the header could measure its
-    /// own ground; the header now takes `markColour` from `SkyField.mark(on:)` and never
-    /// composites a wash, so nothing reads this and nothing needs to.
-    static func topLuminance(precipitation: Double, lightning: Double,
-                             twilight: (color: (r: Double, g: Double, b: Double), opacity: Double),
-                             night: (color: (r: Double, g: Double, b: Double), opacity: Double)
-                                 = ((0, 0, 0), 0),
-                             blue: (color: (r: Double, g: Double, b: Double), opacity: Double)
-                                 = ((0, 0, 0), 0)) -> Double {
-        var c = (r: 1.0, g: 1.0, b: 1.0)
-        func over(_ top: (r: Double, g: Double, b: Double), _ alpha: Double) {
-            c = (c.r * (1 - alpha) + top.r * alpha,
-                 c.g * (1 - alpha) + top.g * alpha,
-                 c.b * (1 - alpha) + top.b * alpha)
-        }
-        // Blue first: on a clear day it IS the paper, as far as anything above
-        // it is concerned. Night and blue never overlap in practice — the blue
-        // is gone by fifteen degrees — but the order is the drawing's order.
-        over(blue.color, blue.opacity)
-        // Night next: it is the sky itself, and dusk is a tint over it rather
-        // than beside it.
-        over(night.color, night.opacity)
-        // Twilight next, since it sits under the weather.
-        over(twilight.color, twilight.opacity)
-        over(lightRainTop, rainStrength(precipitation: precipitation, lightning: lightning) * rainPeak)
-        over(lightStormTop, min(lightning, 1) * stormPeak)
-
-        func linear(_ v: Double) -> Double {
-            v <= 0.03928 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4)
-        }
-        return 0.2126 * linear(c.r) + 0.7152 * linear(c.g) + 0.0722 * linear(c.b)
-    }
 
     var body: some View {
         ZStack {

@@ -89,8 +89,6 @@ final class DayModel {
 
     var isFocusedOnNow: Bool { abs(focusHour - nowHour) < 1.0 / 60 }
 
-    var isFocusedOnToday: Bool { dayIndex == Int(floor(nowHour / 24)) }
-
     /// A new fix invalidates every cached day, since sunrise, sunset and the
     /// curve's whole shape belong to a place.
     ///
@@ -187,19 +185,6 @@ final class DayModel {
     /// belong somewhere else on screen.
     var timedEvents: [CalendarEvent] { events.filter { !$0.isAllDay } }
 
-    /// What is happening right now, which is not the same as what the arc is
-    /// showing. The focus wanders; this does not. **No callers as of 2026-10-13**
-    /// (one grep hit, this declaration); kept because it is the model's own answer
-    /// to "what is on now" and the header asks a different question.
-    var eventContainingNow: CalendarEvent? {
-        timedEvents.filter { $0.contains(nowHour) }
-            .max { a, b in
-                a.startHour == b.startHour
-                    ? a.durationHours > b.durationHours
-                    : a.startHour < b.startHour
-            }
-    }
-
     var allDayEvents: [CalendarEvent] {
         events.filter { $0.isAllDay && Int(floor($0.startHour / 24)) == dayIndex }
     }
@@ -236,14 +221,6 @@ final class DayModel {
 
     var previousEvent: CalendarEvent? {
         timedEvents.last { $0.startHour < focusHour - Self.jumpEpsilon }
-    }
-
-    func jumpToNextEvent() {
-        if let next = nextEvent { focusHour = next.startHour }
-    }
-
-    func jumpToPreviousEvent() {
-        if let previous = previousEvent { focusHour = previous.startHour }
     }
 
     // MARK: - Sky

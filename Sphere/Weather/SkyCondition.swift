@@ -95,11 +95,4 @@ struct SkyHour: Identifiable, Equatable {
 
     /// Below this a layer is not worth drawing.
     static let layerThreshold: Double = 0.12
-
-    var hasLow: Bool { cloudLow >= Self.layerThreshold }
-    var hasMid: Bool { cloudMid >= Self.layerThreshold }
-    var hasHigh: Bool { cloudHigh >= Self.layerThreshold }
-
-    /// Whether the sun or moon can be seen through what is above it.
-    var bodyVisible: Bool { cloudLow < 0.75 }
 }

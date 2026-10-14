@@ -105,11 +105,6 @@ struct SolarDay: Equatable {
         min(max(elevation(atHour: hour), 0) / seasonalCeiling, 1)
     }
 
-    var dayLengthHours: Double {
-        guard let sunrise, let sunset else { return 0 }
-        return sunset - sunrise
-    }
-
     private static func julianCentury(for date: Date) -> Double {
         let julianDay = date.timeIntervalSince1970 / 86400 + 2440587.5
         return (julianDay - 2451545) / 36525

@@ -443,7 +443,7 @@ struct ContentView: View {
                 .padding(.top, 12)
 
             arcBlock
-                .modifier(ScrubAffordance(mark: markColour))
+                .modifier(ScrubAffordance())
         }
         .padding(.vertical, 12)
         .overlay(alignment: .bottomLeading) { guideButton }
@@ -467,7 +467,7 @@ struct ContentView: View {
         arcBlock
             // The arc's content fades at both edges, which is true — there IS more day that
             // way — and is the one signifier a horizontally scrolling surface has.
-            .modifier(ScrubAffordance(mark: markColour))
+            .modifier(ScrubAffordance())
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .overlay(alignment: .topLeading) {
                 header
@@ -830,7 +830,12 @@ struct ContentView: View {
     /// Sky mode replaced: it produced a ~19:1 step across the horizon and two
     /// halves that read as different apps, and every attempt to reconcile them
     /// cost more than flipping the palette outright.
-    private var showsNightSky: Bool { effectiveScheme == .dark }
+    // `showsNightSky` and `nightness` were deleted here on 2026-10-13, on Mason's word, with
+    // every other symbol a reference sweep found unread. `nightness` was this property's only
+    // reader and nothing read `nightness`; `ArcWindow` still takes a parameter of that name,
+    // receives a literal 0 below, and reads it nowhere. Restoring the pair is
+    // `effectiveScheme == .dark`, and `SkyDepth.nightness(elevationDegrees:)` on the focused
+    // hour's elevation.
 
     /// What the status bar is told. Only the Sky mode has anything to say:
     /// every other mode's palette already agrees with the window's.
@@ -888,16 +893,6 @@ struct ContentView: View {
                                     numberFormatStyle: .number.precision(.fractionLength(0))))
     }
 
-    /// How dark the sky is at the focused hour. **Dead as a pair with `showsNightSky`**, which
-    /// is this property's only reader: nothing in this file reads `nightness`, and the only place
-    /// it goes is `ArcWindow`'s parameter of the same name, which nothing there reads either. Kept
-    /// deliberately, along with the literal 0 passed below, for whenever a shaped night returns
-    /// (2026-10-13).
-    private var nightness: Double {
-        guard showsNightSky else { return 0 }
-        return SkyDepth.nightness(elevationDegrees: model.elevationDegrees(atAbsoluteHour: model.focusHour))
-    }
-
     /// The crossing itself, ungated: 0 above the horizon, 1 below, over about
     /// two degrees.
     private var nightTurn: Double {
@@ -932,24 +927,6 @@ struct ContentView: View {
     /// what "size and weight, not colour" means in practice (Mason, 2026-10-09).
     private var captionColor: Color { markColour }
 
-
-    private var isMorning: Bool {
-        model.focusHour - Double(model.dayIndex) * 24 < model.focusSolarDay.solarNoon
-    }
-
-
-    /// DEAD, both of them: zero references anywhere in the app or the widget as of 2026-10-13.
-    /// They were `ContrastHold`'s two targets, and `DECISIONS.md` lists them among ten symbols a
-    /// 2026-10-09 reference sweep deleted — it is wrong about these two, and that section now
-    /// carries the correction. The ratio system they belong to is gone: a two-colour app has no
-    /// ratio to hold.
-    ///
-    /// What they used to mean, and the only reason to keep them rather than delete them with the
-    /// rest: the gap between the two was meant to be the same in every condition, and capping the
-    /// title as well as raising it was the point, because letting it run to 15:1 on a clear day
-    /// while the caption was pinned is what let them meet at dusk.
-    private static let titleContrast: Double = 9.0
-    private static let captionContrast: Double = 3.5
 
     private var hourOfDay: Double {
         model.focusHour - Double(model.dayIndex) * 24

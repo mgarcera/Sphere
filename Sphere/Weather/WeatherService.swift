@@ -56,6 +56,4 @@ final class WeatherService {
         byHour = Dictionary(hours.map { ($0.date, $0) }, uniquingKeysWith: { first, _ in first })
         fetchedFor = nil
     }
-
-    var isLoaded: Bool { !byHour.isEmpty }
 }
