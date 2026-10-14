@@ -22,8 +22,14 @@ struct GestureLesson: Identifiable {
     ///
     /// Rewritten 2026-10-13, when Now left the tap for the hold. Two pages changed and they
     /// changed places: the hold now carries a choice and the two-finger tap is the shortcut past
-    /// it, so the hold states the pair and the shortcut follows as the clause. Still six pages,
-    /// so the dots and their spoken position are untouched.
+    /// it, so the hold states the pair and the shortcut follows it. Still six pages, so the dots
+    /// and their spoken position are untouched.
+    ///
+    /// The clause that joined those last two pages went the same day, when the shortcut moved
+    /// from the menu to Now. It worked because both pages ended on the same word; two pages that
+    /// name different destinations have to be two sentences, or the "or" reads as a third option.
+    /// The two captions name whatever the hold's two cards are called, so they are provisional
+    /// until that copy is settled (Mason has the spread, 2026-10-13).
     static let all = [
         GestureLesson(id: "drag", word: "Drag to move.", fingers: 1, kind: .drag),
         GestureLesson(id: "pinch", word: "Pinch in and out to zoom.", fingers: 2, kind: .pinch),
@@ -34,10 +40,10 @@ struct GestureLesson: Identifiable {
                       word: "Tap the left or right edges to jump between events.",
                       fingers: 1, kind: .tap),
         GestureLesson(id: "hold",
-                      word: "Hold to jump to now, or open the menu…",
+                      word: "Hold to jump to now, or open the menu.",
                       fingers: 1, kind: .hold),
         GestureLesson(id: "twoFinger",
-                      word: "…or tap two fingers straight to the menu.",
+                      word: "Tap two fingers to jump straight to now.",
                       fingers: 2, kind: .twoFingerTap),
     ]
 }

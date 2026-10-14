@@ -14,9 +14,10 @@ enum HoldChoice {
 /// second card.
 ///
 /// Two cards, so the gesture that cost nothing to aim still costs one press to answer. The
-/// two-finger tap is unchanged and still opens the menu outright: with the menu now one card
-/// deep behind the hold, that is the direct route, and a shortcut that is faster than the
-/// gesture it shortcuts is the only kind worth having.
+/// two-finger tap went to the first of them later the same day (Mason, 2026-10-13): it is the
+/// one of the two that is a move rather than a place, so it is what a shortcut is for, and the
+/// menu is what the cards are for. Now is therefore reachable two ways on purpose, the hold for
+/// anyone finding it and two fingers for anyone who already has.
 struct HoldChoiceSheet: View {
     let onChoose: (HoldChoice) -> Void
 

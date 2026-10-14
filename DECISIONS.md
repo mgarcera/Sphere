@@ -1607,14 +1607,30 @@ when it had it for one build on 2026-10-10; the same fact now makes it the right
 two actions that never wanted a position. **The hold asks Now or Menu**, two cards, built from
 the same `ChoiceCard` as the other two sheets.
 
-**The two-finger tap still opens the menu outright, and that stops being a duplicate.** It was
-one from 2026-10-10 and the code said so. With the menu a card behind the hold, two fingers are
-the direct route to it, which is the only kind of shortcut worth keeping.
+**The two-finger tap stopped being a duplicate the same day, twice over.** It opened the menu
+outright from 2026-10-10 and the code called itself a duplicate of the hold. Putting the menu a
+card behind the hold made it the direct route instead, and then Mason moved it again: **two
+fingers now go straight to now.**
+
+That is the better half to shortcut. Of the hold's two cards, Now is a move and the menu is a
+place; a move is what you want in one gesture, and a place is worth the card that names it. So
+Now is reachable two ways on purpose — the hold for anyone finding it, two fingers for anyone who
+already has — and the menu is reachable one way, which it was not before. Both gestures run the
+same `goToNow()` rather than two copies of its four lines, so the shortcut cannot drift from the
+card it shortcuts.
 
 The guide's six pages were rewritten and two of them swapped places: the hold states the pair and
-the two-finger tap follows as its clause, which is the arrangement the two ways to the menu had
-when they were the same action. Still six pages, so the dots and the position VoiceOver speaks
-are unchanged.
+the two-finger tap follows it. The clause that used to join them went when the shortcut moved —
+"…or tap two fingers straight to the menu" worked only because both pages ended on the same word,
+and two pages naming different destinations have to be two sentences or the "or" reads as a third
+option. Still six pages, so the dots and the position VoiceOver speaks are unchanged. The
+captions name the hold's two cards, so they are provisional while that copy is open.
 
 The cost to say out loud: the tap is down to two cards for a thing it once did in one gesture,
-and that STUDY note from 2026-10-10 is still open. Removing Now did not settle it.
+and that STUDY note from 2026-10-10 is still open. Removing Now did not settle it. The menu also
+lost its direct gesture in the same move, so the one surface that holds everything else now costs
+a hold and a press to reach.
+
+**Open:** the two cards' words and their order. "Now" and "Menu" are what they say while Mason
+reads a spread of alternatives; whatever he picks also sets the two guide captions, which name
+the same two things.

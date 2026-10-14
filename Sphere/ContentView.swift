@@ -506,12 +506,12 @@ struct ContentView: View {
                           Sounds.ring(.menu)
                           isHoldChoiceOpen = true
                       },
-                      // Straight to the menu still, and deliberately not the pair above: with
-                      // the menu one card behind the hold, two fingers are the direct way to it.
-                      onTwoFingerTap: {
-                          Sounds.ring(.menu)
-                          isMenuOpen = true
-                      },
+                      // Straight to now (Mason, 2026-10-13), which is the half of the pair
+                      // above that gets reached for without thinking. It asks nothing and lands
+                      // in one gesture; the menu, being a place rather than a move, is worth the
+                      // card. Deliberately the same action the hold's first card runs, through
+                      // the same function, so the shortcut cannot drift from what it shortcuts.
+                      onTwoFingerTap: { goToNow() },
                       // The chevrons' own behaviour, which outlived the chevrons: nearest event
                       // in that direction, searched past the drawn window, and a haptic that says
                       // nothing is there when nothing is.
@@ -1042,15 +1042,23 @@ struct ContentView: View {
         pendingHoldChoice = nil
         switch choice {
         case .now:
-            // Already there is a no-op and not an arrival, so it rings nothing. This moved here
-            // from the tap's sheet on 2026-10-13 unchanged.
-            guard !model.isFocusedOnNow else { return }
-            Haptics.warm()
-            Sounds.ring(.now)
-            travel { model.returnToNow() }
+            goToNow()
         case .menu:
             isMenuOpen = true
         }
+    }
+
+    /// Back to the present. Two gestures run this: the hold's first card and the two-finger tap,
+    /// which is why it is a function rather than two copies of four lines.
+    ///
+    /// Already there is a no-op and not an arrival, so it rings nothing and shakes nothing. That
+    /// matters more for the shortcut than for the card: two fingers are easy to land by accident
+    /// while pinching, and an accident that announces itself reads as a bug.
+    private func goToNow() {
+        guard !model.isFocusedOnNow else { return }
+        Haptics.warm()
+        Sounds.ring(.now)
+        travel { model.returnToNow() }
     }
 
     private func actOnEventChoice() {
