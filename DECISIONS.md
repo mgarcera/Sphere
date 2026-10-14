@@ -1814,11 +1814,27 @@ Mason's call: silent. Both `Sounds.ring(.calendar)` calls are out of `step`. The
 reported twice without sound, by `Haptics.warm()` on the way in and by `travel`'s arrival haptic,
 which is the pattern every other long move already uses.
 
-**Three bells ring now, and `.calendar` rings from nowhere.** The case and `Sphere/Sounds/weather.m4a`
-are kept with that written on them, because the day picker is the surface the case is named for and
-has never rung on; wiring it there is one line at each of the two places the picker opens. If that
-is not wanted, both should go, since a bell nothing rings is the same kind of claim as the
-unreachable editor branch deleted earlier today.
+**The bell goes back to the day picker (2026-10-14), and the claim above it was wrong.** This
+section said the day picker "has never rung on" `.calendar`. It had, for a month. Mason remembered
+it — "i think the pick date was the weather sound" — and the history says he is right:
+`a96a342`, "Sound: weather rings on CAL" (2026-09-12), maps `calendar -> weather.m4a` and rings it
+where the wheel's CAL opened the picker. The same commit message sets "left / right -> silent",
+which means the edge bands' silence is a restoration of his original arrangement and not a new
+decision at all.
+
+What actually happened: on 2026-10-10, `f456d51` — "The gestures get a paged guide, the edges step
+events, the onboarding arc gets ink" — removed the ring from the picker and added two inside
+`step`. A commit about the edge bands taking over stepping took the picker's bell with it, and
+`f7ed036` deleted the wheel's CAL branch an hour later, so nothing was left to notice the loss.
+The bell then rang only from the one control Mason had written down as silent.
+
+So `.calendar` rings from both Pick date cards again. All four bells ring, no repeatedly-pressed
+control rings at all, and the set matches what `a96a342` described a month ago. Nothing is deleted.
+
+The lesson is the same one the comment sweep produced, in a sharper form: a commit that moves a
+control moves everything hanging off it, and what hangs off it is not all in the diff's subject.
+Three days of a silent picker and an over-loud edge band came out of a commit whose message is
+about neither.
 
 **`Planet.swift` deleted.** `Chart.swift` was its only consumer and went in the previous commit,
 which left the seven classical planets, their Chaldean order and the seven call-to-action lines

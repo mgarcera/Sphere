@@ -37,8 +37,11 @@ enum Sounds {
     /// (Mason, 2026-10-13): "the chevrons are not among them: they are the one pair pressed
     /// repeatedly, and a bell on a button you hit five times in a row is the definition of
     /// obnoxious." The chevrons' successor, the edge bands, had become the only thing ringing
-    /// `.calendar`, on every successful step. They are silent now, so **three bells ring and
-    /// `.calendar` rings from nowhere.**
+    /// `.calendar`, on every successful step. They are silent again, and `.calendar` is back on
+    /// the day picker it was written for, so **all four ring, and no repeatedly-pressed control
+    /// rings at all** — which is the arrangement the first commit to add these described:
+    /// "menu -> sunrise, now -> sunset, editor -> midday, calendar -> weather, left / right ->
+    /// silent" (2026-09-12).
     enum Bell: String, CaseIterable {
         /// The hold's question, `HoldChoiceSheet`. Rung from `onHold` and nowhere else; the menu
         /// itself opens silently, from the hold's Menu card and from the corner's. Named for the
@@ -52,11 +55,11 @@ enum Sounds {
         /// where nothing under the finger raises `TimeChoiceSheet` instead — not the editor, since
         /// 2026-10-10.
         case editor = "midday"
-        /// NO RING SITES as of 2026-10-13, when the edge-band step went silent for the reason
-        /// above. Kept, with its `weather.m4a`, because the day picker is the surface this case
-        /// is named for and has never rung on: wiring it there is one line at each of the two
-        /// places the picker opens. Delete both the case and the file if that is not wanted —
-        /// a bell nothing rings is the same kind of claim as an unreachable editor branch.
+        /// Opening the day picker, from either choice sheet's Pick date card. This is the
+        /// surface it was built for: it rang on the wheel's CAL from 2026-09-12, lost that when
+        /// `f456d51` moved the ring into `step` on 2026-10-10 as a side effect of the edge bands
+        /// taking over stepping, and was given back on 2026-10-14. Mason remembered it before the
+        /// code did.
         case calendar = "weather"
     }
 

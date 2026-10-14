@@ -1061,6 +1061,12 @@ struct ContentView: View {
         case .create:
             editorTarget = .new(start)
         case .pickDate:
+            // The bell comes home (Mason, 2026-10-14). `.calendar` is `weather.m4a` and rang on
+            // the wheel's CAL from 2026-09-12 — "Sound: weather rings on CAL", whose own message
+            // also set "left / right -> silent". On 2026-10-10 `f456d51` moved the ring out of
+            // the picker and into `step`, in a commit about the edge bands stepping events, and
+            // the picker has been silent since. Restoring it rather than deleting the bell.
+            Sounds.ring(.calendar)
             isDayPickerOpen = true
         }
     }
@@ -1110,7 +1116,10 @@ struct ContentView: View {
         switch choice {
         case .open: editorTarget = .existing(context.event)
         case .create: editorTarget = .new(context.start)
-        case .pickDate: isDayPickerOpen = true
+        // The picker's own bell, as above, and the second of its two openings.
+        case .pickDate:
+            Sounds.ring(.calendar)
+            isDayPickerOpen = true
         }
     }
 
