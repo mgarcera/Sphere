@@ -33,11 +33,12 @@ enum Sounds {
     /// three of the four had drifted by 2026-10-13 and a bell whose doc names the wrong surface
     /// is worse than an undocumented one.
     ///
-    /// The rule this set was built on has inverted and is kept here as the thing to decide
-    /// again: "the chevrons are not among them: they are the one pair pressed repeatedly, and a
-    /// bell on a button you hit five times in a row is the definition of obnoxious." The
-    /// chevrons' successor, the edge bands, is now the ONLY thing that rings `.calendar`, on
-    /// every successful step. Either the rule was wrong or the edge bands should be silent.
+    /// The rule this set was built on held, and was applied where it had stopped being applied
+    /// (Mason, 2026-10-13): "the chevrons are not among them: they are the one pair pressed
+    /// repeatedly, and a bell on a button you hit five times in a row is the definition of
+    /// obnoxious." The chevrons' successor, the edge bands, had become the only thing ringing
+    /// `.calendar`, on every successful step. They are silent now, so **three bells ring and
+    /// `.calendar` rings from nowhere.**
     enum Bell: String, CaseIterable {
         /// The hold's question, `HoldChoiceSheet`. Rung from `onHold` and nowhere else; the menu
         /// itself opens silently, from the hold's Menu card and from the corner's. Named for the
@@ -51,9 +52,11 @@ enum Sounds {
         /// where nothing under the finger raises `TimeChoiceSheet` instead — not the editor, since
         /// 2026-10-10.
         case editor = "midday"
-        /// An edge-band step to the next or previous event, rung from `step`. **Not** the day
-        /// picker, which this said until 2026-10-13 and which rings nothing from either of the two
-        /// places it opens.
+        /// NO RING SITES as of 2026-10-13, when the edge-band step went silent for the reason
+        /// above. Kept, with its `weather.m4a`, because the day picker is the surface this case
+        /// is named for and has never rung on: wiring it there is one line at each of the two
+        /// places the picker opens. Delete both the case and the file if that is not wanted —
+        /// a bell nothing rings is the same kind of claim as an unreachable editor branch.
         case calendar = "weather"
     }
 

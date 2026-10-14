@@ -1800,3 +1800,29 @@ If that rule wins, the bell has no sites at all and `Sphere/Sounds/weather.m4a` 
 `Mark.newAllDay` was deliberately kept while `EventTarget.newAllDay` went. The enum's header argues
 for the glyph set as a set of drawings rather than wiring, and a drawing costs nothing to keep;
 an unreachable editor branch is a claim about what the app can do.
+
+## The edge bands go silent, and Planet goes (2026-10-13)
+
+**The rule in `Sounds`' header was right and had stopped being applied.** It excluded the chevrons
+by name — "they are the one pair pressed repeatedly, and a bell on a button you hit five times in a
+row is the definition of obnoxious" — and when the edge bands inherited the chevrons' job on
+2026-10-10, they inherited `step`, which rang on every successful jump. So the one control the rule
+was written to exclude became the only thing ringing. Stepping back through a busy afternoon
+stacked four or five strikes, each audible for about 4.5 seconds against a 6.7–7.5 second file.
+
+Mason's call: silent. Both `Sounds.ring(.calendar)` calls are out of `step`. The jump is still
+reported twice without sound, by `Haptics.warm()` on the way in and by `travel`'s arrival haptic,
+which is the pattern every other long move already uses.
+
+**Three bells ring now, and `.calendar` rings from nowhere.** The case and `Sphere/Sounds/weather.m4a`
+are kept with that written on them, because the day picker is the surface the case is named for and
+has never rung on; wiring it there is one line at each of the two places the picker opens. If that
+is not wanted, both should go, since a bell nothing rings is the same kind of claim as the
+unreachable editor branch deleted earlier today.
+
+**`Planet.swift` deleted.** `Chart.swift` was its only consumer and went in the previous commit,
+which left the seven classical planets, their Chaldean order and the seven call-to-action lines
+with no reader anywhere in any target. Its own comment argued for keeping them — "re-deriving the
+seven lines later is the worse cost" — and that argument loses to the file being the only thing in
+the app justified by a direction rather than a use. The lines are recoverable from this repo's
+history; the direction is recorded in "Planetary hours have no surface" above.

@@ -1162,12 +1162,19 @@ struct ContentView: View {
     /// store is asked over a much wider range before giving up. Without that,
     /// an event further out than a day was unreachable: the jump did nothing,
     /// the focus stayed put, and nothing triggered a reload to widen the view.
-    /// Both callers want the same bell and the same shrug, so both live here rather than at the
-    /// two call sites (2026-10-10, when the arc's edge bands adopted this).
+    /// Both callers want the same shrug, so it lives here rather than at the two call sites
+    /// (2026-10-10, when the arc's edge bands adopted this).
+    ///
+    /// **Silent as of 2026-10-13.** Both branches rang `Sounds.ring(.calendar)` until Mason's
+    /// call, and `Sounds`' own header had said all along that this control must not: the edge
+    /// bands inherited the chevrons' job, and the chevrons were excluded by name because "a bell
+    /// on a button you hit five times in a row is the definition of obnoxious". Stepping back
+    /// through a busy afternoon stacked four or five strikes, each audible for about 4.5 seconds.
+    /// The step is still reported twice without sound, by the warm-up below and by `travel`'s
+    /// arrival haptic.
     private func step(_ direction: CalendarService.Direction) {
         if let near = direction == .forward ? model.nextEvent : model.previousEvent {
             Haptics.warm()
-            Sounds.ring(.calendar)
             travel { model.focusHour = near.startHour }
             return
         }
@@ -1178,7 +1185,6 @@ struct ContentView: View {
             return
         }
         Haptics.warm()
-        Sounds.ring(.calendar)
         travel { model.focusHour = far.startDate.timeIntervalSince(model.anchor) / 3600 }
     }
 
