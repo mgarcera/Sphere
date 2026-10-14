@@ -29,9 +29,17 @@ enum Sounds {
     /// were the same thing while these rang on solar crossings and are not any
     /// more, so the mapping lives here rather than at the call sites.
     ///
-    /// Four bells, and each doc below says where its one or two ring sites actually are, because
-    /// three of the four had drifted by 2026-10-13 and a bell whose doc names the wrong surface
-    /// is worse than an undocumented one.
+    /// Four bells, one per FUNCTION, and each doc below names every site it rings from.
+    ///
+    /// **A modal never rings (Mason, 2026-10-14).** A choice sheet is a question, and a bell marks
+    /// what the answer does, so the hold's pair, the tap's pair, the event sheet and the corner's
+    /// pair are all silent and the bell waits for the act. The four acts are: the menu opens, the
+    /// view returns to now, an editor opens, the day picker opens. Nothing else in the app rings.
+    ///
+    /// This is close to where the set started on 2026-09-12, when every button did its thing
+    /// directly and rang on doing it. The sheets arrived between, and each one that took a bell
+    /// with it moved the sound one press earlier than the act — so the app announced a menu that
+    /// might not open, and an editor that might turn out to be a question.
     ///
     /// The rule this set was built on held, and was applied where it had stopped being applied
     /// (Mason, 2026-10-13): "the chevrons are not among them: they are the one pair pressed
@@ -41,25 +49,27 @@ enum Sounds {
     /// the day picker it was written for, so **all four ring, and no repeatedly-pressed control
     /// rings at all** — which is the arrangement the first commit to add these described:
     /// "menu -> sunrise, now -> sunset, editor -> midday, calendar -> weather, left / right ->
-    /// silent" (2026-09-12).
+    /// silent" (2026-09-12). With the modals silenced on 2026-10-14 the set is back to exactly
+    /// that, one bell per act, for the first time since the choice sheets arrived.
     enum Bell: String, CaseIterable {
-        /// The hold's question, `HoldChoiceSheet`. Rung from `onHold` and nowhere else; the menu
-        /// itself opens silently, from the hold's Menu card and from the corner's. Named for the
-        /// menu when the hold went straight there, which it has not since 2026-10-13.
+        /// The menu opening, from the hold's Menu card or the corner's. Rang on the hold's
+        /// QUESTION from 2026-10-10 until 2026-10-14, which meant it sounded whether or not the
+        /// menu was the answer.
         case menu = "sunrise"
         /// Returning to now, from the hold's Now card or from a two-finger tap, through
         /// `goToNow`. Silent when already there, which is a no-op rather than an arrival.
         case now = "sunset"
-        /// Opening an editor or the choice that leads to one. Two ring sites: `openEditor`, where
-        /// nothing under the dot means the new-event editor straight away, and `openAtTappedHour`,
-        /// where nothing under the finger raises `TimeChoiceSheet` instead — not the editor, since
-        /// 2026-10-10.
+        /// An editor opening, and only that. Five sites, every one of them an `editorTarget`
+        /// assignment: New event and Open from the event sheet, New event from the time sheet, the
+        /// header button when there is nothing under the dot, and an all-day row.
+        ///
+        /// It rang in `openEditor` and `openAtTappedHour` before either knew what it was about to
+        /// do, so a tap that raised a question sounded exactly like a tap that opened an editor.
         case editor = "midday"
-        /// Opening the day picker, from either choice sheet's Pick date card. This is the
-        /// surface it was built for: it rang on the wheel's CAL from 2026-09-12, lost that when
-        /// `f456d51` moved the ring into `step` on 2026-10-10 as a side effect of the edge bands
-        /// taking over stepping, and was given back on 2026-10-14. Mason remembered it before the
-        /// code did.
+        /// The day picker opening, from either choice sheet's Pick date card. This is the surface
+        /// it was built for: it rang on the wheel's CAL from 2026-09-12, lost that when `f456d51`
+        /// moved the ring into `step` on 2026-10-10 as a side effect of the edge bands taking over
+        /// stepping, and was given back on 2026-10-14. Mason remembered it before the code did.
         case calendar = "weather"
     }
 

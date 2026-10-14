@@ -313,6 +313,7 @@ struct ContentView: View {
             AllDaySheet(events: model.allDayEvents) { entry in
                 isAllDayOpen = false
                 if let event = calendar.occurrence(for: entry.id) {
+                    Sounds.ring(.editor)
                     editorTarget = .existing(event)
                 }
             }
@@ -559,7 +560,11 @@ struct ContentView: View {
                       // and is now the reason this gesture carries BOTH of the actions that
                       // need no aim: back to the present, or the day's menu.
                       onHold: {
-                          Sounds.ring(.menu)
+                          // No bell. A modal is a question, and the bells mark what the answer
+                          // DOES (Mason, 2026-10-14). This rang `.menu` from 2026-10-10, when the
+                          // hold went straight to the menu, and kept ringing it after the hold
+                          // became a question — so the sound arrived for a menu that might never
+                          // open. `.menu` now rings at the two places the menu actually opens.
                           isHoldChoiceOpen = true
                       },
                       // Straight to now (Mason, 2026-10-13), which is the half of the pair
@@ -1022,7 +1027,6 @@ struct ContentView: View {
     /// the same sheet the header button has shown since the wheel).
     /// All-day events are skipped — they have no hour to be tapped on.
     private func openAtTappedHour(_ hour: Double) {
-        Sounds.ring(.editor)
         let start = snappedToFiveMinutes(hour)
         // If the header is showing an event, a tap can open it (Mason, 2026-10-14). The event
         // under the finger still wins when there is one; `model.activeEvent` is the fallback, and
@@ -1073,6 +1077,7 @@ struct ContentView: View {
         timeChoiceStart = nil
         switch choice {
         case .create:
+            Sounds.ring(.editor)
             editorTarget = .new(start)
         case .pickDate:
             // The bell comes home (Mason, 2026-10-14). `.calendar` is `weather.m4a` and rang on
@@ -1091,8 +1096,11 @@ struct ContentView: View {
         pendingCornerChoice = nil
         switch choice {
         case .guide:
+            // The guide has no bell of its own and never has. It is the only one of these
+            // destinations that is a thing to read rather than a thing done.
             isGuideOpen = true
         case .menu:
+            Sounds.ring(.menu)
             isMenuOpen = true
         }
     }
@@ -1106,6 +1114,7 @@ struct ContentView: View {
         case .now:
             goToNow()
         case .menu:
+            Sounds.ring(.menu)
             isMenuOpen = true
         }
     }
@@ -1128,8 +1137,12 @@ struct ContentView: View {
         pendingChoice = nil
         choiceContext = nil
         switch choice {
-        case .open: editorTarget = .existing(context.event)
-        case .create: editorTarget = .new(context.start)
+        case .open:
+            Sounds.ring(.editor)
+            editorTarget = .existing(context.event)
+        case .create:
+            Sounds.ring(.editor)
+            editorTarget = .new(context.start)
         // The picker's own bell, as above, and the second of its two openings.
         case .pickDate:
             Sounds.ring(.calendar)
@@ -1159,21 +1172,23 @@ struct ContentView: View {
     /// offer. The header title button's route into an event, and one of the two places the
     /// editor bell rings — `openAtTappedHour` is the other, which is the tap on the arc.
     ///
-    /// It sits here rather than on the event actually being created, so the two
-    /// branches sound the same: the choice sheet and the straight-to-new-event
-    /// path are one press to the thumb, and only this level knows that. Ringing
-    /// deeper meant the same press rang or not depending on whether something
-    /// happened to be under the dot.
+    /// The editor bell used to ring HERE, before the branch, on the argument that the choice
+    /// sheet and the straight-to-new-event path are one press to the thumb and should sound the
+    /// same. Mason overruled that on 2026-10-14: the bells mark functions, not modals, so a press
+    /// that raises a question rings nothing and the bell waits for the editor. It now rings on the
+    /// `else` below and inside `actOnEventChoice`, which means the same press does ring or not
+    /// depending on what is under the dot — the thing the old arrangement existed to avoid, and
+    /// the right answer anyway, because those two presses now do different things.
     ///
     /// This doc block spent some time attached to `openAtTappedHour`, one function above the one
     /// it describes, where it read as though that function were the header button's route. Moved
     /// 2026-10-13.
     private func openEditor() {
-        Sounds.ring(.editor)
         if let event = model.activeEvent.flatMap({ calendar.occurrence(for: $0.id) }) {
             choiceContext = ChoiceContext(event: event, start: model.focusDate)
             isEventChoiceOpen = true
         } else {
+            Sounds.ring(.editor)
             editorTarget = .new(model.focusDate)
         }
     }

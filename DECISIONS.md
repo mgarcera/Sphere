@@ -1877,3 +1877,41 @@ The diagnosis was worth more than the fix here. Three candidate fixes were draft
 widen `contains`, narrow the band, draw the band's boundary — and the one-line answer came from
 Mason naming the invariant instead: the header is the app's own statement of which event you are
 on, so anything that disagrees with the header is the bug.
+
+## One bell per function, and modals are silent (2026-10-14)
+
+Mason: "let's make the sounds specific to the function: now, new event/open, pick date, menu. not
+the modals. essentially what it was before."
+
+The set started that way on 2026-09-12 — every wheel button did its thing and rang on doing it. The
+choice sheets arrived between then and now, and each one that inherited a bell moved the sound one
+press EARLIER than the act. By this morning the app rang `.menu` when the hold asked its question,
+whether or not the menu turned out to be the answer, and rang `.editor` from both the arc tap and
+the header button before either knew whether it was opening an editor or raising a sheet. A tap
+that asked a question sounded exactly like a tap that did something.
+
+Now the four bells mark four acts and nothing else rings:
+
+| bell | file | rings when |
+|---|---|---|
+| `.menu` | sunrise | the menu opens — the hold's Menu card, the corner's Menu card |
+| `.now` | sunset | the view returns to now — the hold's Now card, a two-finger tap |
+| `.editor` | midday | an editor opens — every one of the five `editorTarget` assignments |
+| `.calendar` | weather | the day picker opens — either sheet's Pick date card |
+
+Silent: all four choice sheets appearing, the gesture guide, the drag, the pinch, and the edge
+bands. The guide is the one destination with no bell of its own, and should stay that way — it is
+the only one that is a thing to read rather than a thing done.
+
+**The argument this overturns is worth keeping.** `openEditor`'s doc had the bell before the
+branch deliberately, so "the choice sheet and the straight-to-new-event path are one press to the
+thumb and should sound the same", and ringing deeper would mean the same press rang or not
+depending on what was under the dot. That is now exactly what happens, and it is right, because
+those two presses no longer do the same thing: one opens an editor, the other asks a question.
+A bell that papers over the difference is a bell that lies about it.
+
+**The pattern across all three sound bugs this session is one pattern.** A control's bell was
+written at the control, and then the control's job moved: the chevrons' bell went to the edge
+bands that replaced them, the picker's bell went to `step`, the menu's bell stayed on a gesture
+that became a question. Every time, the sound ended up on the gesture rather than on the act. The
+fix each time was to ring where the thing happens, not where the finger went.
