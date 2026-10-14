@@ -1676,3 +1676,21 @@ app's vocabulary without borrowing: the hook is an arc, and an arc is what a day
 Four choice sheets now, all from one `ChoiceCard` and one `ChoiceSheet`, each with a `static func
 cards` so the portrait sheet and the landscape panel cannot drift: the tap on empty time, the tap
 on an event, the hold, and the corner.
+
+**The mark got louder the same day, from 0.3 of the mark colour to 0.55.** Mason could not see it.
+The dimness was chosen when this button's only job was to replay a guide that had just played
+itself, and "deliberately dim, the one exception to no greys" is what the comment said; now that
+it is also the only visible route to the menu, being ignorable is worth less than being findable.
+Full ink was the other answer and would have ended the exception rather than softened it, at the
+cost of one permanent black mark on a canvas carrying nothing else.
+
+**It also gained a spoken label, "Guide or menu".** Without one VoiceOver read the SF Symbol's
+own name and announced the button as "questionmark", which was never apt and is less so now that
+it opens a fork. That is the second `accessibilityLabel` in the app; the first is the guide's page
+counter, added on 2026-10-10 for the same reason, that the thing on screen published nothing.
+
+**`Haptics.held()` was deleted in the same pass.** It was an 0.45-intensity arrival meant to say a
+long press had registered before its action landed, it had zero call sites, and its own comment
+claimed to be "the only thing that says the gesture took" — which nothing was. The hold's answer
+is a sheet, and a sheet arriving is the report. The reason sits where the function was, so
+restoring it is a paste.

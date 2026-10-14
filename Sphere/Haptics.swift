@@ -51,19 +51,12 @@ enum Haptics {
         arrival.impactOccurred(intensity: 0.7)
     }
 
-    /// A long press registered. Nothing about a hold is visible while it is
-    /// happening, so this is the only thing that says the gesture took before
-    /// the action itself lands.
-    ///
-    /// NOT CALLED as of 2026-10-13, and nothing else reports the hold either: grep found zero
-    /// `.held()` call sites in the app. The hold's feedback is `Sounds.ring(.menu)` and the
-    /// sheet arriving, both of which land after the gesture completes rather than when it
-    /// registers. Kept rather than deleted because the question is whether the hold SHOULD
-    /// announce itself at 0.45s, which is Mason's to answer; if the answer is no, this goes.
-    static func held() {
-        guard isEnabled else { return }
-        arrival.impactOccurred(intensity: 0.45)
-    }
+    // A `held()` lived here until 2026-10-13: an 0.45s arrival at intensity 0.45, to say a long
+    // press had registered before its action landed. It had zero call sites in the app and its
+    // own comment claimed to be "the only thing that says the gesture took", which nothing was.
+    // Mason's call to delete rather than wire it: the hold's answer is a sheet, and a sheet
+    // arriving is the report. Restoring it is `arrival.impactOccurred(intensity: 0.45)` behind
+    // the `isEnabled` guard the others use.
 
     /// Nothing in that direction. Blunter than an arrival and sharper than a
     /// detent, so it reads as a wall rather than as either.

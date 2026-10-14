@@ -483,9 +483,17 @@ struct ContentView: View {
             .overlay(alignment: .bottomLeading) { guideButton }
     }
 
-    /// Deliberately dim, and the one exception to "no greys": its whole job is to be ignorable
-    /// until someone is looking for it. The day menu carried this for one build and nobody opens
-    /// a menu row until they are already stuck.
+    /// Dim, and the one exception to "no greys": its job is to stay out of the way until someone
+    /// is looking for it. The day menu carried this for one build and nobody opens a menu row
+    /// until they are already stuck.
+    ///
+    /// It was 0.3 of the mark colour until 2026-10-13 and Mason could not see it. 0.55 roughly
+    /// doubles the contrast against the paper while still reading as secondary to everything the
+    /// arc draws. The dimness was set when this button's only job was to replay a guide that had
+    /// just played itself; it is now also the only visible route to the menu, so being ignorable
+    /// is worth less than being findable. Full ink was the other way to answer it, and would end
+    /// the "no greys" exception rather than soften it, at the cost of one permanent black mark on
+    /// a canvas that carries nothing else.
     ///
     /// It asks Guide or Menu as of 2026-10-13 rather than opening the guide outright, because
     /// the menu had been left with no visible route at all; `CornerChoiceSheet` holds that
@@ -500,11 +508,16 @@ struct ContentView: View {
         } label: {
             Image(systemName: "questionmark")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(markColour.opacity(0.3))
+                .foregroundStyle(markColour.opacity(0.55))
                 .frame(width: 44, height: 44)
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        // Without this VoiceOver reads the SF Symbol's own name, so the button announced itself
+        // as "questionmark" — which was never apt and is less so now that it opens a fork rather
+        // than the guide. Mason's words (2026-10-13). The second `accessibilityLabel` in the app;
+        // the first is the guide's page counter, which circles also published nothing about.
+        .accessibilityLabel("Guide or menu")
         .padding(.leading, 8)
         .padding(.bottom, 4)
     }
