@@ -83,7 +83,78 @@ Sphere draws today as the sun's own elevation curve for where you are, lays your
 155 chars. This is the only listing field that stays editable after a version is approved, so it is
 where a seasonal line or a "new in 1.1" note goes without waiting for review.
 
-## Description — LIVE, as submitted with 2.1
+## Description — 2.2, written 2026-10-16
+
+Three lines of the arc section change and nothing else moves. **Two of them were false in the
+SHIPPED 2.1 listing**, which matters more than the edit: the hold line said "go back to now, or to
+open the menu" while build 2's hold had opened Guide-or-Menu since `d8eb2f6`, which landed before
+build 2 was uploaded. The submission check of 2026-10-14 verified that the wheel words were absent
+and the arc section present; it never asked whether each gesture line was true. The lesson is the
+same one the code keeps learning: a control that moves takes its prose with it, and the prose is
+not in the diff.
+
+The other two went false on 2026-10-16: the two-finger tap was removed, and the question mark
+became a menu mark.
+
+```
+Sphere shows your schedule and weather in the sky. It's designed to have atmosphere. Each of your events is a capsule on the arc, running from start to end in the color of the calendar it came from. Clouds stack by altitude (modeled after cirrus and cumulus clouds), and you'll see rain, storms, lightning, and more. For clear hours, you'll see birds in the day and twinkling stars at night. 
+
+The arc:
+
+- Drag it to move through the day. 
+- Pinch to zoom.
+- Tap to make an event, open one, or pick a different date.
+- Tap the left or right edge to go to the previous or next event.
+- Press and hold to open the menu, or the gesture guide.
+- Scrub away from the present and the bottom left corner shows how far, like "+4 hours". Tap it to come back to now.
+- The menu mark in the bottom right corner opens the menu, or the gesture guide.
+- Events open in Apple's native calendar, so editing, deleting and replying to an invitation work exactly the way you're used to.
+- All-day events are under the date, where they can be read without taking room on the arc.
+
+The menu: 
+
+- Today's arc with sunrise, midday and sunset.
+- Tonight's moon and the temperature right now.
+- Appearance; Natural Sky means the app is light by day and dark at night, and dark makes it dark all the time.
+- Calendar toggles. 
+
+Outside the app:
+
+- Home Screen: the sky curve with your events on it, in small and medium.
+- Lock Screen: where the sun is and your next calendar event.
+
+Sphere is free. No account, no subscription, no ads, no analytics, no tracking.
+
+Privacy: https://smidgecraft.com/sphere/privacy
+Support: https://smidgecraft.com/sphere/support
+
+Questions, ideas, or feedback? mason@smidgecraft.com
+```
+
+1,687 characters.
+
+## What's New — 2.2, written 2026-10-16
+
+```
+Back to now
+- Scrub away from the present and the bottom left corner shows how far, like "+4 hours". Tap it to come back.
+- The two-finger tap and the Now card are gone. The corner replaces both.
+
+Opening events
+- Tapping an event that sits inside a longer one now opens the inner event, not the block around it.
+
+Corner menu
+- The corner button is a menu mark and opens the menu, or the gesture guide.
+
+Card icons
+- Each mark carries one color: a green plus for a new event, a blue lens for opening one, a red dot for picking a date.
+
+Thank you for using Sphere! Feedback: mason@smidgecraft.com
+```
+
+595 characters.
+
+## Description — SUPERSEDED, as submitted with 2.1
 
 Read back from the App Store Connect API on 2026-10-13 after Mason pasted and submitted it, so
 this is the served text rather than a draft of it. 1,584 characters.
@@ -140,7 +211,9 @@ are create, open and pick-a-date; the edges are `onEdgeStep` into `step`, which 
 this version; the hold raises `HoldChoiceSheet`; two fingers run `goToNow`; the corner raises
 `CornerChoiceSheet`.
 
-## What's New — 2.1, as submitted
+## What's New — 2.1, as submitted, and wrong in its first bullet
+
+"Hold to jump back to now or to open the menu" was false in the build it shipped with.
 
 ```
 Gestures
@@ -155,11 +228,14 @@ Gesture guide
 Thank you for using Sphere! Feedback: mason@smidgecraft.com
 ```
 
-## Promotional text — EMPTY on 2.1
+## Promotional text — SET on 2.1, and the note above it was wrong
 
-2.0 carried "Optimized for iPhone Duo." The 2.1 localization returns `null` for this field. It is
-the only listing field that stays editable after a version is approved, so it can be set at any
-time without a review, but as submitted the Duo line is not in the listing.
+It reads "Optimized for iPhone Duo.", 25 characters, read from the 2.1 localization on 2026-10-16.
+
+This section said "EMPTY on 2.1" and claimed the field returned `null`. It does not and did not;
+the earlier reading was wrong and a checkbox was put to Mason offering to restore a line that had
+never left. The field is the only listing field that stays editable after a version is approved,
+so it can be changed at any time without a review.
 
 ## Description — DRAFT of 2026-09-11, never pasted, describes the 1.x app
 ```
