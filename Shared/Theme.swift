@@ -17,6 +17,23 @@ enum Theme {
     /// white, and a near-white track under a white knob makes a toggle read as
     /// one solid white pill with no visible state.
     static let controlAccent = Color("ControlAccent")
+
+    /// The four accents the choice marks carry (Mason, 2026-10-16). One part of each mark is not
+    /// ink: the ink draws the DAY, which every mark shares, and the accent draws the ACT, which
+    /// is the one thing each mark says that the others do not. The plus, the lens rim, the date
+    /// being picked, the present moment.
+    ///
+    /// Colour is not new to this canvas. `EventLayer` has stroked every event in its own
+    /// calendar's colour since the arc was drawn, so the drawing already carries hue and the
+    /// marks were the monochrome exception.
+    ///
+    /// Pigment rather than candy, and each one is a light/dark pair because the ground goes from
+    /// white to near-black. Amber stands in for yellow: a true yellow has almost no contrast
+    /// against paper, and these have to read on both grounds.
+    static let markGreen = Color("MarkGreen")
+    static let markBlue  = Color("MarkBlue")
+    static let markRed   = Color("MarkRed")
+    static let markAmber = Color("MarkAmber")
 }
 
 /// How dark the SKY is at a given sun elevation, 0 by day and 1 once the sun is

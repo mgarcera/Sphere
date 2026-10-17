@@ -24,6 +24,29 @@ enum Mark {
     case none, now, calendar, previousDay, nextDay, newAllDay
     case appearance, openCalendarApp, muteHaptics
     case menu, guide, openEvent, newEvent, previousEvent, nextEvent
+
+    /// The one part of this mark that is not ink (Mason, 2026-10-16).
+    ///
+    /// The ink draws the day, which every mark here shares and which is why the set reads as one
+    /// hand. The accent draws the act: the plus, the lens rim, the date being picked, the present
+    /// moment. Four marks have one and the rest do not, and a mark with no accent draws whole in
+    /// ink exactly as it did before.
+    ///
+    /// Intrinsic to the mark rather than passed in, because the plus is green wherever it is
+    /// drawn. `ActionMark` has one call site today, `ChoiceCard`, plus the Now button; making
+    /// this a parameter would mean each of them deciding again what green means.
+    ///
+    /// Colour is redundant here, never load-bearing: the four shapes already differ, so nothing
+    /// is lost to a reader who cannot tell these hues apart.
+    var accent: Color? {
+        switch self {
+        case .newEvent:  Theme.markGreen
+        case .openEvent: Theme.markBlue
+        case .calendar:  Theme.markRed
+        case .now:       Theme.markAmber
+        default:         nil
+        }
+    }
 }
 
 struct ActionMark: View {
@@ -71,13 +94,18 @@ struct ActionMark: View {
                 lens(&context, scale: scale)
                 return
             }
-            let (strokes, fills) = Self.paths(for: mark)
+            let parts = Self.paths(for: mark)
             // Divided by the scale, so the line reads the same weight at any
             // size instead of thickening with the drawing.
-            context.stroke(strokes, with: .color(color),
-                           style: StrokeStyle(lineWidth: stroke / scale,
-                                              lineCap: .round, lineJoin: .round))
-            context.fill(fills, with: .color(color))
+            let line = StrokeStyle(lineWidth: stroke / scale,
+                                   lineCap: .round, lineJoin: .round)
+            context.stroke(parts.line, with: .color(color), style: line)
+            context.fill(parts.solid, with: .color(color))
+            // Same weight, different colour. A mark with no accent falls back to ink, so the
+            // accent paths cost nothing to a mark that has not been given one.
+            let accentColour = mark.accent ?? color
+            context.stroke(parts.accentLine, with: .color(accentColour), style: line)
+            context.fill(parts.accentSolid, with: .color(accentColour))
         }
         .frame(width: size, height: size)
     }
@@ -181,13 +209,28 @@ struct ActionMark: View {
                          style: StrokeStyle(lineWidth: thin * index, lineCap: .round))
         }
 
-        context.stroke(Path(ellipseIn: bounds), with: .color(color), style: line)
+        // The rim last, and in blue (Mason, 2026-10-16). The rim is the glass, which is the act
+        // this mark is about; the day it magnifies stays ink. It is also the only part of the
+        // drawing a reader would call "the circle".
+        context.stroke(Path(ellipseIn: bounds), with: .color(mark.accent ?? color), style: line)
+    }
+
+    /// The four layers a mark draws in: stroked and filled, each in ink or in the mark's accent.
+    /// Two of them were the whole return value until 2026-10-16.
+    private struct Layers {
+        var line = Path()
+        var solid = Path()
+        var accentLine = Path()
+        var accentSolid = Path()
     }
 
     /// Everything is drawn in a 20-point box and scaled by the frame.
-    private static func paths(for mark: Mark) -> (Path, Path) {
+    private static func paths(for mark: Mark) -> Layers {
+        var layers = Layers()
         var line = Path()
         var solid = Path()
+        var accentLine = Path()
+        var accentSolid = Path()
 
         /// A run of days: one quad curve per lobe, all sitting on one baseline.
         func scallop(from x0: CGFloat, to x1: CGFloat, lobes: Int, base: CGFloat, peak: CGFloat) {
@@ -245,15 +288,27 @@ struct ActionMark: View {
             // end of it. A whole arc is a day; half of one is a point in it.
             line.move(to: CGPoint(x: 3, y: 5))
             line.addQuadCurve(to: CGPoint(x: 17, y: 15), control: CGPoint(x: 11, y: 5.5))
-            solid.addEllipse(in: CGRect(x: 12.5, y: 9.6, width: 4, height: 4))
+            // The dot is the moment; the half-arc is the day it sits in. So the dot is amber.
+            accentSolid.addEllipse(in: CGRect(x: 12.5, y: 9.6, width: 4, height: 4))
 
         case .calendar:
-            // A month of dots, four across and three down.
+            // A month of dots, four across and three down, and one of them is the date.
+            //
+            // A FIXED dot rather than the cell matching today (Mason, 2026-10-16). Today's
+            // position would make the mark read as a date instead of a design, and would also
+            // move it under anyone testing the card through a month. Second row, second column:
+            // inside the grid rather than on its edge, so it reads as one of the set.
+            let pickedRow = 1, pickedColumn = 1
             for row in 0..<3 {
                 for column in 0..<4 {
                     let x = 4 + CGFloat(column) * 4
                     let y = 6 + CGFloat(row) * 4.5
-                    solid.addEllipse(in: CGRect(x: x - 1.1, y: y - 1.1, width: 2.2, height: 2.2))
+                    let dot = CGRect(x: x - 1.1, y: y - 1.1, width: 2.2, height: 2.2)
+                    if row == pickedRow, column == pickedColumn {
+                        accentSolid.addEllipse(in: dot)
+                    } else {
+                        solid.addEllipse(in: dot)
+                    }
                 }
             }
 
@@ -266,10 +321,13 @@ struct ActionMark: View {
         case .newAllDay:
             // A whole day, and a plus above its apex.
             scallop(from: 2, to: 18, lobes: 1, base: 17, peak: 7)
-            line.move(to: CGPoint(x: 10, y: 1.5))
-            line.addLine(to: CGPoint(x: 10, y: 8.5))
-            line.move(to: CGPoint(x: 6.5, y: 5))
-            line.addLine(to: CGPoint(x: 13.5, y: 5))
+            // On the accent layer like `.newEvent`'s plus, though `.newAllDay` has no accent and
+            // so still draws whole in ink. Parked marks stay structured the way the live ones
+            // are, or restoring one is two edits instead of one.
+            accentLine.move(to: CGPoint(x: 10, y: 1.5))
+            accentLine.addLine(to: CGPoint(x: 10, y: 8.5))
+            accentLine.move(to: CGPoint(x: 6.5, y: 5))
+            accentLine.addLine(to: CGPoint(x: 13.5, y: 5))
 
         case .appearance:
             // One disc, half lit. The moon shape the header already uses.
@@ -350,11 +408,12 @@ struct ActionMark: View {
             segment(0, 0.30)
             segment(0.70, 1)
 
+            // The plus is the act, so it is the one green thing; the arc stays ink.
             let crest = day(0.5)
-            line.move(to: CGPoint(x: crest.x, y: crest.y - 2.8))
-            line.addLine(to: CGPoint(x: crest.x, y: crest.y + 2.8))
-            line.move(to: CGPoint(x: crest.x - 2.8, y: crest.y))
-            line.addLine(to: CGPoint(x: crest.x + 2.8, y: crest.y))
+            accentLine.move(to: CGPoint(x: crest.x, y: crest.y - 2.8))
+            accentLine.addLine(to: CGPoint(x: crest.x, y: crest.y + 2.8))
+            accentLine.move(to: CGPoint(x: crest.x - 2.8, y: crest.y))
+            accentLine.addLine(to: CGPoint(x: crest.x + 2.8, y: crest.y))
 
         case .previousEvent:
             run(arrows: 1, lobes: 1, goingLeft: true)
@@ -363,6 +422,10 @@ struct ActionMark: View {
             run(arrows: 1, lobes: 1, goingLeft: false)
         }
 
-        return (line, solid)
+        layers.line = line
+        layers.solid = solid
+        layers.accentLine = accentLine
+        layers.accentSolid = accentSolid
+        return layers
     }
 }
