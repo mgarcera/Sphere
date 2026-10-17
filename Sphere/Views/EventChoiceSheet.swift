@@ -28,10 +28,14 @@ enum EventChoice {
 /// with a different thing under the finger, so the two sheets a tap can raise differ by one card
 /// rather than by shape: this one is `TimeChoiceSheet` with Open inserted after New event.
 ///
-/// That sentence read "the same three the other sheet offers but for Open in place of Now" until
-/// 2026-10-13, and had been false since earlier the same day, when Now left the time sheet for
-/// the hold and took that sheet down to two cards. The relationship survived the change; the
-/// description of it did not.
+/// As of 2026-10-16 that is literal. Now left the time sheet for a corner button, so the other
+/// sheet is two cards and this is those two with Open between them. Until then the two sheets
+/// were both three and Open SUBSTITUTED for Now in the middle; the sentence above survived that
+/// change by accident and is now simply true.
+///
+/// This description has been wrong twice, both times because a card moved and the prose did not.
+/// Which is the argument for the sentence it now makes: state the relationship between the two
+/// sheets, not the contents of either.
 struct EventChoiceSheet: View {
     let onChoose: (EventChoice) -> Void
 

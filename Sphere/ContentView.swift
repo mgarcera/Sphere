@@ -423,6 +423,7 @@ struct ContentView: View {
         }
         .padding(.vertical, 12)
         .overlay(alignment: .bottomLeading) { guideButton }
+        .overlay(alignment: .bottomTrailing) { nowButton }
     }
 
     /// Wide enough for the longest line the header sets — the date, about 130 points — with room
@@ -462,6 +463,7 @@ struct ContentView: View {
             // and where the 0.3 → 0.55 change of 2026-10-13 is recorded. This call site carried
             // a verbatim copy of the retired version of it.
             .overlay(alignment: .bottomLeading) { guideButton }
+            .overlay(alignment: .bottomTrailing) { nowButton }
     }
 
     /// Dim, and the one exception to "no greys": its job is to stay out of the way until someone
@@ -500,6 +502,44 @@ struct ContentView: View {
         // the first is the guide's page counter, which circles also published nothing about.
         .accessibilityLabel("Guide or menu")
         .padding(.leading, 8)
+        .padding(.bottom, 4)
+    }
+
+    /// Back to the present, in the corner opposite the "?" (Mason, 2026-10-16).
+    ///
+    /// Why it is not on the arc, which was the native-looking answer: scrub out to Thursday
+    /// afternoon and the now-dot is off the drawing. That is the exact moment a way back is worth
+    /// a press, so a mark drawn at the present instant is missing whenever it would be used.
+    ///
+    /// Why it is not above a sheet: a sheet asks about the time under your finger and Now throws
+    /// that time away, so a Now button over an open sheet is a second answer to a question
+    /// already on screen. A sheet covers this, which is correct.
+    ///
+    /// It is CONDITIONAL, which is what makes the corner affordable. Two permanent marks start a
+    /// toolbar on a canvas that carries almost nothing, and that cost is why the "?" took a fork
+    /// rather than a neighbour (`CornerChoiceSheet`). Hidden while the focus is on now, this is
+    /// not furniture: it is a way back, absent exactly when it would say nothing. `isFocusedOnNow`
+    /// is a one-minute window, so it appears on the first detent of a scrub.
+    ///
+    /// Opacity rather than an `if`, and hit testing off with it, for the reason written on the
+    /// header's title button: this way there is nothing to transition in and no invisible 44pt
+    /// target. Full ink rather than the "?"'s 0.55, because this one is a way out of somewhere
+    /// rather than a thing to find when stuck, and because it is only ever on screen when it has
+    /// something to do.
+    private var nowButton: some View {
+        Button {
+            goToNow()
+        } label: {
+            ActionMark(mark: .now, size: 20, color: markColour, stroke: 1.5)
+                .frame(width: 44, height: 44)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Back to now")
+        .opacity(model.isFocusedOnNow ? 0 : 1)
+        .allowsHitTesting(!model.isFocusedOnNow)
+        .animation(.easeOut(duration: 0.2), value: model.isFocusedOnNow)
+        .padding(.trailing, 8)
         .padding(.bottom, 4)
     }
 
@@ -1060,11 +1100,6 @@ struct ContentView: View {
         case .create:
             Sounds.ring(.editor)
             editorTarget = .new(start)
-        case .now:
-            // Back on this sheet as of 2026-10-14, through the same `goToNow` the two-finger tap
-            // runs, so the card and the shortcut cannot drift. It rings and shakes in there, and
-            // does neither when you are already on now.
-            goToNow()
         case .pickDate:
             // The bell comes home (Mason, 2026-10-14). `.calendar` is `weather.m4a` and rang on
             // the wheel's CAL from 2026-09-12 — "Sound: weather rings on CAL", whose own message
@@ -1091,8 +1126,10 @@ struct ContentView: View {
         }
     }
 
-    /// Back to the present. Two gestures run this: the hold's first card and the two-finger tap,
-    /// which is why it is a function rather than two copies of four lines.
+    /// Back to the present. Two things run this: the two-finger tap and `nowButton` in the
+    /// bottom-trailing corner, which is why it is a function rather than two copies of four
+    /// lines. It has also been the hold's first card and the time sheet's middle card, in that
+    /// order, and is neither now.
     ///
     /// Already there is a no-op and not an arrival, so it rings nothing and shakes nothing. That
     /// matters more for the shortcut than for the card: two fingers are easy to land by accident

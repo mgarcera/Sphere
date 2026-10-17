@@ -1981,3 +1981,83 @@ composition is the next move and the reason to make it is written here.
 Worth noticing about how this was found: three gesture rearrangements shipped in two days, every
 one of them built, and none of them exposed this. It took one minute of a thumb on glass. The
 compiler cannot see a gesture arena.
+
+## 2.2 — Open opened the wrong event, and the marks took colour
+
+### One question, answered in two files (2026-10-16)
+
+Mason, testing the released 2.1: "tapping the edges goes from event to event, which is right, but
+tapping open opens the underlying event. for example, if there's a multi-hour event with events on
+top of it, tapping open taps the event that spans the full time. that is incorrect."
+
+The arc has had a rule for overlap since the chevrons were built: the most recently STARTED event
+wins, with the shorter breaking a tie. It is written out in `DayModel.activeEvent`, including the
+8:23–8:45 / 8:40–9:10 case that killed shortest-wins, and it is the rule the header has always
+drawn. The tap did not use it. It asked `model.events.first { $0.contains(hour) }`, and
+`CalendarService` sorts by start ascending, so `first` is the EARLIEST-starting event containing
+the hour. A call inside a three-hour block therefore lost to the block from every point inside it,
+including the call's own capsule. The header named the call; Open opened the block.
+
+The rule now lives in one function, `DayModel.event(containing:)`, and `activeEvent` is one line
+calling it with `focusHour`. Nothing can answer this question twice again.
+
+**The pattern, for the fourth time in a week.** Three sound bugs on 2026-10-14 were one bug: the
+bell stayed on the gesture while the gesture's job moved. This is the same shape in a different
+material. The tap's event lookup was written before the header's overlap rule existed and was
+never reconciled with it, so the two surfaces disagreed in exactly the case overlap was invented
+for. **A second copy of a question is a bug with a delay on it.** When a rule is written down
+anywhere — in a doc comment, in a decision record — the next place that needs it calls the first
+one or there is no rule, only two behaviours. It built clean before and after, twice.
+
+### Ink is the day, accent is the act (2026-10-16)
+
+Mason: "i think we should color parts of the icons. the plus in new event should be green, the
+circle in open should be blue, one of the dots in pick date should be red."
+
+The marks were the app's one monochrome holdout. `EventLayer` has stroked every event in its own
+calendar's colour since the arc was drawn, so the canvas already carried hue; the glyph set did
+not. One part of each mark is now an accent and the rest stays ink, and the division is the same
+in all four: **the ink draws the day, which every mark shares and which is why the set reads as
+one hand. The accent draws the act, which is the one thing each mark says that the others do not.**
+The plus, the lens rim, the dot in the grid, the dot on the half-arc.
+
+It is intrinsic to `Mark`, not a parameter, so the plus is green wherever it is drawn. Colour is
+redundant and never load-bearing: the four shapes already differ, so a reader who cannot separate
+these hues loses nothing. `paths(for:)` returns four layers instead of two, and `.newAllDay`'s
+plus went onto the accent layer though that mark has no accent and still draws whole in ink —
+parked marks stay structured the way live ones are, or restoring one is two edits instead of one.
+
+Amber stands in for yellow. A true yellow has almost no contrast against paper, and every accent
+is a light/dark pair because the ground runs from white to near-black.
+
+### Now left the cards for a corner (2026-10-16)
+
+Mason: "i think now should be separated into its own button entirely with the dot yellow. i think
+it should always live above the modal (maybe). let's talk about where it should live."
+
+Three places were argued. The one that looked most native was the arc itself, since Now is already
+a place on it — and it fails in the only case it exists for: scrub out to Thursday afternoon and
+the now-dot is off the drawing, which is exactly when a way back is worth a press. The header was
+possible and costs thumb reach, and moves vertically as all-day events grow it. Above the sheet was
+rejected on Mason's own "maybe": a sheet asks about the time under your finger and Now throws that
+time away, so a Now button over an open sheet is a second answer to a question already on screen.
+
+It sits bottom-trailing, opposite the "?", and it is **conditional**, which is what makes that
+corner affordable. Two permanent marks start a toolbar on a canvas that carries almost nothing, and
+that cost is the reason the "?" took a fork rather than a neighbour in 2.0. Hidden while
+`isFocusedOnNow`, this is not furniture: it is a way back, absent exactly when it would say
+nothing. Hidden by opacity with hit testing off, the pattern the header's title button already
+uses, so there is nothing to transition in and no invisible 44pt target.
+
+So the tap's empty-time sheet is two cards again, New event and Pick date, and **both of them are
+about the time under the finger.** That is the whole argument for which cards a tap gets. The
+invariant it gives up, stated where it was given up: both tap sheets used to read New event,
+something, Pick date, with the something being Now or Open, so the leftmost card of a tap was the
+same either way. Now `TimeChoiceSheet` is two and `EventChoiceSheet` is three, and what survives
+is the part doing the work — New event leads both, Pick date closes both, and Open is literally
+what is inserted when there was something there.
+
+Now's route has moved four times in six days: the tap, the hold, the tap, its own button. The
+reason it stopped is that it is the one act on the arc with no position, and a button has no
+position either. The 2026-10-10 STUDY on whether a tap should cost a card at all is still open,
+and has now survived four rearrangements without being answered.
