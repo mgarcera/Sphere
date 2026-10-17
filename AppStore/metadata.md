@@ -133,26 +133,41 @@ Questions, ideas, or feedback? mason@smidgecraft.com
 
 1,687 characters.
 
-## What's New — 2.2, written 2026-10-16
+## What's New — 2.2, AS SUBMITTED, Mason's edit of 2026-10-16
+
+This is the text read back off the submitted version, not the draft. Mason changed five lines in
+App Store Connect before submitting, and his version is the record.
 
 ```
 Back to now
-- Scrub away from the present and the bottom left corner shows how far, like "+4 hours". Tap it to come back.
-- The two-finger tap and the Now card are gone. The corner replaces both.
+- Scrub away from the present and the bottom left corner shows how far, like "+4 hours". Tap it to come back to now.
+- The two-finger tap and the Now card have been replaced.
 
-Opening events
-- Tapping an event that sits inside a longer one now opens the inner event, not the block around it.
+Opening events bug fix
+- Tapping an event that sits inside a longer one now opens the inner event.
 
 Corner menu
-- The corner button is a menu mark and opens the menu, or the gesture guide.
+- The corner button is a menu mark and opens the menu or the gesture guide.
 
 Card icons
-- Each mark carries one color: a green plus for a new event, a blue lens for opening one, a red dot for picking a date.
+- Each mark now has a color: a green plus for a new event, a blue lens for opening one, and a red dot for picking a date.
 
 Thank you for using Sphere! Feedback: mason@smidgecraft.com
 ```
 
-595 characters.
+570 characters, 25 fewer than the draft.
+
+**What he changed, because it is the same edit every time.** "Tap it to come back" became "Tap it
+to come back to now", finishing the sentence rather than leaning on the heading. "are gone. The
+corner replaces both" became "have been replaced", which is one clause instead of two and drops the
+explanation of where they went. "Opening events" became "Opening events bug fix", which tells the
+reader what kind of change it is before the bullet does. "not the block around it" went entirely:
+the bullet says what now happens and does not also say what no longer happens. "carries one color"
+became "now has a color", and the list gained its Oxford comma.
+
+The pattern across all five: **he cuts the clause that explains the clause, and he finishes
+sentences that a heading was propping up.** The drafted version used the heading as the subject of
+its bullets; his does not.
 
 ## Description — SUPERSEDED, as submitted with 2.1
 
