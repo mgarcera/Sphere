@@ -55,12 +55,6 @@ struct ArcWindow: View {
     /// it now are the two surfaces that care least where the finger was. Now went back to the
     /// tap's sheet the same day.
     var onHold: (() -> Void)?
-    /// Two fingers go straight to now (Mason, 2026-10-13). It opened the menu from 2026-10-10
-    /// until that date, which was a duplicate of the hold and then, once the hold began asking,
-    /// the shortcut past the question. It still is a shortcut past the question; it now skips to
-    /// the other card. Now is the move the pair offers and the menu is the place, and a shortcut
-    /// is worth most on the move.
-    var onTwoFingerTap: (() -> Void)?
     /// A tap inside either edge band steps to the next or previous EVENT, -1 back and +1 forward.
     /// It stepped a whole day for one build on 2026-10-10 and changed the same day: the edges are
     /// where you reach when what you want is off-screen, and what is off-screen that you want is
@@ -265,7 +259,7 @@ struct ArcWindow: View {
                 isEnabled: onHold != nil
             )
             // Spread to see more of the day, squeeze to come back in. Simultaneous with the
-            // scrub so a two-finger gesture that drifts does both rather than fighting.
+            // scrub so a pinch that drifts does both rather than fighting.
             .simultaneousGesture(
                 MagnifyGesture()
                     .onChanged { value in
@@ -280,15 +274,6 @@ struct ArcWindow: View {
                     .onEnded { _ in zoomBase = nil },
                 isEnabled: onZoom != nil
             )
-            // Two fingers return to now. SwiftUI has no two-finger tap, so this is a UIKit
-            // recogniser wrapped in `UIGestureRecognizerRepresentable` — which joins SwiftUI's
-            // gesture arena rather than competing from outside it, and so does not reproduce
-            // the starving that a `contextMenu` did on 2026-10-03.
-            //
-            // A two-finger PAN was tried alongside it and dropped: the pinch already covers
-            // "show me more of the day", so a second two-finger gesture would be a second way
-            // to say the same thing.
-            .gesture(TwoFingerTap { onTwoFingerTap?() })
         }
         .frame(height: ArcGeometry.totalHeight(arcHeight))
     }

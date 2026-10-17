@@ -56,7 +56,7 @@ enum Sounds {
         /// QUESTION from 2026-10-10 until 2026-10-14, which meant it sounded whether or not the
         /// menu was the answer.
         case menu = "sunrise"
-        /// Returning to now, from the hold's Now card or from a two-finger tap, through
+        /// Returning to now, from the corner button, through
         /// `goToNow`. Silent when already there, which is a no-op rather than an arrival.
         case now = "sunset"
         /// An editor opening, and only that. Five sites, every one of them an `editorTarget`

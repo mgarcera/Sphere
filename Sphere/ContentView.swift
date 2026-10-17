@@ -40,6 +40,15 @@ struct ContentView: View {
     @State private var isEventChoiceOpen = false
     @State private var isTimeChoiceOpen = false
     @State private var isCornerChoiceOpen = false
+    /// The corner readout says where you are and nothing says it can be pressed (Mason,
+    /// 2026-10-16). It names the gesture once, the first time it appears.
+    ///
+    /// ONCE PER LAUNCH, not once ever, and `@State` rather than `@AppStorage` is the whole of
+    /// that decision. A persisted flag teaches the person who set up the phone and nobody else
+    /// who ever picks it up, which was the standing objection to a hint at all. Per launch, it
+    /// costs a returning reader one two-second label and teaches every new one.
+    @State private var nowHintSeenThisLaunch = false
+    @State private var showsNowHint = false
     /// Acted on after the chooser closes, never while it is closing: presenting
     /// the editor into a sheet still dismissing is the refusal that cost ten
     /// seconds once already.
@@ -392,6 +401,26 @@ struct ContentView: View {
                 portraitDay
             }
         }
+        // Here rather than on `nowButton`, which is built by both layouts: only one of them
+        // exists at a time, but a trigger that fires once belongs above the thing that chooses.
+        .onChange(of: model.isFocusedOnNow) { _, onNow in
+            if onNow {
+                // Pressed it, or scrubbed back by hand. Either way the lesson is over.
+                showsNowHint = false
+            } else if !nowHintSeenThisLaunch {
+                nowHintSeenThisLaunch = true
+                showsNowHint = true
+            }
+        }
+        // `id:` is the point: returning to now sets `showsNowHint` false, which tears this down
+        // and cancels the sleep, so a hint that has already been answered cannot fire its own
+        // dismissal two seconds later.
+        .task(id: showsNowHint) {
+            guard showsNowHint else { return }
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
+            showsNowHint = false
+        }
     }
 
     /// Below this, the header and the arc go side by side; at or above it they stack.
@@ -534,6 +563,24 @@ struct ContentView: View {
     /// what the press does to be inferred from the only thing that can clear a distance. The
     /// conditional visibility is what makes the text affordable: a permanent readout would be a
     /// status bar, and "+0 minutes" says nothing.
+    ///
+    /// **The affordance, which the readout did not have.** Mason, 2026-10-16: "i think the
+    /// wording needs an affordance of some kind though to indicate it can be clicked." The
+    /// obvious answers were all boxes, and this app has written down its refusal of the box
+    /// twice: `ChoiceCard` dropped its border because "a border around them was drawing the
+    /// container rather than the choice", and the palette has no greys but the "?" at 0.55. So
+    /// the button names the gesture once instead, for two seconds, the first time it appears in
+    /// a launch (`showsNowHint`).
+    ///
+    /// Mason chose this over setting the readout in amber, which was my recommendation, and over
+    /// the cards' uppercase tracked word. The objection I had stands and is worth leaving here:
+    /// a hint is a thing that has to be caught, so it teaches whoever happens to be looking the
+    /// first time they scrub and nobody else. Once per launch rather than once ever is what
+    /// narrows that, and it is the only part of the mechanism that answers it.
+    ///
+    /// The cost, where it is paid: for those two seconds the first scrub of a launch shows no
+    /// distance. Small, because the distance at the start of a scrub is "+15 minutes" and
+    /// uninteresting, and because it is the one moment the control matters more than its value.
     private var nowButton: some View {
         Button {
             goToNow()
@@ -541,7 +588,14 @@ struct ContentView: View {
             // The subtitle's treatment exactly: footnote, monospaced digits, and `.identity` so
             // the number does not animate. A scrub changes this on every frame, and a numeric
             // content transition on a value that moves continuously is noise rather than motion.
-            Text(Self.distanceFromNow(model.focusDate, from: model.realNow))
+            // ONE `Text` whose string changes, not two crossfading in a `ZStack`. A ZStack sizes
+            // to its widest child, so the hit area would stay as wide as the sentence for as
+            // long as the button was on screen — a 120-point invisible target in the corner,
+            // which is the fault this button's own argument was written to avoid. The cost is
+            // that the swap pops rather than fades. It is a deliberate change two seconds in,
+            // and it reads as one.
+            Text(showsNowHint ? Self.nowHint : Self.distanceFromNow(model.focusDate,
+                                                                    from: model.realNow))
                 .contentTransition(.identity)
                 .font(.footnote)
                 .monospacedDigit()
@@ -551,7 +605,9 @@ struct ContentView: View {
                 .padding(.horizontal, 10)
                 .contentShape(.rect)
         }
-        .buttonStyle(.plain)
+        // The app's press language, the same style every choice card uses: presses dim rather
+        // than scale. `.plain` gave this button no press feedback at all for two builds.
+        .buttonStyle(DimOnPress())
         .accessibilityLabel("Back to now")
         .opacity(model.isFocusedOnNow ? 0 : 1)
         .allowsHitTesting(!model.isFocusedOnNow)
@@ -605,7 +661,6 @@ struct ContentView: View {
                       // in one gesture; the menu, being a place rather than a move, is worth the
                       // card. Deliberately the same action the hold's first card runs, through
                       // the same function, so the shortcut cannot drift from what it shortcuts.
-                      onTwoFingerTap: { goToNow() },
                       // The chevrons' own behaviour, which outlived the chevrons: nearest event
                       // in that direction, searched past the drawn window, and a haptic that says
                       // nothing is there when nothing is.
@@ -1143,14 +1198,20 @@ struct ContentView: View {
         }
     }
 
-    /// Back to the present. Two things run this: the two-finger tap and `nowButton` in the
-    /// bottom-trailing corner, which is why it is a function rather than two copies of four
-    /// lines. It has also been the hold's first card and the time sheet's middle card, in that
-    /// order, and is neither now.
+    /// Back to the present. ONE thing runs this now: `nowButton` in the bottom-trailing corner.
+    ///
+    /// It has been the hold's first card, the time sheet's middle card, and a two-finger tap on
+    /// the arc, in that order, and is none of them. The two-finger tap went on 2026-10-16
+    /// (Mason), with its page in the guide: a corner button that states the distance and clears
+    /// it on a press leaves a hidden shortcut to the same place with nothing left to offer, and
+    /// a shortcut nobody is taught is a gesture that fires by accident and never on purpose.
+    /// `TwoFingerTap.swift` went with it, 26 lines, its only caller being the line above.
     ///
     /// Already there is a no-op and not an arrival, so it rings nothing and shakes nothing. That
-    /// matters more for the shortcut than for the card: two fingers are easy to land by accident
-    /// while pinching, and an accident that announces itself reads as a bug.
+    /// guard was written for the two-finger tap, which was easy to land by accident while
+    /// pinching, and it is kept for a smaller reason: the button is hidden inside the same
+    /// one-minute window, so the only way to reach this while already on now is VoiceOver
+    /// pressing a control it can still see.
     private func goToNow() {
         guard !model.isFocusedOnNow else { return }
         Haptics.warm()
@@ -1319,6 +1380,11 @@ struct ContentView: View {
         formatter.timeZone = zone
         return formatter.string(from: date)
     }
+
+    /// Names the gesture, in the guide's own construction — every lesson there is "Tap to…",
+    /// "Drag to…", "Hold for…". No full stop: the guide's lines are sentences in a paragraph and
+    /// this one stands alone in the slot a readout usually fills, so it is a label.
+    private static let nowHint = "Tap to return to now"
 
     /// How far the focus has travelled from the present, as a signed distance: "+4 hours",
     /// "−10 minutes", "+5 days", "+5 months".

@@ -14,9 +14,9 @@ enum TimeChoice {
 /// away, which is why Now is gone from here as of 2026-10-16.
 ///
 /// Now went to a button of its own in the corner opposite the "?", visible only when the focus
-/// has left the present (`nowButton` in `ContentView`, which holds that argument). Two fingers
-/// still go straight to it, so the present is reachable by a gesture and by a button and no
-/// longer costs a card.
+/// has left the present (`nowButton` in `ContentView`, which holds that argument). That corner
+/// is the only route as of 2026-10-16: the two-finger tap went the same day, so the present is
+/// reached by one visible control instead of by a card and a hidden gesture.
 ///
 /// **The invariant this gives up.** Until today both tap sheets read New event, something, Pick
 /// date, with the something being Now when there was no event and Open when there was — so the

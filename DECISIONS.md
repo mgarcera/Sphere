@@ -2097,3 +2097,42 @@ affordance of some kind though to indicate it can be clicked." The readout state
 and nothing says it is pressable, and this app has twice written down its refusal of the obvious
 answer: `ChoiceCard` dropped its border because "a border around them was drawing the container
 rather than the choice". So the affordance has to say pressable without a box.
+
+### The hint, and the two-finger tap goes (2026-10-16)
+
+Mason: "i think the wording needs an affordance of some kind though to indicate it can be
+clicked. let's brainstorm." Then, from the list: "timed hint, dim."
+
+Every obvious affordance was a box, and this app has twice written down its refusal of the box:
+`ChoiceCard` dropped its border because "a border around them was drawing the container rather
+than the choice", and the palette has no greys but the "?" at 0.55. So the corner names the
+gesture instead — "Tap to return to now", for two seconds, the first time the button appears in a
+launch — and then swaps to the readout. It also finally gets `DimOnPress`, the style every choice
+card uses; it had been `.buttonStyle(.plain)` with no press feedback at all for two builds.
+
+**Once per launch, `@State` rather than `@AppStorage`, and that is the only part of the mechanism
+that answers the objection to a hint at all.** A hint has to be caught, so a persisted flag
+teaches whoever set the phone up and nobody else who picks it up. Per launch costs a returning
+reader one two-second label and teaches every new reader.
+
+Recommended against, and chosen anyway: amber text, which would have said "act" in the accent
+vocabulary adopted the same night. Recorded next to the choice in `nowButton` so a later reader
+sees both. One `Text` whose string changes rather than two crossfading in a `ZStack`, because a
+ZStack sizes to its widest child and the hit area would have stayed as wide as the sentence —
+a 120-point invisible target, the exact fault that button's argument was written to avoid.
+
+**And the two-finger tap went.** Mason, same message: "remove the two tap to now and remove it
+from the guide." A corner control that states the distance and clears it on a press leaves a
+hidden shortcut to the same place with nothing left to offer, and a shortcut nobody is taught is a
+gesture that fires by accident and never on purpose. `TwoFingerTap.swift` went with it, 26 lines,
+whose only caller was `ArcWindow`, along with `ArcWindow.onTwoFingerTap`, the
+`GestureLesson.Kind.twoFingerTap` case, and the guide's sixth page. The guide is five pages; the
+dots read their count from `all.count`.
+
+**Six doc sites hung off that one gesture**, and the guide was teaching a line that had been
+false since earlier the same evening: "Tap to create an event, jump to now, open an event, or pick
+a date", after Now had left the cards. `Sounds`, `Haptics`, `DayMenu`, `TimeChoiceSheet`,
+`ArcWindow` and `goToNow` all described a control that no longer existed or no longer did that.
+This is the third time in three days that the lesson has been the same one: **a commit that moves
+a control moves everything hanging off it, and what hangs off it is not in the diff.** The only
+reliable way to find them is to grep the control's name before claiming the move is finished.

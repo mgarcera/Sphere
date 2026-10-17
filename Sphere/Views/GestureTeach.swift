@@ -8,7 +8,7 @@ import SwiftUI
 /// What replaced them shows the gesture instead of describing it, which is the whole reason the
 /// hand exists: a fingertip doing the thing, with one line under it.
 struct GestureLesson: Identifiable {
-    enum Kind { case drag, tap, twoFingerTap, hold, pinch }
+    enum Kind { case drag, tap, hold, pinch }
 
     let id: String
     let word: String
@@ -21,20 +21,25 @@ struct GestureLesson: Identifiable {
     /// which is why the last two read as a trailing clause rather than as separate rules.
     ///
     /// Rewritten 2026-10-13, when Now left the tap for the hold. Two pages changed and they
-    /// changed places: the hold now carries a choice and the two-finger tap is the shortcut past
-    /// it, so the hold states the pair and the shortcut follows it. Still six pages, so the dots
-    /// and their spoken position are untouched.
+    /// changed places: the hold carried a choice and the two-finger tap was the shortcut past it,
+    /// so the hold stated the pair and the shortcut followed it.
     ///
     /// The clause that joined those last two pages went the same day, when the shortcut moved
     /// from the menu to Now. It worked because both pages ended on the same word; two pages that
     /// name different destinations have to be two sentences, or the "or" reads as a third option.
-    /// The two captions name whatever the hold's two cards are called, so they are provisional
-    /// until that copy is settled (Mason has the spread, 2026-10-13).
+    ///
+    /// **Five pages as of 2026-10-16, down from six.** The two-finger tap is gone, and so is its
+    /// page (Mason). Returning to now is a button in the corner rather than a gesture, and this
+    /// guide teaches gestures: the "?" that opens it has never had a page either. The dots read
+    /// their position from `all.count`, so nothing else had to change.
     static let all = [
         GestureLesson(id: "drag", word: "Drag to move.", fingers: 1, kind: .drag),
         GestureLesson(id: "pinch", word: "Pinch in and out to zoom.", fingers: 2, kind: .pinch),
+        // "jump to now" went on 2026-10-16, when Now left the tap's cards for the corner. It had
+        // been false since that commit and the guide went on teaching it, which is the same
+        // failure as the three sound bugs: a control moved and what hung off it did not.
         GestureLesson(id: "tap",
-                      word: "Tap to create an event, jump to now, open an event, or pick a date.",
+                      word: "Tap to create an event, open an event, or pick a date.",
                       fingers: 1, kind: .tap),
         GestureLesson(id: "edge",
                       word: "Tap the left or right edges to jump between events.",
@@ -42,9 +47,6 @@ struct GestureLesson: Identifiable {
         GestureLesson(id: "hold",
                       word: "Hold for this guide, or the menu.",
                       fingers: 1, kind: .hold),
-        GestureLesson(id: "twoFinger",
-                      word: "Tap two fingers to jump straight to now.",
-                      fingers: 2, kind: .twoFingerTap),
     ]
 }
 
@@ -109,7 +111,7 @@ struct GestureDemo: View {
             withAnimation(.easeInOut(duration: 1.1)) { slide = -70 }
             try? await Task.sleep(for: .milliseconds(1_200))
             withAnimation(.easeInOut(duration: 1.1)) { slide = 60 }
-        case .tap, .twoFingerTap:
+        case .tap:
             // Down fast and flat, back on a spring that overshoots a little, which is what makes
             // it read as a tap rather than as a shrink. Twice, because one pop at this size is
             // easy to miss.

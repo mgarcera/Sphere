@@ -43,7 +43,7 @@ enum Haptics {
     }
 
     /// The dot jumped somewhere: an edge band stepping to an event, Now from the hold or from
-    /// two fingers, a day picked. Weightier than a detent, since a jump crosses in one press
+    /// the corner button, a day picked. Weightier than a detent, since a jump crosses in one press
     /// what a scrub would take a long drag to cover.
     ///
     /// Rewritten 2026-10-13. It named a chevron, a tap that returned to now, and what the wheel
