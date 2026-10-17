@@ -135,8 +135,10 @@ Questions, ideas, or feedback? mason@smidgecraft.com
 
 ## What's New — 2.2, AS SUBMITTED, Mason's edit of 2026-10-16
 
-This is the text read back off the submitted version, not the draft. Mason changed five lines in
-App Store Connect before submitting, and his version is the record.
+This is the text read back off the submitted version, not the draft. Mason changed SIX lines in
+App Store Connect before submitting, and his version is the record. An earlier version of this note
+and the commit that added it both said five; the diff has six changed lines and the character
+arithmetic closes on six (+7, -16, +8, -25, -1, +2 = -25).
 
 ```
 Back to now
@@ -157,17 +159,27 @@ Thank you for using Sphere! Feedback: mason@smidgecraft.com
 
 570 characters, 25 fewer than the draft.
 
-**What he changed, because it is the same edit every time.** "Tap it to come back" became "Tap it
-to come back to now", finishing the sentence rather than leaning on the heading. "are gone. The
-corner replaces both" became "have been replaced", which is one clause instead of two and drops the
-explanation of where they went. "Opening events" became "Opening events bug fix", which tells the
-reader what kind of change it is before the bullet does. "not the block around it" went entirely:
-the bullet says what now happens and does not also say what no longer happens. "carries one color"
-became "now has a color", and the list gained its Oxford comma.
+**All six, with their character deltas.**
 
-The pattern across all five: **he cuts the clause that explains the clause, and he finishes
-sentences that a heading was propping up.** The drafted version used the heading as the subject of
-its bullets; his does not.
+1. `+7` "Tap it to come back" became "Tap it to come back to now", finishing the sentence rather
+   than leaning on the heading above it.
+2. `-16` "are gone. The corner replaces both" became "have been replaced", one clause instead of
+   two, dropping the explanation of where they went.
+3. `+8` "Opening events" became "Opening events bug fix", naming the kind of change before the
+   bullet does.
+4. `-25` "not the block around it" went entirely: the bullet says what now happens and does not
+   also say what no longer happens.
+5. `-1` "opens the menu, or the gesture guide" lost its comma, a conjunction joining two.
+6. `+2` "Each mark carries one color" became "Each mark now has a color", and the three-item list
+   gained its serial comma.
+
+**The patterns, and there are three rather than one.** He cuts the clause that explains the clause
+(2, 4). He finishes sentences a heading was propping up (1), which is the opposite of compression
+and now rule 16 of `masons-copy-voice`. And he punctuates series one way consistently (5, 6): a
+serial comma in a list of three, none before a conjunction joining two.
+
+Also worth keeping: "carries" became "has". A mark that *carries* a colour is mild personification,
+so the no-metaphor rule reaches further than the obvious imagery it was written for.
 
 ## Description — SUPERSEDED, as submitted with 2.1
 
