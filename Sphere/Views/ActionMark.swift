@@ -15,11 +15,16 @@ import SwiftUI
 /// step a day, so the pair is told apart by a count rather than by two
 /// unrelated drawings.
 /// Every mark the app can draw, which outlived the wheel the set was built for: the choice
-/// sheets draw their cards from it (`ChoiceCard`), and six are in use — `.newEvent`,
-/// `.openEvent`, `.now`, `.calendar`, `.menu` and `.guide`, the last two having arrived with
-/// the hold's pair and the corner's pair on 2026-10-13. The rest are kept as a glyph set rather
-/// than deleted: they are drawings, not wiring, and `Open in Calendar` and `New all-day event`
-/// lost their only route when the wheel went and will want one again (2026-10-10).
+/// sheets draw their cards from it (`ChoiceCard`), and five are in use — `.newEvent`,
+/// `.openEvent`, `.calendar`, `.menu` and `.guide`, the last two having arrived with the hold's
+/// pair and the corner's pair on 2026-10-13. The rest are kept as a glyph set rather than
+/// deleted: they are drawings, not wiring, and `Open in Calendar` and `New all-day event` lost
+/// their only route when the wheel went and will want one again (2026-10-10).
+///
+/// `.now` joined the parked set on 2026-10-16 and is the one to put back first. It had the Now
+/// card, then the corner button, and the corner now reads out the distance from the present as
+/// text instead, because Mason judged the mark unrecognisable. Its amber accent is still wired,
+/// so restoring the icon is one line in `nowButton`.
 enum Mark {
     case none, now, calendar, previousDay, nextDay, newAllDay
     case appearance, openCalendarApp, muteHaptics

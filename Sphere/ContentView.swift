@@ -526,12 +526,29 @@ struct ContentView: View {
     /// target. Full ink rather than the "?"'s 0.55, because this one is a way out of somewhere
     /// rather than a thing to find when stuck, and because it is only ever on screen when it has
     /// something to do.
+    ///
+    /// It drew the `.now` mark for one build. Mason, 2026-10-16: "i think this icon isn't
+    /// recognizable to users" — a half-arc with a dot says "a moment in a day" to someone who
+    /// has already learned that the arc is a day, which is nobody on their first scrub. So it
+    /// reads out the distance instead (`distanceFromNow`), which states where you are and leaves
+    /// what the press does to be inferred from the only thing that can clear a distance. The
+    /// conditional visibility is what makes the text affordable: a permanent readout would be a
+    /// status bar, and "+0 minutes" says nothing.
     private var nowButton: some View {
         Button {
             goToNow()
         } label: {
-            ActionMark(mark: .now, size: 20, color: markColour, stroke: 1.5)
-                .frame(width: 44, height: 44)
+            // The subtitle's treatment exactly: footnote, monospaced digits, and `.identity` so
+            // the number does not animate. A scrub changes this on every frame, and a numeric
+            // content transition on a value that moves continuously is noise rather than motion.
+            Text(Self.distanceFromNow(model.focusDate, from: model.realNow))
+                .contentTransition(.identity)
+                .font(.footnote)
+                .monospacedDigit()
+                .foregroundStyle(markColour)
+                .fixedSize()
+                .frame(height: 44)
+                .padding(.horizontal, 10)
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -1301,6 +1318,56 @@ struct ContentView: View {
         formatter.dateFormat = "EEEE, MMMM d"
         formatter.timeZone = zone
         return formatter.string(from: date)
+    }
+
+    /// How far the focus has travelled from the present, as a signed distance: "+4 hours",
+    /// "−10 minutes", "+5 days", "+5 months".
+    ///
+    /// EXPERIMENT (Mason, 2026-10-16), standing in for the `.now` mark in the corner: "i think
+    /// this icon isn't recognizable to users". A readout says what the icon could not, which is
+    /// where you ARE, and it says what pressing does by implication, since the only thing that
+    /// clears a distance is going back.
+    ///
+    /// The unit steps up when the ROUNDED value would overflow it: 59 minutes, then 1 hour; 23
+    /// hours, then 1 day; 59 days, then 2 months. Rounding before the test rather than after is
+    /// what makes that true, and the first draft of this did it the other way round, so 31
+    /// minutes read "+1 hour" and nothing between 31 and 59 minutes could be said at all. The
+    /// same inversion put "+24 hours" in the gap below one day.
+    ///
+    /// Months start at 2, which is why the day rung runs to 59 rather than to 30: a readout that
+    /// stepped from "+30 days" to "+1 month" would drop in apparent size while the distance grew.
+    ///
+    /// All of it is arithmetic on the interval, including months at the Gregorian mean length.
+    /// Calendar months were the first draft and they broke symmetry: the same magnitude read
+    /// "+31 days" forward and "−1 month" back, because the two directions span different month
+    /// pairs. This reads distance travelled along the arc rather than calendar boundaries
+    /// crossed, which is also what the arc itself measures, so a scrub of 25 hours across
+    /// midnight is "+1 day" rather than "+2 days".
+    ///
+    /// A true minus sign rather than a hyphen, which is the character that lines up with
+    /// `monospacedDigit`.
+    private static func distanceFromNow(_ focus: Date, from now: Date) -> String {
+        let seconds = focus.timeIntervalSince(now)
+        let sign = seconds < 0 ? "\u{2212}" : "+"
+
+        func unit(_ value: Double, _ singular: String) -> String {
+            "\(sign)\(Int(value)) \(singular)\(Int(value) == 1 ? "" : "s")"
+        }
+
+        /// Days in a mean Gregorian year over twelve.
+        let meanMonth: Double = 30.436875
+
+        let minutes = abs(seconds) / 60
+        let roundedMinutes = minutes.rounded()
+        if roundedMinutes < 60 { return unit(roundedMinutes, "minute") }
+
+        let hours = (minutes / 60).rounded()
+        if hours < 24 { return unit(hours, "hour") }
+
+        let days = (minutes / 1440).rounded()
+        if days < 60 { return unit(days, "day") }
+
+        return unit((minutes / 1440 / meanMonth).rounded(), "month")
     }
 }
 

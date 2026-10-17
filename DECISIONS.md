@@ -2061,3 +2061,39 @@ Now's route has moved four times in six days: the tap, the hold, the tap, its ow
 reason it stopped is that it is the one act on the arc with no position, and a button has no
 position either. The 2026-10-10 STUDY on whether a tap should cost a card at all is still open,
 and has now survived four rearrangements without being answered.
+
+### The corner reads the distance instead of drawing a mark (2026-10-16)
+
+Mason, after one build with the `.now` mark in the corner: "i think this icon isn't recognizable
+to users. how about this, let's experiment with a time scrubber in the corner instead of the icon
+- like +2 hours, +5 days, +5 months, -10 minutes, -4 hours, and clicking on it returns to now."
+
+He is right about the mark. A half-arc with a dot says "a moment in a day" to someone who has
+already learned that a whole arc is a day, and that is nobody on their first scrub. The readout
+says the thing the icon could not, which is where you ARE, and leaves what the press does to be
+inferred from the only thing that can clear a distance.
+
+`distanceFromNow` steps the unit up when the ROUNDED value would overflow it: 59 minutes, then 1
+hour; 23 hours, then 1 day; 59 days, then 2 months. **Rounding before the rung test rather than
+after is the whole of it**, and the first draft did it the other way, so 31 minutes read "+1 hour"
+and nothing between 31 and 59 minutes could be expressed at all. The same inversion put "+24
+hours" in the gap below one day. Neither was visible in a build; both came out of running the
+function against 27 offsets.
+
+The day rung runs to 59 days rather than to 30 so that months can start at 2. Stepping from "+30
+days" to "+1 month" would shrink the number while the distance grew.
+
+All of it is arithmetic on the interval, months included, at the Gregorian mean month of 30.436875
+days. `Calendar` months were the first draft and broke symmetry: the same magnitude read "+31
+days" forward and "−1 month" backward, because the two directions span different month pairs.
+This measures distance travelled along the arc rather than calendar boundaries crossed, which is
+what the arc itself measures.
+
+`Mark.now` is drawn nowhere as a result and joins the parked set, first in line to come back. Its
+amber accent stays wired, so restoring the icon is one line.
+
+**Open, and the reason this entry will be amended.** Mason: "i think the wording needs an
+affordance of some kind though to indicate it can be clicked." The readout states where you are
+and nothing says it is pressable, and this app has twice written down its refusal of the obvious
+answer: `ChoiceCard` dropped its border because "a border around them was drawing the container
+rather than the choice". So the affordance has to say pressable without a box.
