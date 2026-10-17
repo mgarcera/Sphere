@@ -190,7 +190,8 @@ final class DayModel {
     }
 
     /// The event the dot is inside. Real calendars overlap constantly, so the
-    /// most recently STARTED one wins, with the shorter breaking a tie.
+    /// most recently STARTED one wins, with the shorter breaking a tie. The
+    /// rule is `event(containing:)` below, which the tap on the arc shares.
     ///
     /// Shortest-wins was tried and broke the chevrons. With 8:23–8:45 and
     /// 8:40–9:10, pressing next from the first lands on 8:40, which is the
@@ -203,9 +204,19 @@ final class DayModel {
     /// instant can have started later. It also still gets the case
     /// shortest-wins existed for, since a standup inside a focus block starts
     /// after the block.
-    var activeEvent: CalendarEvent? {
+    var activeEvent: CalendarEvent? { event(containing: focusHour) }
+
+    /// The event any given hour lands on, by the rule above.
+    ///
+    /// Factored out of `activeEvent` on 2026-10-16 because the tap had its own copy of this
+    /// question and answered it differently: `events.first { $0.contains(hour) }`, and
+    /// `CalendarService` sorts by start ascending, so `first` is the EARLIEST-starting event
+    /// containing the hour. On a three-hour block with a call inside it, the header named the
+    /// call and Open opened the block (Mason, 2026-10-16). One function now, so the thing the
+    /// header names and the thing Open opens cannot disagree again.
+    func event(containing hour: Double) -> CalendarEvent? {
         timedEvents
-            .filter { $0.contains(focusHour) }
+            .filter { $0.contains(hour) }
             .max { a, b in
                 a.startHour == b.startHour
                     ? a.durationHours > b.durationHours

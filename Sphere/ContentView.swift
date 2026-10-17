@@ -1017,7 +1017,11 @@ struct ContentView: View {
         //
         // `start` is still the tapped time, not the active event's, so New event goes on creating
         // where the tap aimed. That is the whole reason the tap kept this sheet when Now left it.
-        let underFinger = model.events.first { !$0.isAllDay && $0.contains(hour) }
+        // Nested events: the one that STARTED most recently wins, which is the arc's rule for
+        // overlap everywhere else and is why this calls `DayModel` rather than filtering here.
+        // It read `model.events.first { ... }` until 2026-10-16, and the service sorts by start
+        // ascending, so a call inside a three-hour block lost to the block.
+        let underFinger = model.event(containing: hour)
         if let hit = underFinger ?? model.activeEvent,
            let occurrence = calendar.occurrence(for: hit.id) {
             choiceContext = ChoiceContext(event: occurrence, start: start)
@@ -1025,9 +1029,10 @@ struct ContentView: View {
         } else {
             // STUDY (Mason, 2026-10-10): a tap used to open the editor here, which was one
             // gesture to a new event. It asks first instead, so the tap costs a card for the
-            // thing it used to do directly. On trial. The pair it asks is down to two as of
-            // 2026-10-13 — New event or Pick date — because Now was the one card that threw
-            // away the spot the tap had aimed at, and it went to the hold.
+            // thing it used to do directly. On trial, and still unanswered through four
+            // rearrangements. The pair it asks is New event or Pick date, both of which are
+            // about the time under the finger; Now was the card that threw that time away and
+            // has a corner button of its own as of 2026-10-16.
             timeChoiceStart = start
             isTimeChoiceOpen = true
         }
