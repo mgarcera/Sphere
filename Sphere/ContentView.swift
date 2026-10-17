@@ -581,6 +581,14 @@ struct ContentView: View {
     /// The cost, where it is paid: for those two seconds the first scrub of a launch shows no
     /// distance. Small, because the distance at the start of a scrub is "+15 minutes" and
     /// uninteresting, and because it is the one moment the control matters more than its value.
+    ///
+    /// **It takes the "?"'s treatment** as of 2026-10-16, so the two bottom corners are one pair
+    /// rather than two unrelated controls: same size, same semibold, same 0.55 of the ink. The
+    /// cost stated plainly, since it runs against the "?"'s own argument: 0.55 was chosen there
+    /// to keep help out of the way until someone looks for it, and this readout's job is the
+    /// opposite, to be read mid-scrub. Dimming information is a real price. What buys it is that
+    /// the corners now say "these two are the same kind of thing", which is worth more than the
+    /// contrast while the alternative was one dim mark and one full-ink one.
     private var nowButton: some View {
         Button {
             goToNow()
@@ -597,9 +605,18 @@ struct ContentView: View {
             Text(showsNowHint ? Self.nowHint : Self.distanceFromNow(model.focusDate,
                                                                     from: model.realNow))
                 .contentTransition(.identity)
-                .font(.footnote)
+                // The "?"'s treatment, so the two corners read as a pair (Mason, 2026-10-16):
+                // 13 points at default type, semibold, and the ink at 0.55 — which is where the
+                // "?" landed on 2026-10-13 after 0.3 proved invisible to him.
+                //
+                // `.footnote.weight(.semibold)` rather than the "?"'s literal
+                // `.system(size: 13, weight: .semibold)`. The two are identical at default
+                // Dynamic Type and this one grows with the setting, which the "?" does not. A
+                // glyph that means "help" survives being pinned at 13 points; a number someone
+                // has to read does not.
+                .font(.footnote.weight(.semibold))
                 .monospacedDigit()
-                .foregroundStyle(markColour)
+                .foregroundStyle(markColour.opacity(0.55))
                 .fixedSize()
                 .frame(height: 44)
                 .padding(.horizontal, 10)
