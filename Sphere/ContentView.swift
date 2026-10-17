@@ -88,8 +88,8 @@ struct ContentView: View {
     /// whether or not you asked — a palette crossfade is precisely what this
     /// mode exists not to do.
     @State private var skyIsNight = false
-    /// Shown once, when the onboarding hands over. The question mark in the corner reaches it
-    /// through the Guide card, which since 2026-10-13 is one press rather than none.
+    /// Shown once, when the onboarding hands over. The menu mark in the trailing corner reaches
+    /// it through the Guide card, which since 2026-10-13 is one press rather than none.
     @AppStorage("teachGhostSeen") private var guideSeen = false
     @State private var isGuideOpen = false
 
@@ -451,8 +451,8 @@ struct ContentView: View {
                 .modifier(ScrubAffordance())
         }
         .padding(.vertical, 12)
-        .overlay(alignment: .bottomLeading) { guideButton }
-        .overlay(alignment: .bottomTrailing) { nowButton }
+        .overlay(alignment: .bottomLeading) { nowButton }
+        .overlay(alignment: .bottomTrailing) { cornerButton }
     }
 
     /// Wide enough for the longest line the header sets — the date, about 130 points — with room
@@ -488,11 +488,13 @@ struct ContentView: View {
                 isGuideOpen = true
             }
             .padding(.vertical, 24)
-            // Dim, for the reasons on `guideButton` itself, which is where that argument lives
+            // Dim, for the reasons on `cornerButton` itself, which is where that argument lives
             // and where the 0.3 → 0.55 change of 2026-10-13 is recorded. This call site carried
             // a verbatim copy of the retired version of it.
-            .overlay(alignment: .bottomLeading) { guideButton }
-            .overlay(alignment: .bottomTrailing) { nowButton }
+            //
+            // The two swapped sides on 2026-10-16 (Mason): the readout leads, the menu trails.
+            .overlay(alignment: .bottomLeading) { nowButton }
+            .overlay(alignment: .bottomTrailing) { cornerButton }
     }
 
     /// Dim, and the one exception to "no greys": its job is to stay out of the way until someone
@@ -507,34 +509,52 @@ struct ContentView: View {
     /// the "no greys" exception rather than soften it, at the cost of one permanent black mark on
     /// a canvas that carries nothing else.
     ///
-    /// It asks Guide or Menu as of 2026-10-13 rather than opening the guide outright, because
-    /// the menu had been left with no visible route at all; `CornerChoiceSheet` holds that
-    /// argument and the cost of it. The two automatic openings of the guide, at the end of
-    /// onboarding and once for anyone already past it, still go straight to `isGuideOpen` and
-    /// never through the cards: an explanation that arrives by itself cannot ask a question
-    /// first. It rings nothing, unlike the hold — a button dims under the finger, so the press
-    /// has already reported itself.
-    private var guideButton: some View {
+    /// It asks Menu or Guide as of 2026-10-16, and asked Guide or Menu from 2026-10-13, rather
+    /// than opening the guide outright, because the menu had been left with no visible route at
+    /// all; `CornerChoiceSheet` holds that argument and the cost of it. The two automatic
+    /// openings of the guide, at the end of onboarding and once for anyone already past it, still
+    /// go straight to `isGuideOpen` and never through the cards: an explanation that arrives by
+    /// itself cannot ask a question first.
+    ///
+    /// **It draws `.menu` rather than an SF `questionmark`, and it sits on the TRAILING side**
+    /// (Mason, 2026-10-16), having been a question mark on the leading side for as long as it
+    /// existed. Two concerns were raised before the change and neither was decisive; both are
+    /// recorded because the first contradicts an argument this app made in 2.0.
+    ///
+    /// One: the "?" existed so the guide would be findable, since burying it in a menu had been
+    /// tried and "C proved it would not be found" (DECISIONS, 2.0). A menu glyph opening a pair
+    /// led by Menu is closer to buried than a question mark was. What holds it down is unchanged
+    /// and is still two things rather than three: the guide rises by itself when the onboarding
+    /// hands over and once more for anyone already past it, and the hold reaches the same pair.
+    ///
+    /// Two: this mark and the leading card of the sheet it opens are now the same drawing, so a
+    /// press on a menu glyph is answered by a card labelled Menu, which can read as the press
+    /// not having landed.
+    ///
+    /// Drawn at 20 points with a 1.5 line, which puts its three strokes at about 9.5 points
+    /// overall against the 9.3-point cap height of the 13-point semibold readout in the other
+    /// corner. The two corners are a pair and the pair is measured rather than eyeballed.
+    private var cornerButton: some View {
         Button {
             isCornerChoiceOpen = true
         } label: {
-            Image(systemName: "questionmark")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(markColour.opacity(0.55))
+            ActionMark(mark: .menu, size: 20, color: markColour.opacity(0.55), stroke: 1.5)
                 .frame(width: 44, height: 44)
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        // Without this VoiceOver reads the SF Symbol's own name, so the button announced itself
-        // as "questionmark" — which was never apt and is less so now that it opens a fork rather
-        // than the guide. Mason's words (2026-10-13). The second `accessibilityLabel` in the app;
-        // the first is the guide's page counter, which circles also published nothing about.
-        .accessibilityLabel("Guide or menu")
-        .padding(.leading, 8)
+        // An `ActionMark` is a `Canvas`, so it publishes no name at all and this label is the
+        // only thing VoiceOver has. It used to be an override: the SF Symbol announced itself as
+        // "questionmark", which was never apt (Mason, 2026-10-13). The second
+        // `accessibilityLabel` in the app; the first is the guide's page counter.
+        .accessibilityLabel("Menu or guide")
+        .padding(.trailing, 8)
         .padding(.bottom, 4)
     }
 
-    /// Back to the present, in the corner opposite the "?" (Mason, 2026-10-16).
+    /// Back to the present, in the corner opposite the menu mark (Mason, 2026-10-16). It was
+    /// bottom-trailing with the menu bottom-leading for its first three builds; the two swapped
+    /// the same day, so the readout leads and the menu trails.
     ///
     /// Why it is not on the arc, which was the native-looking answer: scrub out to Thursday
     /// afternoon and the now-dot is off the drawing. That is the exact moment a way back is worth
@@ -545,8 +565,8 @@ struct ContentView: View {
     /// already on screen. A sheet covers this, which is correct.
     ///
     /// It is CONDITIONAL, which is what makes the corner affordable. Two permanent marks start a
-    /// toolbar on a canvas that carries almost nothing, and that cost is why the "?" took a fork
-    /// rather than a neighbour (`CornerChoiceSheet`). Hidden while the focus is on now, this is
+    /// toolbar on a canvas that carries almost nothing, and that cost is why the corner button
+    /// took a fork rather than a neighbour (`CornerChoiceSheet`). Hidden while the focus is on now, this is
     /// not furniture: it is a way back, absent exactly when it would say nothing. `isFocusedOnNow`
     /// is a one-minute window, so it appears on the first detent of a scrub.
     ///
@@ -629,7 +649,7 @@ struct ContentView: View {
         .opacity(model.isFocusedOnNow ? 0 : 1)
         .allowsHitTesting(!model.isFocusedOnNow)
         .animation(.easeOut(duration: 0.2), value: model.isFocusedOnNow)
-        .padding(.trailing, 8)
+        .padding(.leading, 8)
         .padding(.bottom, 4)
     }
 
@@ -1215,7 +1235,7 @@ struct ContentView: View {
         }
     }
 
-    /// Back to the present. ONE thing runs this now: `nowButton` in the bottom-trailing corner.
+    /// Back to the present. ONE thing runs this now: `nowButton` in the bottom-leading corner.
     ///
     /// It has been the hold's first card, the time sheet's middle card, and a two-finger tap on
     /// the arc, in that order, and is none of them. The two-finger tap went on 2026-10-16

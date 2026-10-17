@@ -374,12 +374,16 @@ struct ActionMark: View {
             }
 
         case .guide:
-            // Drawn rather than borrowed, unlike `openCalendarApp`. The corner button is an SF
-            // `questionmark`, and the obvious move was to reuse it here through `symbolName` so
-            // the card showed the same glyph that was pressed — but a regular-weight symbol at
-            // 78 points carries a far heavier stroke than the 2.0 these cards draw at, and it
-            // would have sat beside `.menu`'s three hairlines. A question mark is also sayable
-            // in this app's own vocabulary: the hook is an arc, and an arc is what a day is.
+            // Drawn rather than borrowed, unlike `openCalendarApp`. The corner button WAS an
+            // SF `questionmark` until 2026-10-16, and the obvious move had been to reuse it here
+            // through `symbolName` so the card showed the same glyph that was pressed — but a
+            // regular-weight symbol at 78 points carries a far heavier stroke than the 2.0 these
+            // cards draw at, and it would have sat beside `.menu`'s three hairlines. A question
+            // mark is also sayable in this app's own vocabulary: the hook is an arc, and an arc
+            // is what a day is.
+            //
+            // The corner draws `.menu` now, so the glyph the card shares with the button is
+            // `.menu`'s, on the other card. This drawing lost its twin and kept its reasons.
             //
             // One arc opening at the lower left, its stem continuing the same subpath so the
             // join is the curve's own end rather than a seam, and the point as a dot in the

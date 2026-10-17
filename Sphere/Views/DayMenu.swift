@@ -371,7 +371,7 @@ struct DayMenu: View {
         }
     }
 
-    /// Information only. What moves you is the readout in the bottom-trailing corner
+    /// Information only. What moves you is the readout in the bottom-leading corner
     /// on the arc; this said "NOW on the wheel" until 2026-10-13 and pointed at
     /// a control deleted in 2.0.
     private func reading(_ title: String, _ hour: Double?) -> some View {

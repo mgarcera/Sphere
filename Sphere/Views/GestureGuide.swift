@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Every gesture the arc has, one per page, on the same ground as the three choice sheets the
 /// tap and this sheet's own openers raise (Mason, 2026-10-10): `TimeChoiceSheet` and
-/// `EventChoiceSheet` from a tap, and `CornerChoiceSheet` from either the corner's question mark
+/// `EventChoiceSheet` from a tap, and `CornerChoiceSheet` from either the corner's menu mark
 /// or a long press. It said "three" and "the header button" until 2026-10-13, when the header
 /// button turned out to open the editor and never a choice sheet; "four" until 2026-10-14, when
 /// the hold stopped having a sheet of its own and joined the corner's.
@@ -13,7 +13,7 @@ import SwiftUI
 /// first explanation wants. In a sheet it can be plain ink on the app's own ground, and the
 /// reader sets the pace.
 ///
-/// Reached through the "?" in the corner, which since 2026-10-13 asks Guide or Menu first, and
+/// Reached through the menu mark in the trailing corner, which asks Menu or Guide first, and
 /// twice without being asked for: when the onboarding hands over, and once for anyone who was
 /// already past onboarding when the guide arrived. Both of those open it directly, because an
 /// explanation that comes to you cannot put a question in front of itself.

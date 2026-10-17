@@ -48,8 +48,8 @@ struct ArcWindow: View {
     /// is where a pinch belongs: both fingers can land anywhere.
     var onZoom: ((Double) -> Void)?
 
-    /// Hold asks Guide or Menu (2026-10-14), which is the same pair the corner's question mark
-    /// opens and the same sheet. No location needed, which is why it is the one that holds: it
+    /// Hold asks Menu or Guide (2026-10-14, reordered 2026-10-16), which is the same pair the
+    /// corner's menu mark opens and the same sheet. No location needed, which is why it is the one that holds: it
     /// had the time sheet for a single build on 2026-10-10 and gave it back to the tap, which
     /// knows where the finger is; it then carried Now and Menu for a day; and the two things on
     /// it now are the two surfaces that care least where the finger was. Now went back to the
@@ -243,7 +243,7 @@ struct ArcWindow: View {
                 }
             }
             // Guarded on the drag: a long drag is not a long press. Holding still for 0.45s
-            // asks Guide or Menu; moving first makes it a scrub and nothing fires. (It read
+            // asks Menu or Guide; moving first makes it a scrub and nothing fires. (It read
             // "returns to now" until 2026-10-13, which was true until 2026-10-10 and then was
             // not: the hold went to the menu that day, to a pair three days later, and to the
             // corner's pair on 2026-10-14.)
