@@ -116,11 +116,13 @@ struct LockArc: View {
 
     var body: some View {
         Canvas { context, size in
-            let baseline = size.height - 1
-            let peak = size.height - 2
+            // The same split the app's arc uses, so the hill and the night under it hold their
+            // proportions at any size (Mason, 2026-10-21).
+            let box = ArcCurve.box(height: size.height)
+            let baseline = box.baseline
 
             func y(_ h: Double) -> CGFloat {
-                baseline - CGFloat(max(0, day.normalizedElevation(atHour: h))) * peak
+                baseline - CGFloat(ArcCurve.drawn(day.signedElevation(atHour: h))) * box.peak
             }
             func x(_ h: Double) -> CGFloat { size.width * CGFloat(h / 24) }
 

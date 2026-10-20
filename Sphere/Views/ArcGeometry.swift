@@ -16,13 +16,15 @@ enum ArcGeometry {
     static let skyGutter: CGFloat = 100
 
     /// How far below the baseline the curve can ever reach, as a fraction of the arc box
-    /// (Mason, 2026-10-20). An asymptote rather than a value the curve attains: see `eased`.
+    /// (Mason, 2026-10-20). An asymptote rather than a value the curve attains: see
+    /// `ArcCurve.drawn`. Derived from the shared ratio so this arc and the three smaller ones
+    /// cannot drift; it works out to the 0.25 it was written as.
     ///
     /// Deliberately not `peakFraction`. A true mirror spends as much screen under the ground as
     /// over it, which shrinks the daylight half — the half with the events in it — to pay for a
     /// half nobody reads. A quarter is enough for the curve to visibly leave the horizon and
     /// come back, and it costs this much canvas and no more.
-    static let nightFraction: CGFloat = 0.25
+    static let nightFraction: CGFloat = peakFraction * CGFloat(ArcCurve.nightFloor)
 
     /// Room below the night's deepest point for the hour labels. The ticks and the day wedge
     /// stay ON the baseline, because that line is the timeline; only the labels clear the dip.
@@ -30,26 +32,7 @@ enum ArcGeometry {
 
     /// Signed: 1 is the yearly noon, 0 the horizon, -1 the deepest midnight.
     static func y(normalized: Double, height: CGFloat) -> CGFloat {
-        skyGutter + height - height * peakFraction * CGFloat(eased(normalized))
-    }
-
-    /// Below the horizon the curve leaves the line at exactly the angle it arrived at, then
-    /// eases onto a floor instead of plunging to one.
-    ///
-    /// Scaling the two halves by different fractions was the obvious way to make the dip
-    /// shallower, and it put a CORNER at sunrise and sunset: measured on 2026-10-20, the slope
-    /// at the sunset crossing fell from -18.59 to -7.15 points an hour, and a corner has zero
-    /// radius of curvature, which creases the arc and folds everything hung off it. This has one
-    /// scale for the whole curve and bends the VALUE instead, so the derivative at zero is 1 on
-    /// both sides: -18.59 either way.
-    ///
-    /// `nightFraction / peakFraction` is the asymptote, which the curve approaches and never
-    /// reaches: at the deepest midnight of the year it gets to 0.231 of the box, 44 points at
-    /// today's 190, inside the 47.5 the frame allows.
-    static func eased(_ value: Double) -> Double {
-        guard value < 0 else { return value }
-        let floor = Double(nightFraction / peakFraction)
-        return -floor * (1 - exp(value / floor))
+        skyGutter + height - height * peakFraction * CGFloat(ArcCurve.drawn(normalized))
     }
 
     /// The horizon line, where elevation is zero.

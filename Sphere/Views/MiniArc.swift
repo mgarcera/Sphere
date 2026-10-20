@@ -26,7 +26,9 @@ struct MiniArc: View {
     var spans: [Span] = []
     var height: CGFloat = 62
 
-    private static let peak: CGFloat = 0.74
+    /// The hill was 0.74 of the box with nothing under the line. `ArcCurve.box` now splits the
+    /// same box between the hill and the night, which costs the hill about a point at this size
+    /// and makes this arc the same picture as the big one (Mason, 2026-10-21).
     private static let labelGutter: CGFloat = 17
 
     private var markers: [(hour: Double, label: String)] {
@@ -40,14 +42,17 @@ struct MiniArc: View {
     var body: some View {
         GeometryReader { proxy in
             let width = proxy.size.width
+            // The night's deepest point lands exactly on `height`, so the labels below it keep
+            // the gutter they had.
+            let box = ArcCurve.box(height: height, inset: 0)
 
             ZStack(alignment: .topLeading) {
                 Rectangle()
                     .fill(Theme.hairline)
                     .frame(width: width, height: 1)
-                    .position(x: width / 2, y: height)
+                    .position(x: width / 2, y: box.baseline)
 
-                Curve(day: day, arcHeight: height, peak: Self.peak)
+                Curve(day: day, baseline: box.baseline, peak: box.peak)
                     // Muted, not ink, and at the widgets' weight: the curve is
                     // what the day is drawn ON, and the capsules are what is on
                     // it. Drawing the ground in ink made it compete.
@@ -82,8 +87,8 @@ struct MiniArc: View {
 
                     Rectangle()
                         .fill(Theme.hairlineSoft)
-                        .frame(width: 1, height: max(0, height - point.y))
-                        .position(x: point.x, y: (height + point.y) / 2)
+                        .frame(width: 1, height: abs(box.baseline - point.y))
+                        .position(x: point.x, y: (box.baseline + point.y) / 2)
 
                     Circle()
                         .fill(Theme.muted)
@@ -114,9 +119,10 @@ struct MiniArc: View {
     }
 
     static func point(_ hour: Double, day: SolarDay, width: CGFloat, height: CGFloat) -> CGPoint {
-        CGPoint(
+        let box = ArcCurve.box(height: height, inset: 0)
+        return CGPoint(
             x: width * (hour / 24),
-            y: height - height * peak * day.normalizedElevation(atHour: hour)
+            y: box.baseline - box.peak * CGFloat(ArcCurve.drawn(day.signedElevation(atHour: hour)))
         )
     }
 
@@ -124,7 +130,8 @@ struct MiniArc: View {
     /// are tuned for the full-size arc and its sky band.
     private struct Curve: Shape {
         let day: SolarDay
-        let arcHeight: CGFloat
+        /// Both in points, not fractions, so the split is worked out once by `ArcCurve.box`.
+        let baseline: CGFloat
         let peak: CGFloat
 
         func path(in rect: CGRect) -> Path {
@@ -134,7 +141,8 @@ struct MiniArc: View {
                 let hour = Double(step) / 6
                 let point = CGPoint(
                     x: rect.minX + rect.width * (hour / 24),
-                    y: rect.minY + arcHeight - arcHeight * peak * day.normalizedElevation(atHour: hour)
+                    y: rect.minY + baseline
+                        - peak * CGFloat(ArcCurve.drawn(day.signedElevation(atHour: hour)))
                 )
                 if step == 0 { path.move(to: point) } else { path.addLine(to: point) }
             }

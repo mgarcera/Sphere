@@ -124,6 +124,43 @@ struct SolarDay: Equatable {
     }
 }
 
+/// The shape every arc in this app draws, in one place: the app's own arc, the small one in the
+/// menu, and both widgets. Four copies of a curve drift, and these four are meant to read as
+/// the same picture at four sizes.
+enum ArcCurve {
+    /// How far below the horizon the night reaches, as a fraction of the DAY's height.
+    ///
+    /// 0.25/0.65 is the app arc's own two fractions. Deliberately not 1: a true mirror spends as
+    /// much screen under the ground as over it, which shrinks the half with the events in it to
+    /// pay for a half nobody reads.
+    static let nightFloor: Double = 0.25 / 0.65
+
+    /// A signed elevation, with the night eased onto that floor rather than scaled onto it.
+    ///
+    /// Scaling the two halves by different factors is the obvious way to make the dip shallower,
+    /// and it puts a CORNER at sunrise and sunset: measured 2026-10-20, the slope at the sunset
+    /// crossing fell from -18.59 to -7.15 points an hour. A corner has zero radius of curvature,
+    /// which creases the arc and folds anything hung off it. This keeps one scale for the whole
+    /// curve and bends the VALUE instead, so the derivative at the horizon is 1 from both sides.
+    ///
+    /// The floor is an asymptote the curve approaches and never reaches: at the deepest midnight
+    /// of the year it gets to 0.356 of the day's height rather than 0.385.
+    static func drawn(_ signed: Double) -> Double {
+        guard signed < 0 else { return signed }
+        return -nightFloor * (1 - exp(signed / nightFloor))
+    }
+
+    /// Splits a FIXED box between the hill and the night under it, keeping those proportions.
+    ///
+    /// The widgets and the menu's arc each get a box they cannot grow, so the dip has to be paid
+    /// for out of the day's height. The app's own arc is the exception: it has a gutter below the
+    /// baseline already and grows its canvas instead, which is why `ArcGeometry` does its own sum.
+    static func box(height: CGFloat, inset: CGFloat = 1) -> (baseline: CGFloat, peak: CGFloat) {
+        let peak = (height - inset * 2) / (1 + CGFloat(nightFloor))
+        return (inset + peak, peak)
+    }
+}
+
 // MARK: - Degree trigonometry
 
 private let degreesToRadians = Double.pi / 180
