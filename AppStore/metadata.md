@@ -133,6 +133,32 @@ Questions, ideas, or feedback? mason@smidgecraft.com
 
 1,687 characters.
 
+## What's New — 2.3, AS SUBMITTED, Mason's edit of 2026-10-20
+
+Read back off the submitted version, not the draft. Two changes from the draft, both to the first
+entry: the heading went from "The whole day" to "View the whole day", and the bullet lost its
+trailing clause ", with only those two hours labelled". Both cuts go the same way, toward the thing
+the reader DOES rather than the mechanism underneath it, which is the edit he makes most often.
+
+```
+View the whole day
+- Pinch out and the arc opens to the full day, midnight to midnight.
+
+Below the horizon
+- The sun's curve dips under the line at night instead of lying flat on it, in the app, in the menu and in both widgets.
+
+The corner readout
+- It now says what it does: "+4 hours (tap to go back to now)".
+
+Zoomed-out sky bug fix
+- Clouds, stars and birds kept their full size while the day was squeezed, which drew them folded in on themselves. The sky now scales with the zoom.
+
+Thank you for using Sphere! Feedback: mason@smidgecraft.com
+```
+
+Screenshots were retaken for this version (2026-10-20), so the one 6.7" set now shows the arc
+dipping below the horizon and the corner readout carrying its instruction.
+
 ## What's New — 2.2, AS SUBMITTED, Mason's edit of 2026-10-16
 
 This is the text read back off the submitted version, not the draft. Mason changed SIX lines in
