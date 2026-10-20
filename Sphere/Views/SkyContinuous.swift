@@ -24,8 +24,15 @@ struct SkyContinuous: View, Equatable {
     /// What sits BEHIND the marks, which is what a cloud fills with to occlude
     /// the deck behind it.
     var skyGround: Color = Theme.background
-    /// Which fog is drawn. A study setting, and part of the comparison so the
-    /// cached layer rebuilds when it changes.
+    /// How much of its shipped size the sky draws at: 1 at the three-hour window, smaller as the
+    /// day spreads out (Mason, 2026-10-21, choosing "proportions kept").
+    ///
+    /// Everything in a cloud is measured in points except its WIDTH, which is measured in hours,
+    /// so pinching out shrank only the width. At the full day a lobe was 11 points wide and still
+    /// 16 tall, and thirty-nine of those read as a comb rather than as weather. This multiplies
+    /// every vertical measure by the same factor the horizontal one already gets, so the drawing
+    /// keeps its proportions and simply gets smaller.
+    var zoomScale: CGFloat = 1
 
     /// Roughly a third of an hour per lobe, which is a cloud-sized bump at the
     /// three-hour zoom.
@@ -74,19 +81,6 @@ struct SkyContinuous: View, Equatable {
             }
         }
         .frame(width: width, height: ArcGeometry.totalHeight(height), alignment: .topLeading)
-    }
-
-    /// Where the band sits and which way it leans, from the curve this layer
-    /// belongs to. It used to live in ArcContent; it moved here so this view
-    /// owns everything it needs and can be compared for equality.
-    private func placement(_ hour: Double) -> (point: CGPoint, angle: Double) {
-        let delta = 0.35
-        func x(_ h: Double) -> CGFloat { width * (h / 24) }
-        func y(_ h: Double) -> CGFloat {
-            ArcGeometry.y(normalized: day.normalizedElevation(atHour: h), height: height)
-        }
-        let angle = atan2(y(hour + delta) - y(hour - delta), x(hour + delta) - x(hour - delta))
-        return (CGPoint(x: x(hour), y: y(hour)), angle)
     }
 
     // MARK: - Decks
@@ -159,11 +153,23 @@ struct SkyContinuous: View, Equatable {
 
     // MARK: - Geometry
 
+    /// A mark sits straight up from the hour it belongs to, never perpendicular to the curve.
+    ///
+    /// Perpendicular made each deck an OFFSET curve, and an offset curve folds back through
+    /// itself wherever the offset is larger than the curve's local radius of curvature. Measured
+    /// 2026-10-20 at the full-day zoom: minimum radius 0.6 points against offsets of 62, 84 and
+    /// 104, so all three decks turned inside out at sunrise and sunset and a cloud drew as a
+    /// sheared body with its lobes pointing back through its own base. A vertical translation is
+    /// one-to-one by construction, so nothing can fold at any zoom or any offset. At the shipped
+    /// three-hour window it moves a deck at most 14 points sideways.
+    ///
+    /// The clamped elevation, not the signed one: a cloud is at an altitude above the GROUND, so
+    /// when the sun's curve dips under the horizon the band stays flat on it.
     private func point(hour: Double, out: CGFloat) -> CGPoint {
-        let base = placement(hour)
-        return CGPoint(
-            x: base.point.x + sin(base.angle) * out,
-            y: base.point.y - cos(base.angle) * out
+        CGPoint(
+            x: width * (hour / 24),
+            y: ArcGeometry.y(normalized: day.normalizedElevation(atHour: hour), height: height)
+                - out * zoomScale
         )
     }
 
@@ -362,7 +368,7 @@ struct SkyContinuous: View, Equatable {
                 let at = Double(hour) + (Double(index) + 0.1 + 0.8 * jx) / Double(count)
 
                 if entry.condition.isFrozen {
-                    let size = CGFloat(1.4 + jl * 2.2)
+                    let size = CGFloat(1.4 + jl * 2.2) * zoomScale
                     let centre = point(hour: at, out: base - CGFloat(jy) * reach)
                     for k in 0..<3 {
                         let angle = Double(k) * .pi / 3
@@ -403,10 +409,11 @@ struct SkyContinuous: View, Equatable {
             let at = Double(entry.hour) + 0.25 + 0.5 * SkyMarks.jitter(daySeed, salt)
             let height = CGFloat(13 + SkyMarks.jitter(daySeed, salt &+ 41) * 10)
             let anchor = point(hour: at, out: SkyMarks.lowOffset - 6)
-            let base = placement(at)
-            var transform = CGAffineTransform(translationX: anchor.x, y: anchor.y)
-            transform = transform.rotated(by: base.angle)
-            path.addPath(SkyMarks.bolt(height: height, seed: daySeed, salt: salt).applying(transform))
+            // Upright. The rotation that used to be here came from the curve's local tangent,
+            // which is the same quantity that folded the decks; a bolt falls straight down.
+            let transform = CGAffineTransform(translationX: anchor.x, y: anchor.y)
+            path.addPath(SkyMarks.bolt(height: height * zoomScale, seed: daySeed, salt: salt)
+                .applying(transform))
         }
         return path
     }

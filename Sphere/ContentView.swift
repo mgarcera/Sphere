@@ -622,8 +622,9 @@ struct ContentView: View {
             // which is the fault this button's own argument was written to avoid. The cost is
             // that the swap pops rather than fades. It is a deliberate change two seconds in,
             // and it reads as one.
-            Text(showsNowHint ? Self.nowHint : Self.distanceFromNow(model.focusDate,
-                                                                    from: model.realNow))
+            Text(showsNowHint
+                 ? Self.nowHint
+                 : Self.distanceFromNow(model.focusDate, from: model.realNow) + " " + Self.tapBack)
                 .contentTransition(.identity)
                 // The "?"'s treatment, so the two corners read as a pair (Mason, 2026-10-16):
                 // 13 points at default type, semibold, and the ink at 0.55 — which is where the
@@ -1422,6 +1423,18 @@ struct ContentView: View {
     /// "Drag to…", "Hold for…". No full stop: the guide's lines are sentences in a paragraph and
     /// this one stands alone in the slot a readout usually fills, so it is a label.
     private static let nowHint = "Tap to return to now"
+
+    /// Said permanently beside the distance, not only for the two seconds the hint lasts
+    /// (Mason, 2026-10-20, after testing: "it's not obvious even with the on launch signifier").
+    ///
+    /// The hint was the lighter answer and it was not enough: it shows once per launch, it has to
+    /// be caught, and a reader who looks at the corner on their second scrub of the session sees
+    /// only a number. A number is a readout, and nothing about a readout says it can be pressed.
+    ///
+    /// Parenthesised and in Mason's own words. It rides on the same line as the distance rather
+    /// than below it, so the control stays one line tall and the number keeps the sentence's
+    /// stress.
+    private static let tapBack = "(tap to go back to now)"
 
     /// How far the focus has travelled from the present, as a signed distance: "+4 hours",
     /// "−10 minutes", "+5 days", "+5 months".

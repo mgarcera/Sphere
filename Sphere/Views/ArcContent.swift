@@ -35,21 +35,26 @@ struct ArcContent: View, Equatable {
                 .font(.footnote)
                 .foregroundStyle(mark)
                 .fixedSize()
-                .position(x: 0, y: ArcGeometry.baseline(height) + 20)
+                .position(x: 0, y: ArcGeometry.labelY(height))
 
             ForEach(1..<24) { hour in
                 let x = width * (Double(hour) / 24)
 
+                // The TICK stays hourly at every zoom. It is one point wide, so even at the full
+                // day, where the hours are about 17 points apart, it reads as a ruler rather than
+                // as clutter. Only the label thins.
                 Rectangle()
                     .fill(mark)
                     .frame(width: 1, height: 5)
                     .position(x: x, y: ArcGeometry.baseline(height) + 3)
 
-                Text(Self.hourLabel(Double(hour)))
-                    .font(.footnote)
-                    .foregroundStyle(mark)
-                    .fixedSize()
-                    .position(x: x, y: ArcGeometry.baseline(height) + 20)
+                if hour % Self.labelStep(forWidth: width) == 0 {
+                    Text(Self.hourLabel(Double(hour)))
+                        .font(.footnote)
+                        .foregroundStyle(mark)
+                        .fixedSize()
+                        .position(x: x, y: ArcGeometry.labelY(height))
+                }
             }
 
             DayArcShape(day: day, arcHeight: height)
@@ -93,4 +98,21 @@ struct ArcContent: View, Equatable {
         let h12 = h24 % 12 == 0 ? 12 : h24 % 12
         return String(format: "%d:%02d %@", h12, minute, h24 < 12 ? "AM" : "PM")
     }
+    /// One hour label per this many hours, so they never collide (Mason, 2026-10-20: "when
+    /// zoomed out, we can only have 2 labels; midnight and noon").
+    ///
+    /// `width` is the whole day's width at the current zoom, so `width / 24` is the points each
+    /// hour gets. An hour label is about 40 points of type at footnote size, and the thresholds
+    /// are that width plus air. The last rung is 12, which is exactly midnight and noon.
+    ///
+    /// Nothing changes at the zooms the app shipped with: the old cap of 80 points an hour lands
+    /// on step 1, and so does the 3-hour default, which is about 134.
+    static func labelStep(forWidth width: CGFloat) -> Int {
+        let perHour = width / 24
+        if perHour >= 56 { return 1 }
+        if perHour >= 28 { return 3 }
+        if perHour >= 18 { return 6 }
+        return 12
+    }
+
 }

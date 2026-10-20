@@ -98,7 +98,7 @@ struct ArcWindow: View {
             let originHour = Double(firstDay) * 24
             let centreX = proxy.size.width / 2
             let pan = centreX - (model.focusHour - originHour) * pointsPerHour
-            let dotY = ArcGeometry.y(normalized: model.normalizedElevation(atAbsoluteHour: model.focusHour), height: arcHeight)
+            let dotY = ArcGeometry.y(normalized: model.signedElevation(atAbsoluteHour: model.focusHour), height: arcHeight)
 
             ZStack(alignment: .topLeading) {
                 // The clip moved off this stack and onto the two groups that
@@ -146,6 +146,7 @@ struct ArcWindow: View {
                                     deck: deck,
                                     skyInk: skyInk,
                                     skyGround: skyGround,
+                                    zoomScale: CGFloat(model.skyScale),
                                     blinkStep: Int(model.focusHour * 8)
                                 )
                                 .equatable()
@@ -158,7 +159,8 @@ struct ArcWindow: View {
                                     daySeed: index,
                                     deck: deck,
                                     skyInk: skyInk,
-                                    skyGround: skyGround
+                                    skyGround: skyGround,
+                                    zoomScale: CGFloat(model.skyScale)
                                 )
                                 .equatable()
                             }
@@ -193,14 +195,16 @@ struct ArcWindow: View {
                     width: dayWidth * 3,
                     height: arcHeight,
                     activeID: model.activeEvent?.id,
-                    elevation: { model.normalizedElevation(atAbsoluteHour: $0) }
+                    elevation: { model.signedElevation(atAbsoluteHour: $0) }
                 )
                 .offset(x: pan)
                 .opacity(eventsHidden ? 0 : 1)
 
                 Rectangle()
                     .fill(Theme.hairlineSoft)
-                    .frame(width: 1, height: max(0, ArcGeometry.baseline(arcHeight) - dotY))
+                    // abs, not max(0,): at night the dot is BELOW the baseline and the stem
+                    // hangs down to it. The midpoint below already handles either direction.
+                    .frame(width: 1, height: abs(ArcGeometry.baseline(arcHeight) - dotY))
                     .position(x: centreX, y: (ArcGeometry.baseline(arcHeight) + dotY) / 2)
 
                 TimeDot(

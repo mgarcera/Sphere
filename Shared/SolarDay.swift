@@ -99,10 +99,23 @@ struct SolarDay: Equatable {
         max(10, 90 - abs(coordinate.latitude) + 23.44)
     }
 
-    /// 0 at the horizon and below, 1 at the yearly peak. This is the shape the
-    /// arc draws.
+    /// 0 at the horizon and below, 1 at the yearly peak. Everything that draws only the
+    /// daylight half reads this.
     func normalizedElevation(atHour hour: Double) -> Double {
-        min(max(elevation(atHour: hour), 0) / seasonalCeiling, 1)
+        max(0, signedElevation(atHour: hour))
+    }
+
+    /// The same number with the night kept rather than clamped away: -1 at the deepest midnight
+    /// of the year, 0 at the horizon, 1 at the yearly noon (Mason, 2026-10-20, the arc should
+    /// "dip down beneath the horizon").
+    ///
+    /// `seasonalCeiling` divides BOTH halves, and that is arithmetic rather than a shortcut. At
+    /// local midnight the sun's elevation is -(90 - (latitude + declination)), so its deepest
+    /// value across the year is 90 - latitude + 23.44 — the same expression as the highest noon.
+    /// One divisor therefore normalises the whole circle, and the seasons stay honest in both
+    /// directions: the deepest nights are the ones opposite the lowest noons.
+    func signedElevation(atHour hour: Double) -> Double {
+        min(max(elevation(atHour: hour) / seasonalCeiling, -1), 1)
     }
 
     private static func julianCentury(for date: Date) -> Double {

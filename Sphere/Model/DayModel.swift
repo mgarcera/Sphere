@@ -51,20 +51,40 @@ final class DayModel {
     /// starts from whatever the window currently is, which since 2026-10-10 is the persisted
     /// value. There is no gesture that resets it.
     static let defaultWindowHours: Double = 3
+
+    /// How large the sky draws itself, 1 at the default window and smaller as the day spreads
+    /// out (Mason, 2026-10-21). `SkyContinuous` and `ClearSky` multiply every point measure by it.
+    ///
+    /// Capped at 1 rather than running symmetric, because zooming IN would grow the high deck
+    /// past `ArcGeometry.skyGutter`, which is the only room above the arc box, and the tallest
+    /// storms would be cut off at the canvas edge. Pinching in holds the sky at its shipped size.
+    ///
+    /// Derived from the WINDOW, not from a point count, so a smaller phone gets the same sky at
+    /// the same zoom instead of a shrunken one.
+    var skyScale: Double {
+        min(1, DayModel.defaultWindowHours / windowHours)
+    }
     /// The widest the window may open is set by LABEL SPACING, not by a fixed hour count
     /// (Mason, 2026-10-10: "about 5 hours end to end on iPhone 17"). An iPhone 17 is 402 points
     /// across, so five hours is ~80 points each, and that is the number worth keeping — on the
     /// Duo's 466 it allows about six hours, in landscape about eleven, and the hour labels stay
     /// the same distance apart on all of them.
-    static let minPointsPerHour: Double = 80
-
     /// Tight enough to place an event to the minute.
     static let minWindowHours: Double = 1.5
 
-    /// The window a given width can carry without crowding its labels.
+    /// Spreading all the way out shows the WHOLE DAY (Mason, 2026-10-20), midnight to midnight.
+    ///
+    /// It used to stop at `width / minPointsPerHour`, 80 points an hour, which on an iPhone 17 is
+    /// about five hours. That floor was never about the arc: it was the width an hour LABEL needs
+    /// so the labels do not collide, and it capped the zoom to protect them. The labels thin with
+    /// the zoom now (`ArcContent.labelStep`), so the constraint it existed for is handled where
+    /// it belongs and the window can open to the full twenty-four.
+    ///
+    /// What that buys is the thing the cap was hiding: at five hours the curve is a shallow rise
+    /// across the screen, and at twenty-four it is the whole day's arc, which is the drawing this
+    /// app is named for.
     static func windowRange(forWidth width: Double) -> ClosedRange<Double> {
-        let widest = max(minWindowHours, width / minPointsPerHour)
-        return minWindowHours...widest
+        minWindowHours...24
     }
 
     init(now: Date = .now, coordinate: Coordinate = .chicago, timeZone: TimeZone = .autoupdatingCurrent) {
@@ -135,6 +155,13 @@ final class DayModel {
     func normalizedElevation(atAbsoluteHour hour: Double) -> Double {
         let index = Int(floor(hour / 24))
         return solarDay(index).normalizedElevation(atHour: hour - Double(index) * 24)
+    }
+
+    /// The same, keeping the night's sign, so the curve, the dot, the stem and the event
+    /// capsules all dip below the line together instead of some of them stopping at it.
+    func signedElevation(atAbsoluteHour hour: Double) -> Double {
+        let index = Int(floor(hour / 24))
+        return solarDay(index).signedElevation(atHour: hour - Double(index) * 24)
     }
 
     /// Degrees above the horizon at any absolute hour. Negative at night.
