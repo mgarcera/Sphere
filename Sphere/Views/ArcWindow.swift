@@ -100,6 +100,22 @@ struct ArcWindow: View {
             let pan = centreX - (model.focusHour - originHour) * pointsPerHour
             let dotY = ArcGeometry.y(normalized: model.signedElevation(atAbsoluteHour: model.focusHour), height: arcHeight)
 
+            // The plane sits on now itself — the same x any other mark at that hour would get,
+            // with no fraction applied. Mason took the parallax out on 2026-10-21.
+            let planeX = (model.nowHour - originHour) * pointsPerHour + pan
+            // Altitude is a cruising line, not the curve's height at now: `todayPeakElevation`
+            // is constant through the day, so the plane holds its height while the sun rises
+            // and sets under it.
+            // Clamped only so a tall sky at the yearly peak cannot push it off the top; the
+            // clamp still leaves it above the storm crest, which is pinned to the same curve.
+            let planeY = max(PlaneMark.minimumY,
+                             ArcGeometry.y(normalized: model.todayPeakElevation, height: arcHeight)
+                                 - PlaneMark.lift(zoomScale: CGFloat(model.skyScale)))
+            // Attitude comes from the zoom alone. It briefly came from the curve's local slope
+            // too, which put the plane nose-down through sunset; `PlaneMark.tilt` carries why.
+            let planeTilt = PlaneMark.tilt(zoomScale: CGFloat(model.skyScale))
+            let planeOpacity = PlaneMark.edgeOpacity(x: planeX, centreX: centreX)
+
             ZStack(alignment: .topLeading) {
                 // The clip moved off this stack and onto the two groups that
                 // actually pan, so the night between them can reach above the
@@ -199,6 +215,19 @@ struct ArcWindow: View {
                 )
                 .offset(x: pan)
                 .opacity(eventsHidden ? 0 : 1)
+
+                // Now, pinned to the real hour. It sits BEHIND the stem and the dot on purpose:
+                // when you are at now the two coincide, and the dot is the one carrying the
+                // sun's own information.
+                //
+                // No transform of its own: `planeX` is now's drawing position plus the same pan
+                // every other mark gets, so the plane is over the time it reports at any scrub
+                // position and leaves the screen exactly when now does.
+                if planeOpacity > 0 {
+                    PlaneMark(mark: mark, tilt: planeTilt)
+                        .opacity(planeOpacity)
+                        .position(x: planeX, y: planeY)
+                }
 
                 Rectangle()
                     .fill(Theme.hairlineSoft)

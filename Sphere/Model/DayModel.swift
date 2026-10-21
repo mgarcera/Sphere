@@ -183,6 +183,24 @@ final class DayModel {
     var todayIndex: Int { Int(floor(nowHour / 24)) }
     var todaySolarDay: SolarDay { solarDay(todayIndex) }
     var todayHourOfDay: Double { nowHour - Double(todayIndex) * 24 }
+
+    /// Today's highest sun, normalised the way the curve is.
+    ///
+    /// The plane cruises at this height instead of riding the curve (Mason, 2026-10-21 — it
+    /// should "stay in the same general height in the sky, not go down to the arc"). Anchoring
+    /// to TODAY's peak rather than to the yearly ceiling is deliberate: it keeps the plane a
+    /// steady distance above the day's own high point, so the altitude still sits lower in
+    /// December than in June, which is the seasonal difference `SolarDay.seasonalCeiling` exists
+    /// to preserve. A fixed absolute height would have flattened it back out.
+    ///
+    /// Clamped at the horizon for latitudes and dates where the sun never rises: without it the
+    /// cruising line itself goes below the baseline and the plane is underground all day, which
+    /// is the exact failure that riding the curve produced.
+    var todayPeakElevation: Double {
+        let day = todaySolarDay
+        return max(0, day.signedElevation(atHour: day.solarNoon))
+    }
+
     var nowMoonPhase: MoonPhase { MoonPhase(date: realNow) }
 
     func returnToNow() {

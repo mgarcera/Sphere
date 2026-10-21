@@ -30,6 +30,20 @@ enum SkyMarks {
     static let midOffset: CGFloat = 84
     static let highOffset: CGFloat = 104
 
+    /// The highest anything in the sky reaches above the curve, before the zoom scales it.
+    ///
+    /// The high deck in a storm, which beats the stars (`highOffset` plus at most 15 of spread)
+    /// and every ordinary deck. A lobe in `SkyContinuous.scallopedMass` tops out at
+    /// `offset + plinth + big + micro`: the plinth is 0.78 of the amplitude, `big` at most 0.91
+    /// of it (full coverage against the tallest height roll), and `micro` 9% of `big` — so the
+    /// crest is `offset + 1.772 * stormAmplitude`, and `Deck.high.stormAmplitude` is
+    /// `14 * markScale`.
+    ///
+    /// Derived rather than eyeballed because of the note above: a silent 34pt standoff once made
+    /// every clearance sum in this file wrong, and this is a clearance sum. `PlaneMark.lift`
+    /// reads it to stay the highest element in the drawing.
+    static let ceiling: CGFloat = highOffset + 1.772 * (14 * markScale)
+
     /// Deterministic 0..1 from two integers.
     static func jitter(_ seed: Int, _ salt: Int) -> Double {
         var x = UInt64(bitPattern: Int64(seed &* 73_856_093) ^ Int64(salt &* 19_349_663))
