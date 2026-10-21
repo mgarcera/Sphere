@@ -6,6 +6,9 @@ import WidgetKit
 struct ContentView: View {
     /// Ordinary at launch, and a fixed fictional day during a capture run (`DemoDay`).
     @State private var model = DemoDay.model()
+    /// Last translation seen by the scrub OUTSIDE the drawing, so the gesture moves the day by
+    /// the delta rather than re-applying the whole translation every callback.
+    @State private var outerScrubLast: CGFloat = 0
     @State private var calendar = CalendarService()
     @State private var location = LocationService()
 
@@ -398,7 +401,7 @@ struct ContentView: View {
             if proxy.size.height < Self.stackedMinimumHeight {
                 shortScreenDay(width: proxy.size.width)
             } else {
-                portraitDay
+                portraitDay(width: proxy.size.width)
             }
         }
         // Here rather than on `nowButton`, which is built by both layouts: only one of them
@@ -462,7 +465,7 @@ struct ContentView: View {
         min(300, max(220, width * 0.32))
     }
 
-    private var portraitDay: some View {
+    private func portraitDay(width: CGFloat) -> some View {
         // One arrangement WITHIN portrait (Mason, 2026-10-09: an overlay is fine in landscape).
         // Landscape has had its own branch since 2026-10-10; see `day` above, which chooses
         // between this and `shortScreenDay` on the available height.
@@ -475,6 +478,34 @@ struct ContentView: View {
             // way — and is the one signifier a horizontally scrolling surface has.
             .modifier(ScrubAffordance())
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Scrub anywhere in the block, not only on the drawing (Mason, 2026-10-21). The arc
+            // is 369 points tall and centres in about 781, so roughly 205 points above it and
+            // the same below were dead: a drag that began a finger's width under the hour
+            // labels did nothing, which is the gap he noticed.
+            //
+            // The gesture goes on the FRAME rather than a strip measured below the drawing,
+            // because ArcWindow carries the same gesture inside its own bounds and the inner one
+            // wins there. So this only ever receives what the drawing did not, and needs no
+            // geometry to know where the drawing ends.
+            //
+            // The header overlays the top of this block and keeps its own taps; a drag across it
+            // falls through to here, which is the behaviour you want from a surface whose whole
+            // job is to be draggable.
+            .contentShape(.rect)
+            .gesture(
+                DragGesture(minimumDistance: 8)
+                    .onChanged { value in
+                        // The same points-per-hour the drawing uses, so a drag out here moves
+                        // the day by exactly what the identical drag on the arc would.
+                        let pph = width / model.windowHours
+                        guard pph > 0 else { return }
+                        let delta = value.translation.width - outerScrubLast
+                        outerScrubLast = value.translation.width
+                        model.focusHour -= delta / pph
+                        clickPastDetents()
+                    }
+                    .onEnded { _ in outerScrubLast = 0 }
+            )
             .overlay(alignment: .topLeading) {
                 header
                     .padding(.top, 12)
