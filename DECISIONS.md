@@ -2157,6 +2157,7 @@ Measured rather than argued, on a Catalyst build (`spike/mac-catalyst`): the hou
 8 AM and 9 AM at 515, 1024 and 1383 points wide, spaced about 174, 344 and 466 points, each
 within a point or two of `width / 3`. The same three hours at every width. A 460-point scrub at
 1383 wide moved the clock 59 minutes, the same points-per-hour reached from a second instrument.
+At that width the arc is a near-horizontal rule with a speck of sun on it.
 
 So the wide reading is a change of **which variable is stored**, not a change of formula. Making
 points per hour the persisted preference and deriving `windowHours = width / pointsPerHour` is
