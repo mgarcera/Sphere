@@ -2136,3 +2136,31 @@ a date", after Now had left the cards. `Sounds`, `Haptics`, `DayMenu`, `TimeChoi
 This is the third time in three days that the lesson has been the same one: **a commit that moves
 a control moves everything hanging off it, and what hangs off it is not in the diff.** The only
 reliable way to find them is to grep the control's name before claiming the move is finished.
+
+## A Mac Sphere shows more day, not a bigger day (2026-10-21)
+
+Mason picked the wide reading over the phone column, so this is settled before anyone writes a
+line of Mac code: **a wider window shows more hours, it does not scale the same hours up.** The
+arithmetic is already shaped for it — `pointsPerHour = width / windowHours` is the only thing that
+ties the drawing to the viewport — so at the three-hour zoom a 1200-point window shows about 8.4
+hours rather than three stretched across a metre of glass.
+
+The consequence that is NOT free: pinch stops meaning "how big is the arc" and starts meaning
+"how much day", `minWindowHours` of 1.5 and the 24-hour ceiling were both chosen against a 430
+point phone, and the gesture model has to answer a trackpad rather than two fingers on glass. Those
+are the Mac design job; the arc itself mostly survives.
+
+What was established while scoping, so nobody re-derives it:
+
+- **Four of 49 files touch UIKit**: `Haptics` (no haptics on a Mac), `SphereLinks`
+  (`openSettingsURLString`), `CalendarService`, and `EventKitSheets` — the last being 228 lines
+  wrapping `EKEventEditViewController` and `EKEventViewController`.
+- **Mac Catalyst keeps EventKitUI**, which a native macOS target does not. Verified against the
+  SDK rather than assumed, after assuming the opposite: it ships in
+  `MacOSX.sdk/System/iOSSupport/System/Library/Frameworks/EventKitUI.framework` with no
+  `API_UNAVAILABLE(macCatalyst)` in its headers or its apinotes. EventKit, CoreLocation,
+  AVFoundation and UserNotifications are absent from `iOSSupport` only because Catalyst uses the
+  macOS versions of those.
+- **`SmidgecraftKit` already declares `.macOS(.v14)`** and holds no views, so it crosses free.
+- **`TARGETED_DEVICE_FAMILY = 1`** — iPhone only. Catalyst wants iPad in the family, so that is the
+  first thing any Mac work has to change, and it has its own layout consequences on iOS.
