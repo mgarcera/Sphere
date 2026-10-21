@@ -2140,27 +2140,78 @@ reliable way to find them is to grep the control's name before claiming the move
 ## A Mac Sphere shows more day, not a bigger day (2026-10-21)
 
 Mason picked the wide reading over the phone column, so this is settled before anyone writes a
-line of Mac code: **a wider window shows more hours, it does not scale the same hours up.** The
-arithmetic is already shaped for it — `pointsPerHour = width / windowHours` is the only thing that
-ties the drawing to the viewport — so at the three-hour zoom a 1200-point window shows about 8.4
-hours rather than three stretched across a metre of glass.
+line of Mac code: **a wider window shows more hours, it does not scale the same hours up.**
+
+**The arithmetic does the opposite today, and the first version of this entry said it did not.**
+It claimed `pointsPerHour = width / windowHours` had already shaped the drawing for the wide
+reading, so that "at the three-hour zoom a 1200-point window shows about 8.4 hours rather than
+three stretched across a metre of glass". It is the other way round. `windowHours` is the STORED
+preference, written to `UserDefaults` on every change and restored on launch (`DayModel.swift:32`),
+and `pointsPerHour` is DERIVED from it (`ArcWindow.swift:95`). Nothing recomputes `windowHours`
+from a width — `windowRange(forWidth:)` takes a width and ignores the parameter. So widening the
+window holds the span and grows the points per hour, and three hours stretched across a metre of
+glass is precisely what the code does. The sentence described the outcome it was written to rule
+out.
+
+Measured rather than argued, on a Catalyst build (`spike/mac-catalyst`): the hour labels read
+8 AM and 9 AM at 515, 1024 and 1383 points wide, spaced about 174, 344 and 466 points, each
+within a point or two of `width / 3`. The same three hours at every width. A 460-point scrub at
+1383 wide moved the clock 59 minutes, the same points-per-hour reached from a second instrument.
+
+So the wide reading is a change of **which variable is stored**, not a change of formula. Making
+points per hour the persisted preference and deriving `windowHours = width / pointsPerHour` is
+about fifteen lines across `DayModel`, `ArcWindow` and `ContentView`. Two things make it cheaper
+than it reads. `ArcContent.labelStep(forWidth:)` already keys off the day's width, which is
+`24 * pointsPerHour`, so the label thinning is already expressed in the unit the wide reading
+wants. And `minWindowHours`'s own comment says the constraint it encodes was about 80 points of
+label spacing per hour, which is a points-per-hour bound written in hours. The one that gets
+harder is `skyScale`, `min(1, 3 / windowHours)` across five call sites, which has to re-key to
+points per hour or the sky will shrink as the window widens.
 
 The consequence that is NOT free: pinch stops meaning "how big is the arc" and starts meaning
 "how much day", `minWindowHours` of 1.5 and the 24-hour ceiling were both chosen against a 430
 point phone, and the gesture model has to answer a trackpad rather than two fingers on glass. Those
 are the Mac design job; the arc itself mostly survives.
 
-What was established while scoping, so nobody re-derives it:
+**The height does not respond at all**, which the scoping missed entirely. `ArcWindow.arcHeight`
+is a literal `190` (`ArcWindow.swift:13`) under a `.frame(height:)`, so the arc block is about 380
+points tall whatever the window is. On an 868-point Mac window the glass below the arc is sky and
+nothing else. The width work has a vertical twin, and it has not been scoped.
+
+**And the sheets are the larger half of the Mac job.** `presentationDetents` is ignored on
+Catalyst: a sheet sized for a short phone detent becomes a large centred card with its content
+pinned to the top and the rest empty, which is what `TimeChoiceSheet`'s two cards did in a
+515-by-520 card. Worse, every one of these sheets relies on the iOS swipe as its dismiss
+affordance and so draws no close control, and on a Mac a downward drag does not dismiss. Escape
+does, while the app is frontmost, and nothing says so. The guide auto-opening 900 ms into a first
+launch (`ContentView.swift:515`) over the first-run flow left the app with no way out but a
+relaunch. Eight sheet call sites, none of them carrying its own way out.
+
+What was established while scoping, and what the spike then did to it:
 
 - **Four of 49 files touch UIKit**: `Haptics` (no haptics on a Mac), `SphereLinks`
   (`openSettingsURLString`), `CalendarService`, and `EventKitSheets` — the last being 228 lines
-  wrapping `EKEventEditViewController` and `EKEventViewController`.
+  wrapping `EKEventEditViewController` and `EKEventViewController`. **None of them was the
+  trouble.** All 49 files compile for Catalyst with no source edited at all: neither
+  `UIImpactFeedbackGenerator` nor `UIApplication.openSettingsURLString` carries
+  `API_UNAVAILABLE(macCatalyst)` in the macOS 27.0 headers or in `UIKit.apinotes`, so the
+  `#if targetEnvironment(macCatalyst)` guards budgeted for were never needed.
 - **Mac Catalyst keeps EventKitUI**, which a native macOS target does not. Verified against the
   SDK rather than assumed, after assuming the opposite: it ships in
   `MacOSX.sdk/System/iOSSupport/System/Library/Frameworks/EventKitUI.framework` with no
   `API_UNAVAILABLE(macCatalyst)` in its headers or its apinotes. EventKit, CoreLocation,
   AVFoundation and UserNotifications are absent from `iOSSupport` only because Catalyst uses the
-  macOS versions of those.
+  macOS versions of those. Confirmed by running it: `EKEventEditViewController` presents fully
+  populated, prefilled to the tapped time, and is hosted out of process.
 - **`SmidgecraftKit` already declares `.macOS(.v14)`** and holds no views, so it crosses free.
 - **`TARGETED_DEVICE_FAMILY = 1`** — iPhone only. Catalyst wants iPad in the family, so that is the
-  first thing any Mac work has to change, and it has its own layout consequences on iOS.
+  first thing any Mac work has to change, and it has its own layout consequences on iOS. Those
+  consequences are not hypothetical: with the family set to `"1,2"` the built iOS product declares
+  `UIDeviceFamily = [1, 2]`, which makes the shipping app an iPad app in the App Store, with no
+  iPad layout and no `INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad` to hold its
+  orientations. It stays on the spike branch until there is an answer for that.
+- **Signing is its own problem.** Xcode has no Apple ID here, so automatic signing cannot make a
+  Mac Catalyst profile. Ad-hoc signing alone does not get through either, because an entitlements
+  file forces a profile whatever the identity is; it builds only with `CODE_SIGN_ENTITLEMENTS`
+  cleared, which drops the app group and leaves the widget with nothing to read. A real Mac
+  identity is a prerequisite for any Mac build anyone is meant to use.
