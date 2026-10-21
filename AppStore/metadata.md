@@ -133,6 +133,27 @@ Questions, ideas, or feedback? mason@smidgecraft.com
 
 1,687 characters.
 
+## What's New — 2.4, AS SUBMITTED, Mason's edit of 2026-10-21
+
+Read back off the submitted version, not the draft. Two changes, both the same cut he made to 2.3:
+the heading went from "Now as a plane" to "Current time", and the bullet lost its trailing clause
+", levelling off as you zoom in and climbing as you pull out to the whole day". The draft named the
+mechanism; what shipped names only what the reader sees. Third release running where the edit goes
+that direction, so draft it that way next time rather than expecting him to trim it.
+
+The plane's attitude is therefore UNANNOUNCED in the listing even though it ships, which is a
+deliberate omission of his, not an oversight to correct in 2.5.
+
+```
+Current time
+- The current time is a plane that flies above the weather.
+
+Scrubbing anywhere
+- Drag anywhere in the arc area to move through the day, not only on the arc itself.
+
+Thank you for using Sphere! Feedback: mason@smidgecraft.com
+```
+
 ## What's New — 2.3, AS SUBMITTED, Mason's edit of 2026-10-20
 
 Read back off the submitted version, not the draft. Two changes from the draft, both to the first
