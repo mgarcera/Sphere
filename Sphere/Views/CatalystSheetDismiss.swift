@@ -25,6 +25,13 @@ import SwiftUI
 /// `FeedbackSheet` is the one sheet not using this; it already carries its own control.
 #if targetEnvironment(macCatalyst)
 extension View {
+    /// The width a fitted sheet is given on a Mac, in points.
+    ///
+    /// 420 because every sheet here was laid out against an iPhone and none of them carries an
+    /// ideal width of its own, so this stands in for the screen they assumed. A little wider
+    /// than a 393-point iPhone so the date picker's seven columns are not fighting for room.
+    static var catalystSheetWidth: CGFloat { 420 }
+
     /// Adds a close control, and by default sizes the sheet to its content.
     ///
     /// `close` should do exactly what dismissing by gesture does on iOS — usually setting the same
@@ -34,13 +41,23 @@ extension View {
     /// a settings list, asked for `.large` on iOS, and sizing it to its content would make it a
     /// card that grows past the window instead of a panel that scrolls.
     @ViewBuilder
-    func catalystSheet(dismiss close: @escaping () -> Void, fitted: Bool = true) -> some View {
-        // A branch rather than a ternary: the three sizings are distinct concrete types and
-        // SwiftUI vends no type-erased wrapper for them, so `?:` will not typecheck.
+    func catalystSheet(dismiss close: @escaping () -> Void, height: CGFloat? = nil) -> some View {
+        // Width AND height, explicitly. `.fitted` asks a view for its ideal size and these views
+        // have none to give: the date picker's VStack holds a `Spacer(minLength: 0)` and a
+        // `.frame(maxWidth: .infinity)`, which both mean "give me everything". Setting only the
+        // width left the height still being guessed from that Spacer, which is why the second
+        // attempt was as wrong as the first (Mason, 2026-10-21, "they should be auto sized around
+        // the contents" — they cannot self-size, so their design sizes are supplied here).
+        //
+        // The heights passed in are the same constants the iOS detents use, so a sheet is the
+        // size it was drawn to be on both platforms and there is one number rather than two.
         Group {
-            if fitted {
-                presentationSizing(.fitted)
+            if let height {
+                frame(width: Self.catalystSheetWidth, height: height)
+                    .presentationSizing(.fitted)
             } else {
+                // No height means it genuinely wants the window: the day menu is a settings
+                // list, and asks for `.large` on iOS.
                 presentationSizing(.page)
             }
         }
@@ -64,7 +81,7 @@ extension View {
 #else
 extension View {
     /// No-op on iOS: the sheet already drags down, and the detents already size it.
-    func catalystSheet(dismiss close: @escaping () -> Void, fitted: Bool = true) -> some View {
+    func catalystSheet(dismiss close: @escaping () -> Void, height: CGFloat? = nil) -> some View {
         self
     }
 }

@@ -78,6 +78,11 @@ final class CalendarService {
         }
     }
 
+    /// On a Mac this returns false and leaves the status at `.notDetermined` unless the build
+    /// carries a real signing identity: TCC attaches its decision to a stable code identity, and
+    /// an ad-hoc signature has none, so the system declines to prompt rather than refusing
+    /// (measured 2026-10-21 — returned false in 19ms, no throw, status unchanged at 0). A user
+    /// denial would read `.denied` instead, which is how to tell the two apart.
     func requestAccess() async {
         do {
             _ = try await store.requestFullAccessToEvents()

@@ -245,7 +245,7 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, alignment: .top)
             .background(Theme.background)
             .presentationDetents([.height(detent(420))])
-            .catalystSheet(dismiss: { isDayPickerOpen = false })
+            .catalystSheet(dismiss: { isDayPickerOpen = false }, height: detent(420))
             .presentationDragIndicator(.hidden)
             .onChange(of: pickedDay) { _, day in
                 isDayPickerOpen = false
@@ -257,7 +257,7 @@ struct ContentView: View {
         .sheet(isPresented: $isGuideOpen) {
             GestureGuide()
                 .presentationDetents([.height(detent(GestureGuide.height))])
-                .catalystSheet(dismiss: { isGuideOpen = false })
+                .catalystSheet(dismiss: { isGuideOpen = false }, height: detent(GestureGuide.height))
                 // Hidden, like every other sheet here — eight of them now, two when this was
                 // written (Mason, 2026-10-10). It was shown for one build on
                 // the argument that a sheet which is read rather than answered owes a visible
@@ -274,7 +274,7 @@ struct ContentView: View {
                 isTimeChoiceOpen = false
             }
             .presentationDetents([.height(TimeChoiceSheet.height)])
-            .catalystSheet(dismiss: { isTimeChoiceOpen = false })
+            .catalystSheet(dismiss: { isTimeChoiceOpen = false }, height: TimeChoiceSheet.height)
             .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: Binding(get: { isEventChoiceOpen && !isShortScreen },
@@ -286,7 +286,7 @@ struct ContentView: View {
                 isEventChoiceOpen = false
             }
             .presentationDetents([.height(EventChoiceSheet.height)])
-            .catalystSheet(dismiss: { isEventChoiceOpen = false })
+            .catalystSheet(dismiss: { isEventChoiceOpen = false }, height: EventChoiceSheet.height)
             .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: Binding(get: { isCornerChoiceOpen && !isShortScreen },
@@ -298,7 +298,7 @@ struct ContentView: View {
                 isCornerChoiceOpen = false
             }
             .presentationDetents([.height(CornerChoiceSheet.height)])
-            .catalystSheet(dismiss: { isCornerChoiceOpen = false })
+            .catalystSheet(dismiss: { isCornerChoiceOpen = false }, height: CornerChoiceSheet.height)
             .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $isAllDayOpen) {
@@ -312,13 +312,13 @@ struct ContentView: View {
             // One detent, so it cannot be dragged open. It is a glance, not a
             // list view.
             .presentationDetents([.height(detent(AllDaySheet.height(for: model.allDayEvents.count)))])
-            .catalystSheet(dismiss: { isAllDayOpen = false })
+            .catalystSheet(dismiss: { isAllDayOpen = false }, height: detent(AllDaySheet.height(for: model.allDayEvents.count)))
             .presentationDragIndicator(.hidden)
         }
         .sheet(isPresented: $isMenuOpen) {
             DayMenu(model: model, calendar: calendar, location: location, weather: weather, notifications: notifications, appearance: $appearance) { isMenuOpen = false }
                 .presentationDetents([.large])
-                .catalystSheet(dismiss: { isMenuOpen = false }, fitted: false)
+                .catalystSheet(dismiss: { isMenuOpen = false })
                 .presentationDragIndicator(.hidden)
         }
         .task {

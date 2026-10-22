@@ -11,6 +11,14 @@ struct ArcWindow: View {
     /// of what a long jump looks like.
     var eventsHidden = false
     var arcHeight: CGFloat = 190
+
+    /// How fast a vertical trackpad scroll changes the window span, per point, as an exponent.
+    ///
+    /// Mac only; nothing on iOS reads it. 0.004 puts a 170-point swipe at about a doubling, so the
+    /// three-hour default reaches six hours in one comfortable gesture and the whole day in two.
+    /// Exponential rather than linear so the same swipe feels the same at both ends of the
+    /// 1.5-to-24-hour range, instead of one end swallowing it.
+    static let scrollZoomRate: Double = 0.004
     /// How dark the sky is, and READ BY NOTHING in this file as of 2026-10-13. It used to be
     /// what the marks above the horizon lightened with; `skyInk` is now plain `mark`, and the
     /// comment on it 270 lines below says why. `ContentView` passes a literal 0 and records that
@@ -256,6 +264,22 @@ struct ArcWindow: View {
             // carrying Now on 2026-10-10 and the comment did not notice.)
             .contentShape(.rect)
             .gesture(scrubGesture(pointsPerHour: pointsPerHour), isEnabled: onScrub != nil)
+            // Trackpad and wheel, compiled out on iOS entirely. Horizontal is the same scrub a
+            // drag performs; vertical is the zoom, because Mason found vertical scroll arrives in
+            // stutters and a zoom does not care while a scrub does.
+            .catalystScrollScrub(onBegan: { onScrubBegan?() }) { dx, dy in
+                if dx != 0, pointsPerHour > 0 {
+                    onScrub?(Double(-dx / pointsPerHour))
+                }
+                if dy != 0, let onZoom {
+                    // Exponential, so a notch near the three-hour end and a notch near the full
+                    // day feel like the same gesture rather than one of them swallowing the range.
+                    // Down pulls back to more of the day, the way a map zooms out.
+                    let range = DayModel.windowRange(forWidth: proxy.size.width)
+                    let scaled = model.windowHours * exp(Double(dy) * Self.scrollZoomRate)
+                    onZoom(min(max(scaled, range.lowerBound), range.upperBound))
+                }
+            }
             // The bands come first: inside one, the tap is an event step and never a time.
             // Outside them it is the inverse of the pan above, so at centreX it is exactly
             // `focusHour`.

@@ -96,6 +96,30 @@ struct DayMenu: View {
                                 .foregroundStyle(Theme.taskActive)
                         }
                     }
+                } else if calendar.access == .undetermined {
+                    // The third state, which had no branch until 2026-10-21 and so rendered
+                    // nothing at all: no calendars, not denied, and no way to ask. On iPhone it
+                    // is nearly unreachable because first run always raises the prompt, so this
+                    // went unnoticed; on a Mac Mason completed onboarding without the prompt
+                    // resolving and the menu offered him no way to connect anything.
+                    divider
+                    section("Calendars") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("No calendars connected yet.")
+                                .font(.subheadline)
+                                .foregroundStyle(Theme.muted)
+                            Button("Connect calendars") {
+                                Task {
+                                    await calendar.requestAccess()
+                                    // The request only settles `access`; the picker above reads
+                                    // `sources`, which stays empty until this runs.
+                                    calendar.refreshSources()
+                                }
+                            }
+                            .font(.footnote)
+                            .foregroundStyle(Theme.taskActive)
+                        }
+                    }
                 }
 
                 // Its own section (Mason, 2026-10-09), after Calendars because that is what it
