@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.smidgecraft.Sphere</string>
+	</array>
+	<!-- Mac-only, and the reason the permission prompts never appeared. The Catalyst build runs
+	     under the Hardened Runtime (ENABLE_HARDENED_RUNTIME = YES, codesign reads
+	     flags=0x10000(runtime)), which withholds a protected resource unless the app declares
+	     the matching resource-access entitlement. Without these two, EventKit's request reaches
+	     tccd only as a preflight query — "Auth Right: Unknown (None), DB Action:None" — and
+	     returns false in under 30ms with the status still notDetermined, which is the same
+	     symptom an ad-hoc signature produces and is why the two were confused. Passed to
+	     xcodebuild as CODE_SIGN_ENTITLEMENTS so iOS keeps Sphere/Sphere.entitlements, where
+	     these keys do not belong. -->
+	<key>com.apple.security.personal-information.calendars</key>
+	<true/>
+	<key>com.apple.security.personal-information.location</key>
+	<true/>
+</dict>
+</plist>
