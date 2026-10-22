@@ -2216,3 +2216,39 @@ What was established while scoping, and what the spike then did to it:
   file forces a profile whatever the identity is; it builds only with `CODE_SIGN_ENTITLEMENTS`
   cleared, which drops the app group and leaves the widget with nothing to read. A real Mac
   identity is a prerequisite for any Mac build anyone is meant to use.
+
+## The zoom model is deferred; the Mac ships without touching it (2026-10-21)
+
+Mason's constraint, in his words: iOS is "pretty much already set", and he does not want to change
+it unless he is intentionally changing it. Landscape in particular took real work and he does not
+want it broken by Mac work.
+
+Two ways to honour that were scoped against each other and **both were the wrong question**, which
+is the decision worth recording:
+
+- **One codebase** (~30 lines): persist points per hour, derive `windowHours` from width. Every
+  existing user has a `windowHours` value in `UserDefaults` that has to convert, and converting
+  needs a width that `DayModel` does not have at init. Rotating an iPhone would show 4.2 hours
+  instead of 3, because the arc gets 594 points in landscape against 430 in portrait
+  (`ContentView.headerColumn` takes `min(300, max(220, width * 0.32))` of the 874).
+- **Gated on idiom** (~27 lines): iPhone keeps today's behaviour as dead code past an
+  `userInterfaceIdiom != .phone` check, so landscape provably cannot break, and there is no
+  migration because iPad and Mac have no existing users. Cost is two zoom models to maintain.
+
+**Neither is on the critical path, so neither was chosen.** The Catalyst spike runs the app with
+zero Swift files changed: nothing about shipping a Mac build depends on the zoom model. And
+`windowRange(forWidth:)` returns `1.5...24` at every width, so a 1383-point Mac window can already
+be pinched to the whole day at 58 points an hour — three times more generous than the 18 the phone
+gives at its own full-day zoom. **The wide day already works; it just is not the default.** What
+the inversion actually buys is not re-pinching after a resize, and nobody has used the Mac app long
+enough to know whether that is an irritation or a line in a document.
+
+Deferring costs nothing: it is about thirty lines in three files and nothing is being built on top
+of the zoom model, so it is exactly as cheap later. The decision gets made after the Mac app has
+been lived with, when the question is "does this annoy me" instead of "might this annoy me".
+
+**What the Mac work is instead, in order:** the sheets (seven of eight have no dismiss control, and
+unlike the zoom there is no "they can just pinch" escape — a stuck modal is a defect), then the
+fixed `arcHeight`, then signing. `TARGETED_DEVICE_FAMILY = "1,2"` remains an open question of
+Mason's, because it makes the shipping iOS app an iPad app in the Store, and it gates any Mac
+release.
