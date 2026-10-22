@@ -269,7 +269,17 @@ struct ArcWindow: View {
             // stutters and a zoom does not care while a scrub does.
             .catalystScrollScrub(onBegan: { onScrubBegan?() }) { dx, dy in
                 if dx != 0, pointsPerHour > 0 {
-                    onScrub?(Double(-dx / pointsPerHour))
+                    // Explicitly unanimated. The event capsules are placed by `.offset(x: pan)`
+                    // on a layer that slides as a whole, and this mutation arrives from a UIKit
+                    // gesture callback rather than from a SwiftUI gesture, where an ambient
+                    // animation gets applied to it. The arc redraws at once and the capsules
+                    // ease toward their new x, so they lag behind the curve they belong to.
+                    // Invisible at a trackpad's 7-point deltas; a mouse notch carries 55 and
+                    // the lag is the whole symptom (Mason, 2026-10-21: the capsules "move off
+                    // the arc" with a mouse and are "perfectly fine" with a trackpad).
+                    var instant = Transaction()
+                    instant.disablesAnimations = true
+                    withTransaction(instant) { onScrub?(Double(-dx / pointsPerHour)) }
                 }
                 if dy != 0, let onZoom {
                     // Exponential, so a notch near the three-hour end and a notch near the full
