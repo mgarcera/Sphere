@@ -25,6 +25,18 @@ compressed from that description — nothing here claims anything the listing do
 
 ---
 
+> ## ⚠️ Two files disagree about WHERE to shoot
+>
+> This document says never shoot on your own phone and use a simulator that has never been
+> signed into iCloud. `AppStore/frames/shoot.py` captures the **physical phone** over
+> `devicectl`, and argues for it in its own docstring: "a simulator shows an empty one."
+>
+> Both cannot be the rule. Noted 2026-10-28, unresolved. The privacy warning above is the
+> safer of the two and is the one to follow until Mason settles it — and for the iPad set it
+> settles itself, because `shoot.py` looks for an iPhone and there is no iPad to shoot.
+
+---
+
 ## 1. The hard requirements
 
 **Upload one set: iPhone 6.9", portrait, 1320 × 2868. That is the whole obligation.**
@@ -35,7 +47,10 @@ compressed from that description — nothing here claims anything the listing do
 | **Shoot at** | **1320 × 2868** portrait |
 | **Count** | 1 minimum, **10 maximum** per display size. Six recommended below. |
 | **Format** | PNG or JPEG, RGB |
-| **iPad** | **None.** Sphere is `TARGETED_DEVICE_FAMILY = 1`, iPhone-only. Do not upload an iPad set. |
+| **iPad** | **REQUIRED as of 2.5.** Mac Catalyst forced `TARGETED_DEVICE_FAMILY = "1,2"`, so the
+app declares iPad and App Store Connect will not take a submission without an iPad 13"
+set at **2064 x 2752** portrait. This row said "None, iPhone-only" until 2026-10-28 and
+was true when written. |
 | **Landscape** | None. The app is portrait-only. |
 
 **The three pixel sizes Apple accepts inside the 6.9" class** — any one of them satisfies the
