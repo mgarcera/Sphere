@@ -100,7 +100,10 @@ struct ArcWindow: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let pointsPerHour = proxy.size.width / model.windowHours
+            // Width-relative, so a wider screen shows more day rather than the same day
+            // spread thinner. See `DayModel.drawnWindowHours`.
+            let drawnHours = model.drawnWindowHours(forWidth: proxy.size.width)
+            let pointsPerHour = proxy.size.width / drawnHours
             let dayWidth = 24 * pointsPerHour
             let firstDay = model.dayIndex - 1
             let originHour = Double(firstDay) * 24

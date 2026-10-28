@@ -515,7 +515,7 @@ struct ContentView: View {
                     .onChanged { value in
                         // The same points-per-hour the drawing uses, so a drag out here moves
                         // the day by exactly what the identical drag on the arc would.
-                        let pph = width / model.windowHours
+                        let pph = width / model.drawnWindowHours(forWidth: width)
                         guard pph > 0 else { return }
                         let delta = value.translation.width - outerScrubLast
                         outerScrubLast = value.translation.width

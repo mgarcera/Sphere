@@ -38,6 +38,28 @@ final class DayModel {
 
     static let windowKey = "windowHours"
 
+    /// The width the window was tuned at: an iPhone 17, 402 points across, where the default
+    /// three hours put the hour labels about 134 points apart.
+    static let referenceWidth: Double = 402
+
+    /// The window to actually DRAW at a given width.
+    ///
+    /// `windowHours` is a reading preference, not a measurement, and spending it as an absolute
+    /// hour count is what made a 13-inch iPad draw the same three hours a phone does — 344
+    /// points to the hour, with the sun's path flattened to a horizon line across the whole
+    /// screen and three labels on it (2026-10-28, measured on an iPad Pro 13" simulator).
+    ///
+    /// Scaling by the width holds points-per-hour fixed instead, so a wider screen buys MORE
+    /// DAY at the density the labels were spaced for. That is the same rule `minWindowHours`
+    /// already states for the other end of the zoom: the labels stay the same distance apart on
+    /// every screen, and what changes is how much day fits between them.
+    ///
+    /// An iPhone is unchanged, because at 402 points the factor is exactly 1.
+    func drawnWindowHours(forWidth width: Double) -> Double {
+        guard width > 0 else { return windowHours }
+        return min(windowHours * (width / DayModel.referenceWidth), 24)
+    }
+
     /// Clamped only at the ends a bad value could reach. The pinch clamps against the real
     /// screen width, which is unknown here, so a window restored onto a narrower screen than it
     /// was set on stays as it was until the next pinch brings it into range.
