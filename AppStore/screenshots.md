@@ -47,10 +47,10 @@ compressed from that description — nothing here claims anything the listing do
 | **Shoot at** | **1320 × 2868** portrait |
 | **Count** | 1 minimum, **10 maximum** per display size. Six recommended below. |
 | **Format** | PNG or JPEG, RGB |
-| **iPad** | **REQUIRED as of 2.5.** Mac Catalyst forced `TARGETED_DEVICE_FAMILY = "1,2"`, so the
-app declares iPad and App Store Connect will not take a submission without an iPad 13"
-set at **2064 x 2752** portrait. This row said "None, iPhone-only" until 2026-10-28 and
-was true when written. |
+| **iPad** | **None, for now.** Sphere ships `TARGETED_DEVICE_FAMILY = 1` again as of 2.4.1.
+Catalyst had forced `"1,2"`, which would have required an iPad 13" set at **2064 x 2752**;
+Mason deferred the whole iPad/Mac route on 2026-10-28 to get the review prompt out, so the
+requirement goes away with it. It comes BACK the moment `SUPPORTS_MACCATALYST` does. |
 | **Landscape** | None. The app is portrait-only. |
 
 **The three pixel sizes Apple accepts inside the 6.9" class** — any one of them satisfies the
