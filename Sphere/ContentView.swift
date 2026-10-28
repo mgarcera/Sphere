@@ -370,12 +370,23 @@ struct ContentView: View {
         // heard, and before this the schedule was only rebuilt at launch.
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
+            // Sphere has no act of making, so the honest signal that somebody likes it is that
+            // they came back on another day. Counted here, at most once per calendar day, and
+            // only past onboarding for the same reason `requestLocationIfPastOnboarding` checks
+            // the gate: a first-run launch owes no prompt.
+            if let gate, gate.hasResolved, gate.state == .ready {
+                ReviewMoment.recordOncePerDay()
+            }
             Task {
                 await notifications.refreshPermission()
                 reload()
                 await rescheduleNotifications()
             }
         }
+        // Five distinct days. Later than Perzine's eight stickers because a day is a much larger
+        // unit than a sticker, and slower because the arc animates in: the ask waits 2.5s so it
+        // lands on a drawn sky rather than on one still arriving.
+        .reviewAsk(threshold: 5, after: .seconds(2.5))
         .onChange(of: notifications.isEnabled) { _, _ in Task { await rescheduleNotifications() } }
         .onChange(of: notifications.leadMinutes) { _, _ in Task { await rescheduleNotifications() } }
         .onChange(of: notifications.permission) { _, _ in Task { await rescheduleNotifications() } }
